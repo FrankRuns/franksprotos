@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The blow-up variable — marathon sandbox</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --line: rgba(0,0,0,0.08);
+    --accent: #c2410c;
+    --good: #15803d;
+    --bad: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+  h1 { font-size: 28px; font-weight: 600; margin: 0 0 0.4rem; letter-spacing: -0.015em; }
+  .deck { color: var(--muted); font-size: 16px; margin: 0 0 1.75rem; max-width: 560px; }
+
+  /* TOP TABS */
+  .top-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 0.5px solid var(--line);
+    margin-bottom: 1.75rem;
+  }
+  .top-tabs button {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 11px 18px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+    font-weight: 400;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .top-tabs button:hover { color: var(--ink); }
+  .top-tabs button.active { color: var(--ink); border-bottom: 2px solid var(--ink); font-weight: 500; outline: none; }
+  .top-pane { display: none; }
+  .top-pane.active { display: block; }
+
+  /* PANELS */
+  .panel {
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .panel-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 1rem;
+  }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    background: #f5f4ef;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .toggle-label .lead { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+  .toggle-label .sub { font-size: 12px; color: var(--muted); }
+  .toggle-switch {
+    flex-shrink: 0;
+    position: relative;
+    width: 52px; height: 28px;
+    background: #d0cfc7;
+    border-radius: 28px;
+    cursor: pointer;
+    border: none; padding: 0;
+    transition: background 0.2s;
+  }
+  .toggle-switch.on { background: var(--bad); }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 22px; height: 22px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle-switch.on::after { transform: translateX(24px); }
+
+  /* THREE HISTOGRAMS */
+  .hist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .hist-col .strategy { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .hist-col .meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .hist-col .meta .avg { color: var(--ink); font-weight: 500; }
+  .hist-svg { width: 100%; display: block; }
+  .hist-legend {
+    display: flex; gap: 12px;
+    font-size: 11px; color: var(--muted);
+    margin-top: 10px;
+  }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
+  .winner-strip {
+    margin-top: 1rem;
+    padding: 12px 16px;
+    background: #f5f4ef;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .winner-strip .lbl { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 3px; }
+  .winner-strip .val { font-weight: 500; }
+
+  /* DAG ACCORDION */
+  .dag-accordion {
+    margin-top: 1.25rem;
+    border: 0.5px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .dag-accordion summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: var(--muted);
+    list-style: none;
+    background: #f9f8f5;
+    user-select: none;
+  }
+  .dag-accordion summary::-webkit-details-marker { display: none; }
+  .dag-accordion summary::before { content: '▸  '; font-size: 11px; }
+  .dag-accordion[open] summary::before { content: '▾  '; }
+  .dag-accordion summary:hover { color: var(--ink); }
+  .dag-inner { padding: 1.25rem 1.5rem; }
+  .dag-svg { width: 100%; display: block; }
+  .dag-caption { font-size: 13px; color: var(--muted); margin-top: 1rem; line-height: 1.65; }
+  .dag-caption strong { color: var(--ink); font-weight: 500; }
+  .dag-caption .red { color: var(--bad); }
+
+  /* YOUR DATA TAB */
+  .time-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 0.75rem; }
+  .time-field { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .time-field input {
+    width: 66px; padding: 10px 0;
+    font-size: 22px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    border: 0.5px solid var(--line);
+    border-radius: 8px;
+    background: #f5f4ef;
+    color: var(--ink);
+    text-align: center;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+  .time-field input::-webkit-outer-spin-button,
+  .time-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .time-field input:focus { border-color: rgba(0,0,0,0.3); background: white; }
+  .time-field label { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+  .time-sep { font-size: 26px; font-weight: 200; color: var(--muted); padding-top: 8px; }
+  .error-msg { font-size: 12px; color: var(--bad); min-height: 16px; margin-top: 4px; }
+
+  .pacing-buttons { display: flex; gap: 8px; }
+  .pacing-buttons button {
+    flex: 1; padding: 13px 6px;
+    background: transparent;
+    border: 0.5px solid var(--line);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 13px; cursor: pointer;
+    font-family: inherit; font-weight: 500;
+    line-height: 1.35; transition: all 0.15s;
+  }
+  .pacing-buttons button:hover { border-color: rgba(0,0,0,0.25); color: var(--ink); }
+  .pacing-buttons button.active { background: var(--ink); color: white; border-color: var(--ink); }
+  .pacing-buttons button .sub { display: block; font-size: 10px; font-weight: 400; margin-top: 3px; opacity: 0.7; }
+
+  .generate-btn {
+    width: 100%; padding: 15px;
+    background: var(--accent); color: white;
+    border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .generate-btn:hover { opacity: 0.88; }
+
+  .your-results { display: none; margin-top: 1.25rem; }
+
+  .your-results.show { display: block; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; margin-bottom: 0.75rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  thead th {
+    text-align: left; padding: 8px 12px;
+    font-size: 11px; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-bottom: 0.5px solid var(--line);
+    background: #f5f4ef;
+  }
+  tbody td { padding: 9px 12px; border-bottom: 0.5px solid var(--line); color: var(--ink); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #f9f8f5; }
+  .blow-yes { color: var(--bad); font-weight: 500; }
+  .blow-no { color: var(--good); }
+  .finish-cell { font-weight: 500; }
+  .table-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .section-divider {
+    border: none; border-top: 0.5px solid var(--line);
+    margin: 1.5rem 0;
+  }
+  .section-label {
+    font-size: 12px; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.04em;
+    text-transform: uppercase; margin-bottom: 1rem;
+  }
+
+  .footer {
+    text-align: center; margin-top: 2rem;
+    font-size: 13px; color: var(--muted);
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 520px) {
+    .wrap { padding: 2rem 1rem 3rem; }
+    h1 { font-size: 22px; }
+    .hist-grid { gap: 10px; }
+    .time-field input { width: 56px; font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>The blow-up variable.</h1>
+  <p class="deck">A marathon pacing model built from a LLM-generated causal DAG. The goal is to explore how adding a probability of hitting the wall variable changes how we think about marathon pacing strategy.</p>
+
+  <div class="top-tabs">
+    <button class="active" id="ttab-arg" onclick="showTopTab('arg')">Insight</button>
+    <button id="ttab-you" onclick="showTopTab('you')">Build Data</button>
+  </div>
+  </div><!-- end tpane-you inner wrapper -->
+
+  <!-- ==================== TAB 1: THE ARGUMENT ==================== -->
+  <div class="top-pane active" id="tpane-arg">
+    <div style="max-width:680px; margin: 0 auto; padding: 0 1.5rem;">
+    <div style="margin-bottom: 1.5rem;">
+      <h2 style="font-size:20px;font-weight:600;margin:0 0 0.35rem;letter-spacing:-0.01em;">Insight</h2>
+      <p style="font-size:15px;color:var(--muted);margin:0;max-width:500px;">A sub-2:30 runner. Three pacing strategies. One missing variable. Toggle it on and watch the answer change.</p>
+    </div>
+
+    <div class="panel">
+      <div class="toggle-row">
+        <div class="toggle-label">
+          <div class="lead" id="toggle-lead">Blow-up variable: off</div>
+          <div class="sub" id="toggle-sub">Pure physics. The model has no concept of you blowing up.</div>
+        </div>
+        <button class="toggle-switch" id="toggle-btn" onclick="toggleBlowup()"></button>
+      </div>
+
+      <div class="hist-grid">
+        <div class="hist-col">
+          <div class="strategy">Conservative</div>
+          <div class="meta"><span id="arg-lbl-cons">5% blow-up · </span>avg <span class="avg" id="arg-avg-cons">—</span></div>
+          <svg class="hist-svg" id="arg-hist-cons" viewBox="0 0 200 90" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="hist-col">
+          <div class="strategy">Even</div>
+          <div class="meta"><span id="arg-lbl-even">33% blow-up · </span>avg <span class="avg" id="arg-avg-even">—</span></div>
+          <svg class="hist-svg" id="arg-hist-even" viewBox="0 0 200 90" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="hist-col">
+          <div class="strategy">Aggressive</div>
+          <div class="meta"><span id="arg-lbl-aggr">78% blow-up · </span>avg <span class="avg" id="arg-avg-aggr">—</span></div>
+          <svg class="hist-svg" id="arg-hist-aggr" viewBox="0 0 200 90" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+
+      <div class="hist-legend" id="arg-legend">
+        <span><span class="dot" style="background:#15803d"></span>Clean races</span>
+        <span><span class="dot" style="background:#b91c1c"></span>Blow-ups</span>
+      </div>
+
+      <div class="winner-strip">
+        <div class="lbl">Fastest expected time</div>
+        <div class="val" id="arg-winner">—</div>
+      </div>
+    </div>
+
+    <details class="dag-accordion">
+      <summary id="dag-summary">The causal model behind these distributions</summary>
+      <div class="dag-inner">
+        <div id="dag-container"></div>
+        <div class="dag-caption" id="dag-caption"></div>
+      </div>
+    </details>
+      </div>
+    </details>
+
+  </div>
+  </div><!-- end tpane-arg inner wrapper -->
+
+  <!-- ==================== TAB 2: YOUR DATA ==================== -->
+  <div class="top-pane" id="tpane-you">
+    <div style="max-width:680px; margin: 0 auto; padding: 0 1.5rem;">
+    <div style="margin-bottom: 1.5rem;">
+      <h2 style="font-size:20px;font-weight:600;margin:0 0 0.35rem;letter-spacing:-0.01em;">Build your own data</h2>
+      <p style="font-size:15px;color:var(--muted);margin:0;max-width:500px;">Enter your goal time and how prone you are to blowing up. The model generates 1,000 synthetic runners — all three strategies — using your parameters.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Your goal finish time</div>
+      <div class="time-row">
+        <div class="time-field">
+          <input type="number" id="hours" min="2" max="7" value="3" />
+          <label>hours</label>
+        </div>
+        <span class="time-sep">:</span>
+        <div class="time-field">
+          <input type="number" id="minutes" min="0" max="59" value="30" />
+          <label>min</label>
+        </div>
+        <span class="time-sep">:</span>
+        <div class="time-field">
+          <input type="number" id="seconds" min="0" max="59" value="00" />
+          <label>sec</label>
+        </div>
+      </div>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Your blow-up sensitivity</div>
+      <div class="pacing-buttons">
+        <button data-sensitivity="low" onclick="setSensitivity('low')" class="active">
+          I rarely blow up
+          <span class="sub">Con 2% · Even 12% · Aggr 40%</span>
+        </button>
+        <button data-sensitivity="mid" onclick="setSensitivity('mid')">
+          Sometimes
+          <span class="sub">Con 5% · Even 33% · Aggr 78%</span>
+        </button>
+        <button data-sensitivity="high" onclick="setSensitivity('high')">
+          I go out too hard
+          <span class="sub">Con 10% · Even 50% · Aggr 92%</span>
+        </button>
+      </div>
+    </div>
+
+    <button class="generate-btn" onclick="generate()">Generate →</button>
+
+    <div class="your-results" id="your-results">
+
+      <div class="panel" style="margin-top:1.25rem;">
+        <div class="panel-title">Sample — first 10 of 1,000 synthetic runners (even pacing)</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>VO₂max</th>
+                <th>LT %</th>
+                <th>Economy</th>
+                <th>Glycogen</th>
+                <th>Temp °F</th>
+                <th>Pacing</th>
+                <th>Blew up?</th>
+                <th>Finish</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+        <div class="table-note" id="table-note"></div>
+
+        <hr class="section-divider" />
+        <div class="section-label">All three strategies · same goal time · 1,000 runners each</div>
+
+        <div class="hist-grid">
+          <div class="hist-col">
+            <div class="strategy">Conservative</div>
+            <div class="meta">5% blow-up · avg <span class="avg" id="you-avg-cons">—</span></div>
+            <svg class="hist-svg" id="you-hist-cons" viewBox="0 0 200 90" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="hist-col">
+            <div class="strategy">Even</div>
+            <div class="meta">33% blow-up · avg <span class="avg" id="you-avg-even">—</span></div>
+            <svg class="hist-svg" id="you-hist-even" viewBox="0 0 200 90" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="hist-col">
+            <div class="strategy">Aggressive</div>
+            <div class="meta">78% blow-up · avg <span class="avg" id="you-avg-aggr">—</span></div>
+            <svg class="hist-svg" id="you-hist-aggr" viewBox="0 0 200 90" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+        <div class="hist-legend" style="margin-top:8px;">
+          <span><span class="dot" style="background:#15803d"></span>Clean</span>
+          <span><span class="dot" style="background:#b91c1c"></span>Blow-up</span>
+        </div>
+        <div class="winner-strip" style="margin-top:1rem;">
+          <div class="lbl">Fastest expected time for your goal</div>
+          <div class="val" id="you-winner">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Built from a causal DAG · <a href="https://affectiveanalytics.substack.com" target="_blank">Affective Analytics</a>
+  </div>
+
+</div>
+
+<script>
+  // ── SHARED MODEL ──────────────────────────────────────────────────────────
+  const BLOWUP_P  = { '-3': 0.05, '0': 0.33, '3': 0.78 };
+  const PACE_LABEL = { '-3': 'conservative', '0': 'even', '3': 'aggressive' };
+  const ARG_BASE_VO2 = 71.58; // calibrated so conservative sim mean lands at ~2:22:00
+
+  function gauss(mean, sd) {
+    const u1 = Math.random(), u2 = Math.random();
+    return mean + Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2) * sd;
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function fmtTime(s) {
+    s = Math.round(Math.max(0, s));
+    return `${Math.floor(s/3600)}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  }
+  function penalty() {
+    const r = Math.random();
+    if (r < 0.5) return (3 + Math.random() * 5) * 60;
+    if (r < 0.85) return (8 + Math.random() * 10) * 60;
+    return (18 + Math.random() * 17) * 60;
+  }
+
+  function makeRunner(baseVO2, paceVal, customP) {
+    const blowupTable = customP || BLOWUP_P;
+    const vo2Sd = Math.min(baseVO2 * 0.015, 1.5);
+    const vo2 = clamp(gauss(baseVO2, vo2Sd), baseVO2 * 0.96, baseVO2 * 1.02);
+    const lt   = clamp(gauss(0.86, 0.01), 0.82, 0.90);
+    const econ = clamp(gauss(200, 5), 185, 215);
+    const gly  = clamp(gauss(70, 10), 35, 100);
+    const temp = clamp(gauss(60, 5), 48, 75);
+    const heat = temp <= 55 ? 1.0 : 1.0 - 0.0035 * (temp - 55);
+    const vel  = (vo2 * lt * heat / econ) * 1000;
+    let baseMin = 42195 / vel;
+    baseMin *= (1 - paceVal * 0.005);
+    const clean = baseMin * 60 + gauss(0, 20);
+    const blewUp = Math.random() < blowupTable[String(paceVal)];
+    return { vo2, lt, econ, gly, temp, paceVal, blewUp, finish: clean + (blewUp ? penalty() : 0) };
+  }
+
+  function renderHist(svgId, pop, xMin, xMax, globalMax) {
+    const W = 200, H = 90, padT = 2, padB = 2;
+    const innerH = H - padT - padB;
+    const N = 40, bs = (xMax - xMin) / N;
+    const bins = Array.from({length: N}, () => ({c:0, b:0}));
+    pop.forEach(r => {
+      const i = clamp(Math.floor((r.finish - xMin) / bs), 0, N-1);
+      if (r.blewUp) bins[i].b++; else bins[i].c++;
+    });
+    const bw = W / N;
+    let svg = '';
+    bins.forEach((b, i) => {
+      const x = i * bw;
+      const ch = (b.c / globalMax) * innerH;
+      const bh = (b.b / globalMax) * innerH;
+      if (b.c > 0) svg += `<rect x="${x+.3}" y="${padT+innerH-ch}" width="${bw-.6}" height="${ch}" fill="#15803d"/>`;
+      if (b.b > 0) svg += `<rect x="${x+.3}" y="${padT+innerH-ch-bh}" width="${bw-.6}" height="${bh}" fill="#b91c1c"/>`;
+    });
+    document.getElementById(svgId).innerHTML = svg;
+  }
+
+  function renderThreeHists(prefix, baseVO2, blowupMult, customP) {
+    const pops = {'-3': [], '0': [], '3': []};
+    ['-3','0','3'].forEach(p => {
+      for (let i = 0; i < 1000; i++) {
+        const r = makeRunner(baseVO2, parseInt(p), blowupMult === 0 ? null : (customP || null));
+        if (blowupMult === 0) {
+          // Blow-up node is off — recompute finish without any penalty
+          const vo2 = r.vo2, lt = r.lt, econ = r.econ, temp = r.temp;
+          const heat = temp <= 55 ? 1.0 : 1.0 - 0.0035 * (temp - 55);
+          const vel = (vo2 * lt * heat / econ) * 1000;
+          let baseMin = 42195 / vel;
+          baseMin *= (1 - parseInt(p) * 0.005);
+          r.finish = baseMin * 60 + gauss(0, 45);
+          r.blewUp = false;
+        }
+        pops[p].push(r);
+      }
+    });
+
+    const all = [...pops['-3'], ...pops['0'], ...pops['3']].map(r => r.finish);
+    const xMin = Math.min(...all) - 60, xMax = Math.max(...all) + 60;
+
+    function maxBin(pop) {
+      const bs = (xMax - xMin) / 40;
+      const bins = Array.from({length:40}, () => 0);
+      pop.forEach(r => bins[clamp(Math.floor((r.finish-xMin)/bs),0,39)]++);
+      return Math.max(...bins);
+    }
+    const gMax = Math.max(maxBin(pops['-3']), maxBin(pops['0']), maxBin(pops['3']));
+
+    renderHist(`${prefix}-hist-cons`, pops['-3'], xMin, xMax, gMax);
+    renderHist(`${prefix}-hist-even`, pops['0'],  xMin, xMax, gMax);
+    renderHist(`${prefix}-hist-aggr`, pops['3'],  xMin, xMax, gMax);
+
+    const avg = pop => fmtTime(Math.round(pop.reduce((a,r)=>a+r.finish,0)/pop.length));
+    document.getElementById(`${prefix}-avg-cons`).textContent = avg(pops['-3']);
+    document.getElementById(`${prefix}-avg-even`).textContent = avg(pops['0']);
+    document.getElementById(`${prefix}-avg-aggr`).textContent = avg(pops['3']);
+
+    // Update blow-up labels — hide entirely when blow-up node is off
+    const lblCons = document.getElementById(`${prefix}-lbl-cons`);
+    const lblEven = document.getElementById(`${prefix}-lbl-even`);
+    const lblAggr = document.getElementById(`${prefix}-lbl-aggr`);
+    const legend  = document.getElementById(`${prefix}-legend`);
+    const show = blowupMult !== 0;
+    if (lblCons) lblCons.style.display = show ? '' : 'none';
+    if (lblEven) lblEven.style.display = show ? '' : 'none';
+    if (lblAggr) lblAggr.style.display = show ? '' : 'none';
+    if (legend)  legend.style.display  = show ? '' : 'none';
+
+    const means = [
+      {name:'Conservative', mean: pops['-3'].reduce((a,r)=>a+r.finish,0)/1000},
+      {name:'Even',         mean: pops['0'].reduce((a,r)=>a+r.finish,0)/1000},
+      {name:'Aggressive',   mean: pops['3'].reduce((a,r)=>a+r.finish,0)/1000}
+    ].sort((a,b)=>a.mean-b.mean);
+    document.getElementById(`${prefix}-winner`).textContent =
+      `${means[0].name} — ${fmtTime(means[0].mean)}`;
+  }
+
+  // ── TAB 1: THE ARGUMENT ───────────────────────────────────────────────────
+  let blowupOn = false;
+
+  function renderDAG(showBlowup) {
+    const f = '-apple-system,sans-serif';
+    const arr = `<defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#999" stroke-width="1.2" stroke-linecap="round"/>
+      </marker>
+      <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round"/>
+      </marker>
+    </defs>`;
+
+    // When blow-up is OFF: no You? node, no blow-up prob node, outcome arrow from velocity+glycogen only
+    // Blow-up ON: full graph with dashed You? node and blow-up probability node
+    const vb = showBlowup ? '0 0 680 460' : '0 0 680 460';
+
+    // Shared nodes (always present)
+    const shared = `
+      <g><rect x="40" y="40" width="120" height="46" rx="8" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
+        <text x="100" y="60" text-anchor="middle" font-size="13" font-weight="500" fill="#3C3489" font-family="${f}">VO₂max</text>
+        <text x="100" y="76" text-anchor="middle" font-size="11" fill="#534AB7" font-family="${f}">aerobic ceiling</text></g>
+      <g><rect x="180" y="40" width="120" height="46" rx="8" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
+        <text x="240" y="60" text-anchor="middle" font-size="13" font-weight="500" fill="#3C3489" font-family="${f}">Lactate threshold</text>
+        <text x="240" y="76" text-anchor="middle" font-size="11" fill="#534AB7" font-family="${f}">% sustainable</text></g>
+      <g><rect x="320" y="40" width="120" height="46" rx="8" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
+        <text x="380" y="60" text-anchor="middle" font-size="13" font-weight="500" fill="#3C3489" font-family="${f}">Running economy</text>
+        <text x="380" y="76" text-anchor="middle" font-size="11" fill="#534AB7" font-family="${f}">mL/kg/km</text></g>
+      <g><rect x="460" y="40" width="120" height="46" rx="8" fill="#EEEDFE" stroke="#7F77DD" stroke-width="0.5"/>
+        <text x="520" y="60" text-anchor="middle" font-size="13" font-weight="500" fill="#3C3489" font-family="${f}">Glycogen</text>
+        <text x="520" y="76" text-anchor="middle" font-size="11" fill="#534AB7" font-family="${f}">fueling reserve</text></g>
+      <g><rect x="120" y="170" width="140" height="46" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+        <text x="190" y="190" text-anchor="middle" font-size="13" font-weight="500" fill="#633806" font-family="${f}">Race-day temp</text>
+        <text x="190" y="206" text-anchor="middle" font-size="11" fill="#854F0B" font-family="${f}">heat penalty</text></g>
+      <g><rect x="290" y="170" width="140" height="46" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5"/>
+        <text x="360" y="190" text-anchor="middle" font-size="13" font-weight="500" fill="#633806" font-family="${f}">Pacing strategy</text>
+        <text x="360" y="206" text-anchor="middle" font-size="11" fill="#854F0B" font-family="${f}">your only lever</text></g>`;
+
+    if (!showBlowup) {
+      // Simplified DAG — no blow-up node, no You? node
+      // Execution row: just velocity and glycogen tax, centered
+      const svg = `<svg class="dag-svg" viewBox="${vb}" preserveAspectRatio="xMidYMid meet">${arr}${shared}
+        <g><rect x="120" y="290" width="160" height="46" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+          <text x="200" y="310" text-anchor="middle" font-size="13" font-weight="500" fill="#085041" font-family="${f}">Sustained velocity</text>
+          <text x="200" y="326" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="${f}">m/min you can hold</text></g>
+        <g><rect x="300" y="290" width="160" height="46" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+          <text x="380" y="310" text-anchor="middle" font-size="13" font-weight="500" fill="#085041" font-family="${f}">Glycogen tax</text>
+          <text x="380" y="326" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="${f}">back-half slowdown</text></g>
+        <g><rect x="240" y="400" width="200" height="46" rx="8" fill="#1a1a1a"/>
+          <text x="340" y="420" text-anchor="middle" font-size="14" font-weight="500" fill="white" font-family="${f}">Finish time</text>
+          <text x="340" y="436" text-anchor="middle" font-size="11" fill="#bbb" font-family="${f}">what the world sees</text></g>
+        <path d="M 100 86 Q 100 180 200 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 240 86 Q 240 180 215 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 380 86 Q 380 180 240 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 520 86 Q 520 200 390 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 190 216 L 210 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 190 216 Q 220 250 370 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 360 216 Q 360 250 390 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 360 216 L 230 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 200 336 Q 230 380 290 400" stroke="#666" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+        <path d="M 380 336 L 365 400" stroke="#666" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+      </svg>`;
+      document.getElementById('dag-container').innerHTML = svg;
+      document.getElementById('dag-caption').innerHTML =
+        '<strong>Physiology</strong> sets the ceiling. <strong>Race inputs</strong> — temperature and pacing — shape how much of that ceiling you actually access. <strong>Execution</strong> converts those into sustained velocity and glycogen tax, which together determine finish time. This is the complete model. No blow-up node. No missing variable. No you.';
+    } else {
+      // Full DAG with You? and blow-up probability
+      const svg = `<svg class="dag-svg" viewBox="${vb}" preserveAspectRatio="xMidYMid meet">${arr}${shared}
+        <g><rect x="490" y="170" width="140" height="46" rx="8" fill="#fef2f2" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="560" y="190" text-anchor="middle" font-size="14" font-weight="600" fill="#7f1d1d" font-family="${f}">You?</text>
+          <text x="560" y="206" text-anchor="middle" font-size="11" font-style="italic" fill="#b91c1c" font-family="${f}">unmeasurable</text></g>
+        <g><rect x="80" y="290" width="160" height="46" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+          <text x="160" y="310" text-anchor="middle" font-size="13" font-weight="500" fill="#085041" font-family="${f}">Sustained velocity</text>
+          <text x="160" y="326" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="${f}">m/min you can hold</text></g>
+        <g><rect x="260" y="290" width="160" height="46" rx="8" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.5"/>
+          <text x="340" y="310" text-anchor="middle" font-size="13" font-weight="500" fill="#085041" font-family="${f}">Glycogen tax</text>
+          <text x="340" y="326" text-anchor="middle" font-size="11" fill="#0F6E56" font-family="${f}">back-half slowdown</text></g>
+        <g><rect x="440" y="290" width="160" height="46" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+          <text x="520" y="310" text-anchor="middle" font-size="13" font-weight="500" fill="#791F1F" font-family="${f}">Blow-up probability</text>
+          <text x="520" y="326" text-anchor="middle" font-size="11" fill="#A32D2D" font-family="${f}">half physics, half psyche</text></g>
+        <g><rect x="240" y="400" width="200" height="46" rx="8" fill="#1a1a1a"/>
+          <text x="340" y="420" text-anchor="middle" font-size="14" font-weight="500" fill="white" font-family="${f}">Finish time</text>
+          <text x="340" y="436" text-anchor="middle" font-size="11" fill="#bbb" font-family="${f}">what the world sees</text></g>
+        <path d="M 100 86 Q 100 160 160 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 240 86 Q 240 160 175 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 380 86 Q 380 160 195 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 520 86 Q 520 220 350 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 190 216 L 175 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 190 216 Q 220 260 460 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 360 216 Q 360 250 340 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 360 216 L 480 290" stroke="#bbb" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+        <path d="M 160 336 Q 200 380 290 400" stroke="#666" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+        <path d="M 340 336 L 340 400" stroke="#666" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+        <path d="M 520 336 Q 480 380 400 400" stroke="#666" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+        <path d="M 560 216 Q 560 250 540 290" stroke="#b91c1c" stroke-width="2" stroke-dasharray="5,3" fill="none" marker-end="url(#arr-red)"/>
+      </svg>`;
+      document.getElementById('dag-container').innerHTML = svg;
+      document.getElementById('dag-caption').innerHTML =
+        'Now the model is more honest. The <span style="color:#b91c1c;font-weight:500;">dashed red node</span> — your discipline, your fear of the wall, your knowledge of your own failure mode — enters at blow-up probability. That\'s the seam between physics and psychology. The model can\'t measure it. Only you can.';
+    }
+  }
+
+  function toggleBlowup() {
+    blowupOn = !blowupOn;
+    document.getElementById('toggle-btn').classList.toggle('on', blowupOn);
+    if (blowupOn) {
+      document.getElementById('toggle-lead').textContent = 'Blow-up variable: on';
+      document.getElementById('toggle-sub').textContent = 'Now the model knows runners blow up — at rates the data says, not yours.';
+    } else {
+      document.getElementById('toggle-lead').textContent = 'Blow-up variable: off';
+      document.getElementById('toggle-sub').textContent = 'Pure physics. The model has no concept of you blowing up.';
+    }
+    renderDAG(blowupOn);
+    renderThreeHists('arg', ARG_BASE_VO2, blowupOn ? 1 : 0);
+  }
+
+  // ── TAB 2: YOUR DATA ──────────────────────────────────────────────────────
+  let yourPace = 0;
+  let yourSensitivity = 'low';
+
+  const SENSITIVITY_P = {
+    low:  { '-3': 0.02, '0': 0.12, '3': 0.40 },
+    mid:  { '-3': 0.05, '0': 0.33, '3': 0.78 },
+    high: { '-3': 0.10, '0': 0.50, '3': 0.92 }
+  };
+
+  function setSensitivity(s) {
+    yourSensitivity = s;
+    document.querySelectorAll('[data-sensitivity]').forEach(b => {
+      b.classList.toggle('active', b.dataset.sensitivity === s);
+    });
+  }
+
+  function setYourPace(p) {
+    yourPace = p;
+    document.querySelectorAll('[data-pace]').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.pace) === p);
+    });
+  }
+
+  function getGoalSeconds() {
+    const h = parseInt(document.getElementById('hours').value) || 0;
+    const m = parseInt(document.getElementById('minutes').value) || 0;
+    const s = parseInt(document.getElementById('seconds').value) || 0;
+    return h*3600 + m*60 + s;
+  }
+
+  function validate() {
+    const t = getGoalSeconds();
+    const el = document.getElementById('error-msg');
+    if (t < 2*3600+5*60) { el.textContent = 'Minimum goal time is 2:05:00 — below that the model breaks physics.'; return false; }
+    if (t > 7*3600) { el.textContent = 'Maximum goal time is 7:00:00.'; return false; }
+    el.textContent = ''; return true;
+  }
+
+  function goalToBaseVO2(goalSeconds, paceVal) {
+    // Target conservative mean = goal time, compensating for nonlinearity drift
+    // Use even pacing (0) as baseline since we generate all three strategies
+    const targetVel = 42195 / ((goalSeconds - 180) / 60); // subtract ~3 min drift compensation
+    return (targetVel * 200) / (0.86 * 0.9825 * 1000);
+  }
+
+  function generate() {
+    if (!validate()) return;
+    const goalSeconds = getGoalSeconds();
+    const baseVO2 = goalToBaseVO2(goalSeconds, 0); // even pacing as baseline for profile inference
+
+    // 1,000 runners for the selected strategy (for the table)
+    const runners = Array.from({length: 1000}, () => makeRunner(baseVO2, 0, SENSITIVITY_P[yourSensitivity]));
+    const preview = runners.slice(0, 10);
+
+    document.getElementById('table-body').innerHTML = preview.map((r, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td>${r.vo2.toFixed(1)}</td>
+        <td>${(r.lt*100).toFixed(1)}%</td>
+        <td>${r.econ.toFixed(0)}</td>
+        <td>${r.gly.toFixed(0)}</td>
+        <td>${r.temp.toFixed(1)}</td>
+        <td>${PACE_LABEL[String(r.paceVal)]}</td>
+        <td class="${r.blewUp ? 'blow-yes' : 'blow-no'}">${r.blewUp ? 'Yes' : 'No'}</td>
+        <td class="finish-cell">${fmtTime(r.finish)}</td>
+      </tr>
+    `).join('');
+
+    const blowups = runners.filter(r => r.blewUp).length;
+    const avgFinish = Math.round(runners.reduce((a,r)=>a+r.finish,0)/runners.length);
+    document.getElementById('table-note').textContent =
+      `Showing 10 of 1,000 synthetic runners · ${blowups} blow-ups (${Math.round(blowups/10)}%) · avg finish ${fmtTime(avgFinish)} · goal ${fmtTime(goalSeconds)} · even pacing`;
+
+    // Three histograms with blow-up on (this is "your data" — reality, not pure physics)
+    renderThreeHists('you', baseVO2, 1, SENSITIVITY_P[yourSensitivity]);
+
+    document.getElementById('your-results').classList.add('show');
+    document.getElementById('your-results').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  // ── TAB SWITCHING ─────────────────────────────────────────────────────────
+  function showTopTab(name) {
+    document.querySelectorAll('.top-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.top-tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tpane-' + name).classList.add('active');
+    document.getElementById('ttab-' + name).classList.add('active');
+  }
+
+  ['hours','minutes','seconds'].forEach(id => {
+    document.getElementById(id).addEventListener('input', validate);
+  });
+
+  // Initialise argument tab
+  renderDAG(false);
+  renderThreeHists('arg', ARG_BASE_VO2, 0);
+</script>
+</body>
+</html>
