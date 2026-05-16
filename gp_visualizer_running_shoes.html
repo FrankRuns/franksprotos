@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shoe Bayesian Optimization Explorer</title>
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --ink: #171717;
+      --muted: #6b6258;
+      --card: #fffaf2;
+      --line: #262626;
+      --gp: #2563eb;
+      --band: rgba(37, 99, 235, 0.16);
+      --candidate: #0ea5e9;
+      --raced: #111827;
+      --safe: #f59e0b;
+      --explore: #ef4444;
+      --legal: #16a34a;
+      --illegal: rgba(239, 68, 68, 0.08);
+      --grid: rgba(23, 23, 23, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .wrap {
+      width: min(1180px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 28px 0 38px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(31px, 4vw, 58px);
+      letter-spacing: -0.055em;
+      line-height: 0.92;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 760px;
+      line-height: 1.45;
+    }
+
+    .badge {
+      border: 1px solid rgba(0,0,0,0.12);
+      background: rgba(255,255,255,0.55);
+      padding: 10px 13px;
+      border-radius: 999px;
+      font-size: 13px;
+      white-space: nowrap;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 24px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .controls { padding: 18px; position: sticky; top: 14px; }
+    .panel { padding: 14px; }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .control {
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.09);
+    }
+    .control:last-child { border-bottom: 0; }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .value { color: var(--gp); font-variant-numeric: tabular-nums; }
+
+    input[type="range"] { width: 100%; accent-color: var(--gp); }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin-top: 7px;
+    }
+
+    button, select {
+      width: 100%;
+      border: 1px solid rgba(0,0,0,0.14);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .toggleRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .toggleBtn.active {
+      background: #171717;
+      color: #fff;
+    }
+
+    .chartHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 8px;
+    }
+
+    .chartTitle {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .decision {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.12);
+      font-weight: 800;
+    }
+
+    .swatch { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+
+    canvas {
+      width: 100%;
+      display: block;
+      background: #fffdf8;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 18px;
+    }
+
+    #gpCanvas { height: 360px; }
+    #acqCanvas { height: 170px; margin-top: 10px; }
+
+    .takeaway {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .mini {
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 18px;
+      padding: 13px;
+      min-height: 82px;
+    }
+
+    .mini h3 { margin: 0 0 6px; font-size: 14px; }
+    .mini p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+    .tooltip {
+      position: fixed;
+      display: none;
+      pointer-events: none;
+      z-index: 10;
+      background: rgba(23,23,23,0.94);
+      color: #fff;
+      border-radius: 12px;
+      padding: 9px 10px;
+      font-size: 12px;
+      max-width: 260px;
+      box-shadow: 0 16px 38px rgba(0,0,0,0.22);
+    }
+
+    @media (max-width: 900px) {
+      header { grid-template-columns: 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      .takeaway { grid-template-columns: 1fr; }
+      #gpCanvas { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Bayesian Optimization Picks a Shoe</h1>
+        <div class="subtitle">A toy model trained on five raced shoes. Move the exploration knob and watch the next experiment flip from “safe and similar” to “uncertain upside.” Then turn on the racing rule and watch the optimizer respect the constraint.</div>
+      </div>
+      <div class="badge">GP surrogate + acquisition function 🏁</div>
+    </header>
+
+    <div class="layout">
+      <aside class="card controls">
+        <div class="eyebrow">Model knobs</div>
+
+        <div class="control">
+          <label for="explore">Exploration appetite <span class="value" id="exploreVal"></span></label>
+          <input id="explore" type="range" min="0" max="3" step="0.05" value="0.35" />
+          <div class="hint">Low = exploit the best-looking region. High = chase uncertainty.</div>
+        </div>
+
+        <div class="control">
+          <label for="length">GP length scale <span class="value" id="lengthVal"></span></label>
+          <input id="length" type="range" min="1.2" max="9" step="0.1" value="4.2" />
+          <div class="hint">Small = local, bendy belief. Large = broad, smooth belief.</div>
+        </div>
+
+        <div class="control">
+          <label for="noise">Noise <span class="value" id="noiseVal"></span></label>
+          <input id="noise" type="range" min="0.05" max="2.2" step="0.05" value="0.55" />
+          <div class="hint">More noise means the model treats each race as less definitive.</div>
+        </div>
+
+        <div class="control">
+          <label>World Athletics rule</label>
+          <div class="toggleRow">
+            <button class="toggleBtn" id="ruleOff">Ignore rule</button>
+            <button class="toggleBtn active" id="ruleOn">Respect 40mm</button>
+          </div>
+          <div class="hint">BO only knows constraints you encode.</div>
+        </div>
+
+        <div class="control">
+          <label>40mm overlay</label>
+          <div class="toggleRow">
+            <button class="toggleBtn" id="overlayOff">Hide overlay</button>
+            <button class="toggleBtn active" id="overlayOn">Show overlay</button>
+          </div>
+          <div class="hint">Hide the 40mm line, label, and shading for cleaner screenshots.</div>
+        </div>
+
+        <div class="control">
+          <label>BO next pick</label>
+          <div class="toggleRow">
+            <button class="toggleBtn" id="pickOff">Hide pick</button>
+            <button class="toggleBtn active" id="pickOn">Show pick</button>
+          </div>
+          <div class="hint">Screenshot flow: hide the recommendation first, then reveal it.</div>
+        </div>
+
+        <div class="control">
+          <button id="lowExplore">Safe default</button>
+          <div style="height:8px"></div>
+          <button id="highExplore">High exploration</button>
+          <div class="hint">Use these buttons to recreate the article’s recommendation flip.</div>
+        </div>
+      </aside>
+
+      <main class="card panel">
+        <div class="chartHeader">
+          <div>
+            <div class="eyebrow">Surrogate model</div>
+            <div class="chartTitle">The GP sees stack height, race times, uncertainty, and candidates</div>
+          </div>
+          <div class="decision" id="decisionPills"></div>
+        </div>
+
+        <canvas id="gpCanvas" width="980" height="500"></canvas>
+        <canvas id="acqCanvas" width="980" height="260"></canvas>
+
+        <div class="takeaway">
+          <div class="mini">
+            <h3>GP mean</h3>
+            <p>The blue curve is the model’s central guess for marathon time by stack height.</p>
+          </div>
+          <div class="mini">
+            <h3>Uncertainty band</h3>
+            <p>The shaded region widens where the model has less evidence.</p>
+          </div>
+          <div class="mini">
+            <h3>Acquisition score</h3>
+            <p>The bottom chart is what BO maximizes to choose the next experiment.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const raced = [
+      {name:'Kinvara', x:22.0, y:158.0},
+      {name:'Pegasus', x:28.0, y:156.4},
+      {name:'Alphafly', x:32.0, y:149.2},
+      {name:'Vaporfly', x:36.0, y:149.9},
+      {name:'Prime X', x:42.0, y:151.8}
+    ];
+
+    const candidates = [
+      {name:'Nike Vaporfly 4', x:34.1, legal:true},
+      {name:'HOKA Rocket X 2', x:36.0, legal:true},
+      {name:'Adidas Adios Pro 4', x:36.6, legal:true},
+      {name:'Nike Alphafly 3', x:38.1, legal:true},
+      {name:'HOKA Cielo X1 3.0', x:38.0, legal:true},
+      {name:'New Balance SC Elite v5', x:39.3, legal:true},
+      {name:'ASICS Metaspeed Sky Tokyo', x:39.5, legal:true},
+      {name:'On Cloudboom Strike', x:39.5, legal:true},
+      {name:'Saucony Endorphin Elite 2', x:39.9, legal:true},
+      {name:'PUMA Deviate Nitro Elite 3', x:40.0, legal:true},
+      {name:'HOKA Skyward X 2', x:45.8, legal:false},
+      {name:'PUMA MagMax Nitro', x:46.0, legal:false}
+    ];
+
+    const gpCanvas = document.getElementById('gpCanvas');
+    const acqCanvas = document.getElementById('acqCanvas');
+    const g = gpCanvas.getContext('2d');
+    const a = acqCanvas.getContext('2d');
+    const tooltip = document.getElementById('tooltip');
+
+    const els = {
+      explore: document.getElementById('explore'),
+      length: document.getElementById('length'),
+      noise: document.getElementById('noise'),
+      exploreVal: document.getElementById('exploreVal'),
+      lengthVal: document.getElementById('lengthVal'),
+      noiseVal: document.getElementById('noiseVal'),
+      ruleOff: document.getElementById('ruleOff'),
+      ruleOn: document.getElementById('ruleOn'),
+      overlayOff: document.getElementById('overlayOff'),
+      overlayOn: document.getElementById('overlayOn'),
+      pickOff: document.getElementById('pickOff'),
+      pickOn: document.getElementById('pickOn'),
+      lowExplore: document.getElementById('lowExplore'),
+      highExplore: document.getElementById('highExplore'),
+      decisionPills: document.getElementById('decisionPills')
+    };
+
+    let respectRule = true;
+    let showLimitOverlay = true;
+    let showPick = true;
+    const xMin = 20, xMax = 48;
+    const yMin = 159, yMax = 148;
+    const margin = {left:58, right:26, top:22, bottom:46};
+    const acqMargin = {left:58, right:26, top:22, bottom:42};
+    const gridN = 260;
+    const jitter = 1e-8;
+
+    function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+    function px(x){ return margin.left + (x-xMin)/(xMax-xMin)*(gpCanvas.width-margin.left-margin.right); }
+    function py(y){ return margin.top + (y-yMax)/(yMin-yMax)*(gpCanvas.height-margin.top-margin.bottom); }
+    function apx(x){ return acqMargin.left + (x-xMin)/(xMax-xMin)*(acqCanvas.width-acqMargin.left-acqMargin.right); }
+    function apy(v, min, max){ return acqMargin.top + (max-v)/(max-min)*(acqCanvas.height-acqMargin.top-acqMargin.bottom); }
+
+    function kernel(x1, x2, p){
+      const d = x1-x2;
+      return 8.0 * Math.exp(-(d*d)/(2*p.length*p.length));
+    }
+
+    function cholesky(A){
+      const n=A.length, L=Array.from({length:n},()=>Array(n).fill(0));
+      for(let i=0;i<n;i++){
+        for(let j=0;j<=i;j++){
+          let s=A[i][j];
+          for(let k=0;k<j;k++) s-=L[i][k]*L[j][k];
+          if(i===j) L[i][j]=Math.sqrt(Math.max(s,1e-12));
+          else L[i][j]=s/L[j][j];
+        }
+      }
+      return L;
+    }
+    function solveLower(L,b){
+      const x=Array(b.length).fill(0);
+      for(let i=0;i<b.length;i++){
+        let s=b[i];
+        for(let j=0;j<i;j++) s-=L[i][j]*x[j];
+        x[i]=s/L[i][i];
+      }
+      return x;
+    }
+    function solveUpper(L,b){
+      const n=b.length, x=Array(n).fill(0);
+      for(let i=n-1;i>=0;i--){
+        let s=b[i];
+        for(let j=i+1;j<n;j++) s-=L[j][i]*x[j];
+        x[i]=s/L[i][i];
+      }
+      return x;
+    }
+    function solve(L,b){ return solveUpper(L, solveLower(L,b)); }
+    function dot(u,v){ return u.reduce((s,z,i)=>s+z*v[i],0); }
+
+    function gpPosterior(){
+      const p = params();
+      const xs = Array.from({length:gridN},(_,i)=>xMin+i*(xMax-xMin)/(gridN-1));
+      const yMean = raced.reduce((s,d)=>s+d.y,0)/raced.length;
+      const y = raced.map(d=>d.y-yMean);
+      const X = raced.map(d=>d.x);
+      const K = X.map(xi=>X.map(xj=>kernel(xi,xj,p)));
+      for(let i=0;i<K.length;i++) K[i][i]+=p.noise*p.noise+jitter;
+      const L = cholesky(K);
+      const alpha = solve(L,y);
+      const mean=[], sd=[];
+      for(const x of xs){
+        const kv=X.map(xi=>kernel(x,xi,p));
+        const m=yMean+dot(kv,alpha);
+        const v=solveLower(L,kv);
+        const variance=Math.max(kernel(x,x,p)-dot(v,v),1e-8);
+        mean.push(m); sd.push(Math.sqrt(variance));
+      }
+      return {xs, mean, sd, yMean};
+    }
+
+    function interp(arr, xs, x){
+      if(x<=xs[0]) return arr[0];
+      if(x>=xs[xs.length-1]) return arr[arr.length-1];
+      const step=(xs[xs.length-1]-xs[0])/(xs.length-1);
+      const i=Math.floor((x-xs[0])/step);
+      const t=(x-xs[i])/(xs[i+1]-xs[i]);
+      return arr[i]*(1-t)+arr[i+1]*t;
+    }
+
+    function params(){
+      return {explore:+els.explore.value, length:+els.length.value, noise:+els.noise.value};
+    }
+
+    function candidateScores(post){
+      const best = Math.min(...raced.map(d=>d.y));
+      return candidates.map(c=>{
+        const mu=interp(post.mean,post.xs,c.x);
+        const sd=interp(post.sd,post.xs,c.x);
+        let score = (best - mu) + params().explore * sd;
+        if(respectRule && !c.legal) score = -999;
+        return {...c, mu, sd, score};
+      });
+    }
+
+    function pick(scores){ return scores.reduce((best,d)=>d.score>best.score?d:best, scores[0]); }
+
+    function drawGrid(ctx, canvas, isGP=true){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#fffdf8'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.strokeStyle=css('--grid'); ctx.lineWidth=1;
+      ctx.font='12px system-ui'; ctx.fillStyle='rgba(23,23,23,0.64)';
+      const m=isGP?margin:acqMargin;
+      const h=canvas.height-m.top-m.bottom;
+      for(let x=20;x<=48;x+=4){
+        const xp=isGP?px(x):apx(x);
+        line(ctx,xp,m.top,xp,canvas.height-m.bottom);
+        ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(String(x),xp,canvas.height-m.bottom+12);
+      }
+      if(isGP){
+        for(let y=148;y<=159;y+=2){
+          const yp=py(y);
+          line(ctx,m.left,yp,canvas.width-m.right,yp);
+          ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.fillText(String(y),m.left-8,yp);
+        }
+        if(showLimitOverlay){
+          ctx.save();
+          ctx.fillStyle=css('--illegal');
+          ctx.fillRect(px(40),m.top,canvas.width-m.right-px(40),h);
+          ctx.restore();
+          ctx.strokeStyle=css('--legal'); ctx.lineWidth=2; ctx.setLineDash([5,5]);
+          line(ctx,px(40),m.top,px(40),canvas.height-m.bottom); ctx.setLineDash([]);
+          ctx.fillStyle=css('--legal'); ctx.textAlign='left'; ctx.textBaseline='top';
+          ctx.font='bold 12px system-ui'; ctx.fillText('40mm racing limit',px(40)+7,m.top+8);
+        }
+      }
+      ctx.strokeStyle='rgba(0,0,0,0.24)'; ctx.lineWidth=1.2;
+      line(ctx,m.left,m.top,m.left,canvas.height-m.bottom);
+      line(ctx,m.left,canvas.height-m.bottom,canvas.width-m.right,canvas.height-m.bottom);
+    }
+
+    function line(ctx,x1,y1,x2,y2){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+
+    function path(ctx, xs, ys, mapX, mapY){
+      ctx.beginPath();
+      xs.forEach((x,i)=>{ const xp=mapX(x), yp=mapY(ys[i]); if(i===0)ctx.moveTo(xp,yp); else ctx.lineTo(xp,yp); });
+    }
+
+    function star(ctx,x,y,r,color){
+      ctx.save(); ctx.translate(x,y); ctx.beginPath();
+      for(let i=0;i<10;i++){
+        const ang=-Math.PI/2+i*Math.PI/5;
+        const rr=i%2===0?r:r*0.43;
+        const xx=Math.cos(ang)*rr, yy=Math.sin(ang)*rr;
+        if(i===0)ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+      }
+      ctx.closePath(); ctx.fillStyle=color; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#171717'; ctx.stroke(); ctx.restore();
+    }
+
+    function drawGP(){
+      const post = gpPosterior();
+      const scores = candidateScores(post);
+      const winner = pick(scores);
+
+      drawGrid(g,gpCanvas,true);
+
+      const upper = post.mean.map((m,i)=>m-post.sd[i]);
+      const lower = post.mean.map((m,i)=>m+post.sd[i]);
+      g.beginPath();
+      post.xs.forEach((x,i)=>{ const xp=px(x), yp=py(upper[i]); if(i===0)g.moveTo(xp,yp); else g.lineTo(xp,yp); });
+      for(let i=post.xs.length-1;i>=0;i--) g.lineTo(px(post.xs[i]),py(lower[i]));
+      g.closePath(); g.fillStyle=css('--band'); g.fill();
+
+      path(g,post.xs,post.mean,px,py); g.strokeStyle=css('--gp'); g.lineWidth=3; g.stroke();
+
+      for(const c of scores){
+        g.beginPath(); g.arc(px(c.x),py(c.mu),6.5,0,Math.PI*2);
+        g.fillStyle=css('--candidate'); g.fill();
+        g.lineWidth=1.5; g.strokeStyle='#fff'; g.stroke();
+      }
+
+      for(const d of raced){
+        g.beginPath(); g.arc(px(d.x),py(d.y),7.5,0,Math.PI*2); g.fillStyle=css('--raced'); g.fill();
+        g.lineWidth=2.2; g.strokeStyle='#fffdf8'; g.stroke();
+      }
+
+      for(const d of raced){
+        g.save();
+        g.font='bold 12px system-ui'; g.textAlign='left'; g.textBaseline='middle';
+        const tx = px(d.x)+10, ty = py(d.y)+5;
+        const labelWidth = g.measureText(d.name).width;
+        g.fillStyle='rgba(255,253,248,0.88)';
+        g.fillRect(tx-3, ty-9, labelWidth+6, 18);
+        g.fillStyle=css('--ink');
+        g.fillText(d.name,tx,ty);
+        g.restore();
+      }
+
+      if(showPick){
+        star(g,px(winner.x),py(winner.mu),13,respectRule?css('--safe'):css('--explore'));
+        g.font='900 13px system-ui'; g.fillStyle=css('--ink'); g.textAlign='center'; g.textBaseline='bottom';
+        g.fillText('BO pick: '+winner.name,px(winner.x),py(winner.mu)-18);
+      }
+
+      g.fillStyle='rgba(23,23,23,0.68)'; g.font='12px system-ui';
+      g.textAlign='center'; g.textBaseline='bottom'; g.fillText('Stack height (mm)', gpCanvas.width/2, gpCanvas.height-9);
+      g.save(); g.translate(16,gpCanvas.height/2); g.rotate(-Math.PI/2); g.textAlign='center'; g.fillText('Marathon time, minutes (lower is better)',0,0); g.restore();
+
+      drawAcq(scores, winner);
+      updatePills(winner);
+      return {post,scores,winner};
+    }
+
+    function drawAcq(scores,winner){
+      drawGrid(a,acqCanvas,false);
+      const visible = scores.filter(d=>!respectRule || d.legal);
+      const min = Math.min(...visible.map(d=>d.score))-0.4;
+      const max = Math.max(...visible.map(d=>d.score))+0.4;
+      const barW = 18;
+      for(const d of scores){
+        const xp=apx(d.x);
+        const base=apy(Math.max(min,0),min,max);
+        const top=apy(d.score,min,max);
+        a.fillStyle = css('--candidate');
+        a.fillRect(xp-barW/2, Math.min(base,top), barW, Math.abs(base-top));
+        if(!d.legal){
+          a.fillStyle='rgba(23,23,23,0.55)'; a.font='11px system-ui'; a.textAlign='center';
+          a.fillText('',xp,acqCanvas.height-acqMargin.bottom-8);
+        }
+      }
+      if(showPick){
+        star(a,apx(winner.x),apy(winner.score,min,max),12,respectRule?css('--safe'):css('--explore'));
+      }
+      a.fillStyle=css('--ink'); a.font='900 14px system-ui'; a.textAlign='left'; a.textBaseline='top';
+      a.fillText('Acquisition score: improvement + exploration × uncertainty', acqMargin.left, 14);
+      a.fillStyle='rgba(23,23,23,0.64)'; a.font='12px system-ui'; a.textAlign='center'; a.textBaseline='bottom';
+      a.fillText('Candidate stack height (mm)', acqCanvas.width/2, acqCanvas.height-7);
+    }
+
+    function updatePills(winner){
+      els.decisionPills.innerHTML = `
+        <span class="pill"><span class="swatch" style="background:${css('--raced')}"></span> trained on 5 races</span>
+        <span class="pill"><span class="swatch" style="background:${css('--candidate')}"></span> choosing from ${candidates.length} candidates</span>
+        ${showPick ? `<span class="pill"><span class="swatch" style="background:${respectRule?css('--safe'):css('--explore')}"></span> pick: ${winner.name}</span>` : `<span class="pill"><span class="swatch" style="background:#d4d4d8"></span> recommendation hidden</span>`}
+      `;
+    }
+
+    function draw(){
+      const p=params();
+      els.exploreVal.textContent=p.explore.toFixed(2);
+      els.lengthVal.textContent=p.length.toFixed(1);
+      els.noiseVal.textContent=p.noise.toFixed(2);
+      els.ruleOn.classList.toggle('active',respectRule);
+      els.ruleOff.classList.toggle('active',!respectRule);
+      els.overlayOn.classList.toggle('active',showLimitOverlay);
+      els.overlayOff.classList.toggle('active',!showLimitOverlay);
+      els.pickOn.classList.toggle('active',showPick);
+      els.pickOff.classList.toggle('active',!showPick);
+      drawGP();
+    }
+
+    function tooltipMove(e){
+      const rect=gpCanvas.getBoundingClientRect();
+      const sx=(e.clientX-rect.left)*gpCanvas.width/rect.width;
+      const sy=(e.clientY-rect.top)*gpCanvas.height/rect.height;
+      let found=null;
+      const post=gpPosterior();
+      const scores=candidateScores(post);
+      for(const d of [...raced.map(d=>({...d,type:'raced'})),...scores.map(d=>({...d,type:'candidate',y:d.mu}))]){
+        const dx=sx-px(d.x), dy=sy-py(d.y);
+        if(Math.hypot(dx,dy)<14) found=d;
+      }
+      if(!found){ tooltip.style.display='none'; return; }
+      tooltip.style.display='block'; tooltip.style.left=(e.clientX+14)+'px'; tooltip.style.top=(e.clientY+14)+'px';
+      tooltip.innerHTML = found.type==='raced'
+        ? `<b>${found.name}</b><br>Raced shoe<br>Stack: ${found.x.toFixed(1)}mm<br>Time: ${found.y.toFixed(1)} min`
+        : `<b>${found.name}</b><br>Candidate<br>Stack: ${found.x.toFixed(1)}mm<br>Predicted: ${found.mu.toFixed(1)} min<br>Uncertainty: ${found.sd.toFixed(2)}`;
+    }
+
+    ['explore','length','noise'].forEach(id=>els[id].addEventListener('input',draw));
+    els.ruleOn.addEventListener('click',()=>{respectRule=true; draw();});
+    els.ruleOff.addEventListener('click',()=>{respectRule=false; draw();});
+    els.overlayOn.addEventListener('click',()=>{showLimitOverlay=true; draw();});
+    els.overlayOff.addEventListener('click',()=>{showLimitOverlay=false; draw();});
+    els.pickOn.addEventListener('click',()=>{showPick=true; draw();});
+    els.pickOff.addEventListener('click',()=>{showPick=false; draw();});
+    els.lowExplore.addEventListener('click',()=>{els.explore.value=0.25; respectRule=true; showPick=true; draw();});
+    els.highExplore.addEventListener('click',()=>{els.explore.value=2.2; respectRule=false; showPick=true; draw();});
+    gpCanvas.addEventListener('mousemove',tooltipMove);
+    gpCanvas.addEventListener('mouseleave',()=>tooltip.style.display='none');
+
+    draw();
+  </script>
+</body>
+</html>
