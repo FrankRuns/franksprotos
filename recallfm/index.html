@@ -18,9 +18,10 @@
     padding: 24px; text-align: center;
   }
   h1 { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; opacity: 0.5; margin: 0 0 48px; font-weight: 400; }
-  .status { font-size: 28px; line-height: 1.3; min-height: 120px; max-width: 500px; }
+  .status { font-size: 24px; line-height: 1.4; min-height: 140px; max-width: 540px; }
   .status.listening { color: #4ade80; }
   .status.error { color: #f87171; }
+  .status.blurb { font-size: 18px; opacity: 0.85; }
   button {
     margin-top: 48px;
     background: #e8e8e8; color: #0a0a0a;
@@ -32,8 +33,6 @@
   }
   button:active { transform: scale(0.97); }
   button:disabled { opacity: 0.3; }
-  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #4ade80; margin-right: 12px; vertical-align: middle; animation: pulse 1.2s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   .progress { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.4; letter-spacing: 2px; }
   input[type="email"] {
     margin-top: 24px;
@@ -52,34 +51,48 @@
   <button id="action" onclick="onAction()">Start</button>
 
 <script>
-// ---------- Quiz data ----------
 const PRIMER = [
   {
     id: "p1",
     text: "Question one. When AI gets better at doing knowledge work, what do you expect happens to the number of humans employed at AI-forward companies? Say A for drops sharply. Say B for drops slightly. Say C for stays flat. Say D for grows.",
-    options: ["A", "B", "C", "D"],
+    short: "AI-forward headcount over time",
+    blurbs: {
+      A: "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
+      B: "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
+      C: "Closer to Dan's view but still too pessimistic. He'd say you're missing that AI generates more work to do — more pull requests to review, more agents to maintain, more output to curate.",
+      D: "You'd be in violent agreement with Dan. He calls the AI jobpocalypse not really a thing and is hiring aggressively. His mental model: models make yesterday's human competence cheap, which frees humans to push the frontier further.",
+    },
   },
   {
     id: "p2",
     text: "Question two. Where will most professional work happen in a year? Say A for a traditional SaaS app with AI features. Say B for a chat interface like ChatGPT. Say C for a coding agent environment like Codex or Claude Code. Say D for the command line.",
-    options: ["A", "B", "C", "D"],
+    short: "Future work surface",
+    blurbs: {
+      A: "Dan thinks this is wrong but not for the reason you'd expect. He's actually bullish on SaaS — would buy SaaS stocks today. But he thinks the SaaS apps will run inside a coding agent's browser, with you and the agent collaborating on them. SaaS survives, but the container changes.",
+      B: "Dan would say you were right a year ago. But the new pattern is agents that live on your computer with full access to your files and an in-app browser. Chat alone is too thin a surface — the agent needs to see what you see.",
+      C: "Dead on. Dan calls Codex his daily driver and says all knowledge work is migrating there. The unlock was when these agents got an in-app browser, so the agent watches you work in real time. He hit inbox zero for ten days using it — unprecedented for him.",
+      D: "Dan would say you're six months behind. His phrase: we speed-ran the CLI era. GUIs are back because the in-app browser pattern needs visual surface. CLIs aren't dying, but they're not the main work surface anymore.",
+    },
   },
   {
     id: "p3",
     text: "Question three. What's the biggest risk to a SaaS company in the AI era? Say A for AI agents replace SaaS entirely. Say B for margins crushed by token costs. Say C for users will demand AI features they can't afford to build. Say D for nothing major, SaaS will thrive.",
-    options: ["A", "B", "C", "D"],
+    short: "SaaS risk",
+    blurbs: {
+      A: "Dan calls this take dumb. His contrarian bet: agents increase the number of users of SaaS, not get rid of it. Every employee at his company uses tons of SaaS even though they're maximally AI-forward.",
+      B: "Interesting one — Dan flipped this. He argues margins actually improve because users bring their own tokens via Codex or Cowork. The SaaS company doesn't pay for the AI, the user's agent does. Inverts the usual margin-crush story.",
+      C: "Partially right but Dan's reframe is that you shouldn't be building the AI features inside your product anyway. Build for humans and agents to collaborate on your product together. The agent comes with the user.",
+      D: "You'd be aligned with Dan's most contrarian take in the whole episode. I would buy SaaS stocks right now. The world thinks SaaS is dying. Dan thinks it's about to see an insane spike in demand from agent users.",
+    },
   },
 ];
 
-// ---------- State ----------
-let phase = "idle"; // idle | running | done | email
+let phase = "idle";
 let qIdx = 0;
 const answers = [];
 
-// ---------- Audio (browser TTS for now; swap to ElevenLabs MP3s later) ----------
 function speak(text) {
   return new Promise((resolve) => {
-    // Cancel anything in progress
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 1.0;
@@ -90,12 +103,11 @@ function speak(text) {
   });
 }
 
-// ---------- Speech recognition ----------
 function listen() {
   return new Promise((resolve, reject) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      reject(new Error("Speech recognition not supported on this browser. Use Safari on iPhone or Chrome on desktop."));
+      reject(new Error("Speech recognition not supported on this browser."));
       return;
     }
     const rec = new SR();
@@ -111,7 +123,6 @@ function listen() {
       for (let i = 0; i < e.results[0].length; i++) {
         transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
       }
-      // Look for A/B/C/D in any alternative
       const letter = findLetter(transcripts);
       resolved = true;
       resolve({ letter, raw: transcripts });
@@ -132,7 +143,6 @@ function listen() {
 }
 
 function findLetter(transcripts) {
-  // Handle "A", "B", "ay", "bee", "see", "sea", "dee", "the", etc.
   const map = {
     A: ["A", "AY", "EH"],
     B: ["B", "BE", "BEE", "BEA"],
@@ -150,7 +160,6 @@ function findLetter(transcripts) {
   return null;
 }
 
-// ---------- UI ----------
 const $status = document.getElementById("status");
 const $action = document.getElementById("action");
 const $progress = document.getElementById("progress");
@@ -164,7 +173,6 @@ function setProgress(text) {
   $progress.textContent = text;
 }
 
-// ---------- Main flow ----------
 async function onAction() {
   if (phase === "idle") {
     phase = "running";
@@ -176,18 +184,15 @@ async function onAction() {
 }
 
 async function runQuiz() {
-  // Unlock speech synthesis on iOS (needs a user gesture, which we just had)
-  await speak("");
-
-  await speak("Primer. Three questions. After each one, say A, B, C, or D out loud.");
+  await speak(""); // unlock iOS audio
+  await speak("Primer. Three questions. After each one, say A, B, C, or D out loud. You'll hear Dan Shipper's take after each answer.");
 
   for (qIdx = 0; qIdx < PRIMER.length; qIdx++) {
     setProgress(`${qIdx + 1} / ${PRIMER.length}`);
     const q = PRIMER[qIdx];
-    setStatus(`Question ${qIdx + 1}…`);
+    setStatus(q.short);
     await speak(q.text);
 
-    // Listen with up to 2 retries
     let answer = null;
     for (let attempt = 0; attempt < 3 && !answer; attempt++) {
       setStatus("Listening…", "listening");
@@ -205,18 +210,20 @@ async function runQuiz() {
     }
 
     if (!answer) {
-      await speak("Skipping. Moving on.");
+      await speak("Skipping this one. Moving on.");
       answers.push({ id: q.id, answer: null });
     } else {
       answers.push({ id: q.id, answer });
-      await speak(`Got it. ${answer}.`);
+      const blurb = q.blurbs[answer];
+      setStatus(`You said ${answer}. Here's Dan's take…`, "blurb");
+      await speak(`You said ${answer}.`);
+      await speak(blurb);
     }
   }
 
-  // Done with primer
   setProgress("");
   phase = "email";
-  setStatus("Now go listen to the episode. When you finish, come back here and enter your email to schedule the followup quizzes.");
+  setStatus("Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish, come back here and enter your email for the followup quizzes.");
   $action.textContent = "Enter email";
   $action.style.display = "inline-block";
 
@@ -224,7 +231,6 @@ async function runQuiz() {
 }
 
 function submitEmail() {
-  // Show email input
   if (!document.getElementById("email")) {
     const input = document.createElement("input");
     input.type = "email";
@@ -241,7 +247,6 @@ function submitEmail() {
     setStatus("Need a real email.", "error");
     return;
   }
-  // POST to server (stub for now — we'll wire this up next)
   const payload = { email, primerAnswers: answers, ts: Date.now() };
   console.log("Would POST to /start:", payload);
   setStatus("Saved. Check your email after you finish the episode and tap the link.");
