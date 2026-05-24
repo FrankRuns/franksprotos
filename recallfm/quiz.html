@@ -191,7 +191,13 @@ function listen() {
     rec.onerror = (e) => {
       if (resolved) return;
       resolved = true;
-      reject(new Error("rec error: " + e.error));
+      // Treat common transient errors as "no answer heard" instead of fatal
+      const soft = ["aborted", "no-speech", "audio-capture"];
+      if (soft.includes(e.error)) {
+        resolve({ word: null, raw: [], softError: e.error });
+      } else {
+        reject(new Error("rec error: " + e.error));
+      }
     };
     rec.onend = () => {
       if (!resolved) {
@@ -271,6 +277,8 @@ async function runQuiz() {
     let attempts = 0;
     while (!answer && attempts < 6) {
       attempts++;
+      // Give iOS audio session a moment to release the mic before we grab it
+      await new Promise(r => setTimeout(r, 350));
       setStatus("Listening…", "listening");
       try {
         const result = await listen();
@@ -280,6 +288,9 @@ async function runQuiz() {
           await window.recallAudio.play(questionKey, buildQuestionText(q, i));
         } else if (["A", "B", "C", "D"].includes(result.word)) {
           answer = result.word;
+        } else if (result.softError === "aborted" && attempts < 6) {
+          // iOS audio glitch — silently retry without scolding the user
+          continue;
         } else if (attempts < 6) {
           await window.recallAudio.play("didnt_catch_quiz", "Didn't catch that. Say A, B, C, D, or repeat.");
         }

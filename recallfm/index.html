@@ -118,7 +118,12 @@ function listen() {
     rec.onerror = (e) => {
       if (resolved) return;
       resolved = true;
-      reject(new Error("rec error: " + e.error));
+      const soft = ["aborted", "no-speech", "audio-capture"];
+      if (soft.includes(e.error)) {
+        resolve({ letter: null, raw: [], softError: e.error });
+      } else {
+        reject(new Error("rec error: " + e.error));
+      }
     };
     rec.onend = () => {
       if (!resolved) {
@@ -180,13 +185,16 @@ async function runQuiz() {
     await window.recallAudio.play(`primer_q_${q.id}`, q.text);
 
     let answer = null;
-    for (let attempt = 0; attempt < 3 && !answer; attempt++) {
+    for (let attempt = 0; attempt < 4 && !answer; attempt++) {
+      await new Promise(r => setTimeout(r, 350));
       setStatus("Listening…", "listening");
       try {
         const result = await listen();
         if (result.letter) {
           answer = result.letter;
-        } else if (attempt < 2) {
+        } else if (result.softError === "aborted" && attempt < 3) {
+          continue;
+        } else if (attempt < 3) {
           await window.recallAudio.play("didnt_catch_primer",
             "Sorry, didn't catch that. Try again. Just say A, B, C, or D.");
         }
