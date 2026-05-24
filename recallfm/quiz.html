@@ -21,6 +21,8 @@
   .status { font-size: 24px; line-height: 1.4; min-height: 140px; max-width: 540px; }
   .status.listening { color: #4ade80; }
   .status.error { color: #f87171; }
+  .status.correct { color: #4ade80; }
+  .status.wrong { color: #f87171; }
   button {
     margin-top: 48px;
     background: #e8e8e8; color: #0a0a0a;
@@ -31,24 +33,22 @@
     -webkit-tap-highlight-color: transparent;
   }
   button:active { transform: scale(0.97); }
-  button.secondary { background: transparent; color: #e8e8e8; border: 1px solid #333; margin-top: 16px; }
   .progress { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.4; letter-spacing: 2px; }
   .round-badge { position: fixed; top: 20px; right: 20px; font-size: 11px; opacity: 0.4; letter-spacing: 2px; text-transform: uppercase; }
+  .hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 11px; opacity: 0.35; letter-spacing: 1px; text-transform: uppercase; }
   .results { font-size: 16px; line-height: 1.8; opacity: 0.8; max-width: 480px; text-align: left; margin-top: 24px; }
   .results .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
-  .results .row.correct { color: #4ade80; }
-  .results .row.wrong { color: #f87171; }
 </style>
 </head>
 <body>
   <div class="progress" id="progress"></div>
   <div class="round-badge" id="round-badge"></div>
   <h1>recallfm</h1>
-  <div class="status" id="status">Tap start when you're ready. Say A, B, C, or D out loud.</div>
+  <div class="status" id="status">Tap start when you're ready. Say A, B, C, or D — or say "repeat" to hear the question again.</div>
   <button id="action" onclick="onAction()">Start</button>
+  <div class="hint" id="hint"></div>
 
 <script>
-// ---------- Quiz data — same 8 questions, used across all 3 rounds ----------
 const QUESTIONS = [
   {
     id: "q1",
@@ -60,6 +60,7 @@ const QUESTIONS = [
       D: "Cursor and Vercel",
     },
     correct: "B",
+    explain: "Shopify has one called Sidekick, Ramp has Ramp Agent. Dan held them up as the model — one super-agent per company instead of one per employee.",
   },
   {
     id: "q2",
@@ -71,6 +72,7 @@ const QUESTIONS = [
       D: "Slack-based agents, to CLI-based agents",
     },
     correct: "A",
+    explain: "He started bullish on the Golden Compass daemon model — one agent per person. Realized agents need a human babysitter, and most people won't maintain their own. So: one super-agent, one forward-deployed engineer keeping it running.",
   },
   {
     id: "q3",
@@ -82,6 +84,7 @@ const QUESTIONS = [
       D: "Subscription prices will rise across the board",
     },
     correct: "B",
+    explain: "When users run his app Proof inside Codex, they spend their own OpenAI tokens, not his. Inverts the AI-crushes-margins story.",
   },
   {
     id: "q4",
@@ -93,6 +96,7 @@ const QUESTIONS = [
       D: "Slack with embedded AI",
     },
     correct: "C",
+    explain: "His exact phrase: we speed-ran the CLI era. The unlock was the in-app browser — agent and human watching the same screen, working together.",
   },
   {
     id: "q5",
@@ -104,6 +108,7 @@ const QUESTIONS = [
       D: "Full-stack designer",
     },
     correct: "C",
+    explain: "The person who keeps the company's super-agent working. Every agent needs a human who cares about it. That's the new job that doesn't go away.",
   },
   {
     id: "q6",
@@ -115,6 +120,7 @@ const QUESTIONS = [
       D: "Writing and content",
     },
     correct: "B",
+    explain: "Models ingest everything humans already figured out and commoditize it. Humans then push past the frontier. That gap is where the work is.",
   },
   {
     id: "q7",
@@ -126,6 +132,7 @@ const QUESTIONS = [
       D: "In enterprise companies adopting AI at scale",
     },
     correct: "A",
+    explain: "Model builders make the tool but don't know all the uses. The edge is the user who turns the rock over and finds a new use case.",
   },
   {
     id: "q8",
@@ -137,10 +144,10 @@ const QUESTIONS = [
       D: "Ride the models",
     },
     correct: "D",
+    explain: "Use every new model the day it drops on whatever you do. Turn the rock over again. The people who do this consistently are very hard to replace.",
   },
 ];
 
-// ---------- Determine which round this is based on localStorage ----------
 function getRound() {
   const completed = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
   if (completed.length === 0) return { num: 1, label: "Immediate" };
@@ -149,9 +156,7 @@ function getRound() {
   return { num: 4, label: "Done — all rounds complete" };
 }
 
-// ---------- Seeded shuffle so the order is stable within a round but different across rounds ----------
 function shuffleArray(arr, seed) {
-  // Mulberry32 PRNG
   let a = seed;
   const random = () => {
     a |= 0; a = a + 0x6D2B79F5 | 0;
@@ -168,10 +173,8 @@ function shuffleArray(arr, seed) {
 }
 
 function shuffleQuestions(round) {
-  // Shuffle question order
   const seed = round * 1000 + 7;
   const shuffled = shuffleArray(QUESTIONS, seed);
-  // Also shuffle answer letters for each question
   return shuffled.map((q, i) => {
     const letters = ["A", "B", "C", "D"];
     const shuffledLetters = shuffleArray(letters, seed + i * 17);
@@ -190,7 +193,6 @@ function shuffleQuestions(round) {
   });
 }
 
-// ---------- State ----------
 const round = getRound();
 let phase = "idle";
 let questions = [];
@@ -200,12 +202,11 @@ function buildQuestionText(q, idx) {
   return `Question ${idx + 1}. ${q.prompt} Say A for ${q.options.A}. Say B for ${q.options.B}. Say C for ${q.options.C}. Say D for ${q.options.D}.`;
 }
 
-// ---------- Audio ----------
-function speak(text) {
+function speak(text, rate = 0.95) {
   return new Promise((resolve) => {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.0;
+    u.rate = rate;
     u.pitch = 1.0;
     u.onend = resolve;
     u.onerror = resolve;
@@ -223,7 +224,7 @@ function listen() {
     const rec = new SR();
     rec.lang = "en-US";
     rec.interimResults = false;
-    rec.maxAlternatives = 3;
+    rec.maxAlternatives = 5;
     rec.continuous = false;
     let resolved = false;
     rec.onresult = (e) => {
@@ -233,7 +234,7 @@ function listen() {
         transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
       }
       resolved = true;
-      resolve({ letter: findLetter(transcripts), raw: transcripts });
+      resolve({ word: parseCommand(transcripts), raw: transcripts });
     };
     rec.onerror = (e) => {
       if (resolved) return;
@@ -243,24 +244,27 @@ function listen() {
     rec.onend = () => {
       if (!resolved) {
         resolved = true;
-        resolve({ letter: null, raw: [] });
+        resolve({ word: null, raw: [] });
       }
     };
     rec.start();
   });
 }
 
-function findLetter(transcripts) {
-  const map = {
+function parseCommand(transcripts) {
+  // Returns "A", "B", "C", "D", or "REPEAT", or null
+  const letterMap = {
     A: ["A", "AY", "EH"],
     B: ["B", "BE", "BEE", "BEA"],
     C: ["C", "SEE", "SEA", "CEE"],
     D: ["D", "DE", "DEE", "THE"],
   };
+  const repeatWords = ["REPEAT", "AGAIN", "RETRY", "ONCE", "SAY"];
   for (const t of transcripts) {
     const words = t.split(/\s+/);
     for (const w of words) {
-      for (const [letter, variants] of Object.entries(map)) {
+      if (repeatWords.includes(w)) return "REPEAT";
+      for (const [letter, variants] of Object.entries(letterMap)) {
         if (variants.includes(w)) return letter;
       }
     }
@@ -268,22 +272,21 @@ function findLetter(transcripts) {
   return null;
 }
 
-// ---------- UI ----------
 const $status = document.getElementById("status");
 const $action = document.getElementById("action");
 const $progress = document.getElementById("progress");
 const $badge = document.getElementById("round-badge");
+const $hint = document.getElementById("hint");
 
 function setStatus(text, cls = "") {
   $status.textContent = text;
   $status.className = "status " + cls;
 }
 function setProgress(text) { $progress.textContent = text; }
+function setHint(text) { $hint.textContent = text; }
 
-// Show round badge on load
 $badge.textContent = `Round ${round.num} / 3 · ${round.label}`;
 
-// If all rounds done, show results immediately
 if (round.num > 3) {
   showFinalResults();
 }
@@ -299,7 +302,6 @@ async function onAction() {
     questions = shuffleQuestions(round.num);
     await runQuiz();
   } else if (phase === "results") {
-    // After round 1 or 2, button shows "I'll be back"
     setStatus(round.num === 1
       ? "Come back tomorrow. Set a calendar reminder."
       : "Come back in 6 days. Set a calendar reminder.");
@@ -309,23 +311,32 @@ async function onAction() {
 
 async function runQuiz() {
   await speak("");
-  await speak(`Round ${round.num}. ${questions.length} questions. Say A, B, C, or D after each one. No feedback during the quiz — you'll see your results at the end.`);
+  await speak(`Round ${round.num}. ${questions.length} questions. Say A, B, C, or D. Or say repeat to hear the question again.`, 0.95);
+
+  setHint("Say A, B, C, D, or 'repeat'");
 
   for (let i = 0; i < questions.length; i++) {
     setProgress(`${i + 1} / ${questions.length}`);
     const q = questions[i];
     setStatus(`Question ${i + 1}`);
-    await speak(buildQuestionText(q, i));
+    await speak(buildQuestionText(q, i), 0.92);
 
     let answer = null;
-    for (let attempt = 0; attempt < 3 && !answer; attempt++) {
+    let attempts = 0;
+    const maxAttempts = 6; // allow several repeats
+
+    while (!answer && attempts < maxAttempts) {
+      attempts++;
       setStatus("Listening…", "listening");
       try {
         const result = await listen();
-        if (result.letter) {
-          answer = result.letter;
-        } else if (attempt < 2) {
-          await speak("Didn't catch that. Try again.");
+        if (result.word === "REPEAT") {
+          setStatus("Repeating…");
+          await speak(buildQuestionText(q, i), 0.88); // slower on repeat
+        } else if (["A", "B", "C", "D"].includes(result.word)) {
+          answer = result.word;
+        } else if (attempts < maxAttempts) {
+          await speak("Didn't catch that. Say A, B, C, D, or repeat.", 0.95);
         }
       } catch (err) {
         setStatus("Speech error: " + err.message, "error");
@@ -333,39 +344,48 @@ async function runQuiz() {
       }
     }
 
+    const isCorrect = answer === q.correct;
     answers.push({
       id: q.id,
       asked: q.prompt,
       answer: answer,
       correct: q.correct,
-      isCorrect: answer === q.correct,
+      correctText: answer ? q.options[q.correct] : null,
+      isCorrect: isCorrect,
     });
 
-    // Silent acknowledgment — no right/wrong feedback
     if (answer) {
-      await speak(`Got it.`);
+      if (isCorrect) {
+        setStatus(`Correct.`, "correct");
+        await speak(`Correct. ${q.explain}`, 0.95);
+      } else {
+        const correctOpt = q.options[q.correct];
+        setStatus(`Not quite. The answer was ${q.correct}.`, "wrong");
+        await speak(`Not quite. The answer was ${q.correct}. ${correctOpt}. ${q.explain}`, 0.95);
+      }
     } else {
-      await speak("Skipping.");
+      setStatus(`Skipping. The answer was ${q.correct}.`);
+      await speak(`Skipping. The answer was ${q.correct}. ${q.options[q.correct]}. ${q.explain}`, 0.95);
     }
   }
 
-  // Persist this round
   const all = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
+  const score = answers.filter(a => a.isCorrect).length;
   all.push({
     round: round.num,
     label: round.label,
     ts: Date.now(),
     answers: answers,
-    score: answers.filter(a => a.isCorrect).length,
+    score: score,
     total: answers.length,
   });
   localStorage.setItem("recallfm_rounds", JSON.stringify(all));
 
   setProgress("");
+  setHint("");
   phase = "results";
 
-  const score = answers.filter(a => a.isCorrect).length;
-  await speak(`Round ${round.num} complete. You got ${score} out of ${answers.length}.`);
+  await speak(`Round ${round.num} complete. You got ${score} out of ${answers.length}.`, 0.95);
 
   if (round.num === 3) {
     showFinalResults();
@@ -374,7 +394,7 @@ async function runQuiz() {
     setStatus(`Round ${round.num} done: ${score} / ${answers.length}. Come back ${nextWhen}. Set a calendar reminder right now.`);
     $action.textContent = "Done";
     $action.style.display = "inline-block";
-    await speak(`Come back ${nextWhen}. Set a calendar reminder before you forget.`);
+    await speak(`Come back ${nextWhen}. Set a calendar reminder before you forget.`, 0.95);
   }
 }
 
