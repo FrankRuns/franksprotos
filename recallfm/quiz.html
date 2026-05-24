@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>recallfm — quiz</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #0a0a0a; color: #e8e8e8;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    height: 100vh; width: 100vw; overflow: hidden;
+  }
+  body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px; text-align: center;
+  }
+  h1 { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; opacity: 0.5; margin: 0 0 48px; font-weight: 400; }
+  .status { font-size: 24px; line-height: 1.4; min-height: 140px; max-width: 540px; }
+  .status.listening { color: #4ade80; }
+  .status.error { color: #f87171; }
+  button {
+    margin-top: 48px;
+    background: #e8e8e8; color: #0a0a0a;
+    border: none; border-radius: 999px;
+    padding: 20px 48px;
+    font-size: 18px; font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active { transform: scale(0.97); }
+  button.secondary { background: transparent; color: #e8e8e8; border: 1px solid #333; margin-top: 16px; }
+  .progress { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.4; letter-spacing: 2px; }
+  .round-badge { position: fixed; top: 20px; right: 20px; font-size: 11px; opacity: 0.4; letter-spacing: 2px; text-transform: uppercase; }
+  .results { font-size: 16px; line-height: 1.8; opacity: 0.8; max-width: 480px; text-align: left; margin-top: 24px; }
+  .results .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
+  .results .row.correct { color: #4ade80; }
+  .results .row.wrong { color: #f87171; }
+</style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="round-badge" id="round-badge"></div>
+  <h1>recallfm</h1>
+  <div class="status" id="status">Tap start when you're ready. Say A, B, C, or D out loud.</div>
+  <button id="action" onclick="onAction()">Start</button>
+
+<script>
+// ---------- Quiz data — same 8 questions, used across all 3 rounds ----------
+const QUESTIONS = [
+  {
+    id: "q1",
+    prompt: "Dan's super-agent prediction — which two companies did he name as already having one?",
+    options: {
+      A: "OpenAI and Anthropic",
+      B: "Shopify and Ramp",
+      C: "Google and Meta",
+      D: "Cursor and Vercel",
+    },
+    correct: "B",
+  },
+  {
+    id: "q2",
+    prompt: "Dan flipped his view this past year on agent architecture. What did he move from and to?",
+    options: {
+      A: "Personal agents per employee, to one super-agent per company",
+      B: "Super-agents, to personal agents per employee",
+      C: "Human-only workflows, to fully autonomous agents",
+      D: "Slack-based agents, to CLI-based agents",
+    },
+    correct: "A",
+  },
+  {
+    id: "q3",
+    prompt: "Why does Dan think SaaS margins might actually improve in the AI era?",
+    options: {
+      A: "Agents make products cheaper to build",
+      B: "Users bring their own tokens via Codex or Cowork",
+      C: "AI eliminates the need for customer support",
+      D: "Subscription prices will rise across the board",
+    },
+    correct: "B",
+  },
+  {
+    id: "q4",
+    prompt: "Dan says CLIs are over. What replaces them as the main work surface?",
+    options: {
+      A: "Browser-based chat interfaces",
+      B: "Voice-only agents",
+      C: "GUI environments like Codex or Cowork with an in-app browser",
+      D: "Slack with embedded AI",
+    },
+    correct: "C",
+  },
+  {
+    id: "q5",
+    prompt: "What new role does Dan call the most essential in the AI era?",
+    options: {
+      A: "Prompt engineer",
+      B: "AI ethicist",
+      C: "Forward deployed engineer",
+      D: "Full-stack designer",
+    },
+    correct: "C",
+  },
+  {
+    id: "q6",
+    prompt: "Dan's mental model for why human jobs survive — models make blank cheap. Fill in the blank.",
+    options: {
+      A: "Software development",
+      B: "Yesterday's human competence",
+      C: "Customer acquisition",
+      D: "Writing and content",
+    },
+    correct: "B",
+  },
+  {
+    id: "q7",
+    prompt: "Dan claims the edge of AI is not in San Francisco. Where is it?",
+    options: {
+      A: "Wherever AI meets a real human doing real work",
+      B: "Inside the model labs themselves",
+      C: "In Brooklyn, where Every is based",
+      D: "In enterprise companies adopting AI at scale",
+    },
+    correct: "A",
+  },
+  {
+    id: "q8",
+    prompt: "Dan's one-line career advice for staying employed in the AI era.",
+    options: {
+      A: "Learn to code",
+      B: "Become a manager",
+      C: "Specialize deeply in one domain",
+      D: "Ride the models",
+    },
+    correct: "D",
+  },
+];
+
+// ---------- Determine which round this is based on localStorage ----------
+function getRound() {
+  const completed = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
+  if (completed.length === 0) return { num: 1, label: "Immediate" };
+  if (completed.length === 1) return { num: 2, label: "24-hour" };
+  if (completed.length === 2) return { num: 3, label: "1-week" };
+  return { num: 4, label: "Done — all rounds complete" };
+}
+
+// ---------- Seeded shuffle so the order is stable within a round but different across rounds ----------
+function shuffleArray(arr, seed) {
+  // Mulberry32 PRNG
+  let a = seed;
+  const random = () => {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function shuffleQuestions(round) {
+  // Shuffle question order
+  const seed = round * 1000 + 7;
+  const shuffled = shuffleArray(QUESTIONS, seed);
+  // Also shuffle answer letters for each question
+  return shuffled.map((q, i) => {
+    const letters = ["A", "B", "C", "D"];
+    const shuffledLetters = shuffleArray(letters, seed + i * 17);
+    const newOptions = {};
+    const oldToNew = {};
+    letters.forEach((oldLetter, idx) => {
+      const newLetter = shuffledLetters[idx];
+      newOptions[newLetter] = q.options[oldLetter];
+      oldToNew[oldLetter] = newLetter;
+    });
+    return {
+      ...q,
+      options: newOptions,
+      correct: oldToNew[q.correct],
+    };
+  });
+}
+
+// ---------- State ----------
+const round = getRound();
+let phase = "idle";
+let questions = [];
+const answers = [];
+
+function buildQuestionText(q, idx) {
+  return `Question ${idx + 1}. ${q.prompt} Say A for ${q.options.A}. Say B for ${q.options.B}. Say C for ${q.options.C}. Say D for ${q.options.D}.`;
+}
+
+// ---------- Audio ----------
+function speak(text) {
+  return new Promise((resolve) => {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.0;
+    u.pitch = 1.0;
+    u.onend = resolve;
+    u.onerror = resolve;
+    window.speechSynthesis.speak(u);
+  });
+}
+
+function listen() {
+  return new Promise((resolve, reject) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      reject(new Error("Speech recognition not supported."));
+      return;
+    }
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 3;
+    rec.continuous = false;
+    let resolved = false;
+    rec.onresult = (e) => {
+      if (resolved) return;
+      const transcripts = [];
+      for (let i = 0; i < e.results[0].length; i++) {
+        transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
+      }
+      resolved = true;
+      resolve({ letter: findLetter(transcripts), raw: transcripts });
+    };
+    rec.onerror = (e) => {
+      if (resolved) return;
+      resolved = true;
+      reject(new Error("rec error: " + e.error));
+    };
+    rec.onend = () => {
+      if (!resolved) {
+        resolved = true;
+        resolve({ letter: null, raw: [] });
+      }
+    };
+    rec.start();
+  });
+}
+
+function findLetter(transcripts) {
+  const map = {
+    A: ["A", "AY", "EH"],
+    B: ["B", "BE", "BEE", "BEA"],
+    C: ["C", "SEE", "SEA", "CEE"],
+    D: ["D", "DE", "DEE", "THE"],
+  };
+  for (const t of transcripts) {
+    const words = t.split(/\s+/);
+    for (const w of words) {
+      for (const [letter, variants] of Object.entries(map)) {
+        if (variants.includes(w)) return letter;
+      }
+    }
+  }
+  return null;
+}
+
+// ---------- UI ----------
+const $status = document.getElementById("status");
+const $action = document.getElementById("action");
+const $progress = document.getElementById("progress");
+const $badge = document.getElementById("round-badge");
+
+function setStatus(text, cls = "") {
+  $status.textContent = text;
+  $status.className = "status " + cls;
+}
+function setProgress(text) { $progress.textContent = text; }
+
+// Show round badge on load
+$badge.textContent = `Round ${round.num} / 3 · ${round.label}`;
+
+// If all rounds done, show results immediately
+if (round.num > 3) {
+  showFinalResults();
+}
+
+async function onAction() {
+  if (phase === "idle") {
+    if (round.num > 3) {
+      window.location.reload();
+      return;
+    }
+    phase = "running";
+    $action.style.display = "none";
+    questions = shuffleQuestions(round.num);
+    await runQuiz();
+  } else if (phase === "results") {
+    // After round 1 or 2, button shows "I'll be back"
+    setStatus(round.num === 1
+      ? "Come back tomorrow. Set a calendar reminder."
+      : "Come back in 6 days. Set a calendar reminder.");
+    $action.style.display = "none";
+  }
+}
+
+async function runQuiz() {
+  await speak("");
+  await speak(`Round ${round.num}. ${questions.length} questions. Say A, B, C, or D after each one. No feedback during the quiz — you'll see your results at the end.`);
+
+  for (let i = 0; i < questions.length; i++) {
+    setProgress(`${i + 1} / ${questions.length}`);
+    const q = questions[i];
+    setStatus(`Question ${i + 1}`);
+    await speak(buildQuestionText(q, i));
+
+    let answer = null;
+    for (let attempt = 0; attempt < 3 && !answer; attempt++) {
+      setStatus("Listening…", "listening");
+      try {
+        const result = await listen();
+        if (result.letter) {
+          answer = result.letter;
+        } else if (attempt < 2) {
+          await speak("Didn't catch that. Try again.");
+        }
+      } catch (err) {
+        setStatus("Speech error: " + err.message, "error");
+        return;
+      }
+    }
+
+    answers.push({
+      id: q.id,
+      asked: q.prompt,
+      answer: answer,
+      correct: q.correct,
+      isCorrect: answer === q.correct,
+    });
+
+    // Silent acknowledgment — no right/wrong feedback
+    if (answer) {
+      await speak(`Got it.`);
+    } else {
+      await speak("Skipping.");
+    }
+  }
+
+  // Persist this round
+  const all = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
+  all.push({
+    round: round.num,
+    label: round.label,
+    ts: Date.now(),
+    answers: answers,
+    score: answers.filter(a => a.isCorrect).length,
+    total: answers.length,
+  });
+  localStorage.setItem("recallfm_rounds", JSON.stringify(all));
+
+  setProgress("");
+  phase = "results";
+
+  const score = answers.filter(a => a.isCorrect).length;
+  await speak(`Round ${round.num} complete. You got ${score} out of ${answers.length}.`);
+
+  if (round.num === 3) {
+    showFinalResults();
+  } else {
+    const nextWhen = round.num === 1 ? "tomorrow" : "in 6 days";
+    setStatus(`Round ${round.num} done: ${score} / ${answers.length}. Come back ${nextWhen}. Set a calendar reminder right now.`);
+    $action.textContent = "Done";
+    $action.style.display = "inline-block";
+    await speak(`Come back ${nextWhen}. Set a calendar reminder before you forget.`);
+  }
+}
+
+function showFinalResults() {
+  const all = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
+  if (all.length === 0) {
+    setStatus("No rounds completed yet.");
+    return;
+  }
+  let html = "<div class='results'>";
+  html += "<div style='font-size: 20px; margin-bottom: 16px;'>Your decay curve:</div>";
+  all.forEach(r => {
+    const pct = Math.round((r.score / r.total) * 100);
+    html += `<div class='row'><span>${r.label}</span><span>${r.score} / ${r.total} (${pct}%)</span></div>`;
+  });
+  html += "</div>";
+  $status.innerHTML = html;
+  $status.className = "status";
+
+  $action.textContent = "Reset";
+  $action.style.display = "inline-block";
+  $action.onclick = () => {
+    if (confirm("Wipe all recallfm data and start over?")) {
+      localStorage.removeItem("recallfm_rounds");
+      window.location.reload();
+    }
+  };
+}
+</script>
+</body>
+</html>
