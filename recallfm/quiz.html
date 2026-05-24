@@ -44,105 +44,66 @@
   <div class="progress" id="progress"></div>
   <div class="round-badge" id="round-badge"></div>
   <h1>recallfm</h1>
-  <div class="status" id="status">Tap start when you're ready. Say A, B, C, or D — or say "repeat" to hear the question again.</div>
+  <div class="status" id="status">Tap start when ready. Say A, B, C, D — or say "repeat" to hear it again.</div>
   <button id="action" onclick="onAction()">Start</button>
   <div class="hint" id="hint"></div>
 
+<script src="./audio.js"></script>
 <script>
-const QUESTIONS = [
+const QUIZ_QUESTIONS = [
   {
     id: "q1",
     prompt: "Dan's super-agent prediction — which two companies did he name as already having one?",
-    options: {
-      A: "OpenAI and Anthropic",
-      B: "Shopify and Ramp",
-      C: "Google and Meta",
-      D: "Cursor and Vercel",
-    },
+    options: { A: "OpenAI and Anthropic", B: "Shopify and Ramp", C: "Google and Meta", D: "Cursor and Vercel" },
     correct: "B",
     explain: "Shopify has one called Sidekick, Ramp has Ramp Agent. Dan held them up as the model — one super-agent per company instead of one per employee.",
   },
   {
     id: "q2",
     prompt: "Dan flipped his view this past year on agent architecture. What did he move from and to?",
-    options: {
-      A: "Personal agents per employee, to one super-agent per company",
-      B: "Super-agents, to personal agents per employee",
-      C: "Human-only workflows, to fully autonomous agents",
-      D: "Slack-based agents, to CLI-based agents",
-    },
+    options: { A: "Personal agents per employee, to one super-agent per company", B: "Super-agents, to personal agents per employee", C: "Human-only workflows, to fully autonomous agents", D: "Slack-based agents, to CLI-based agents" },
     correct: "A",
     explain: "He started bullish on the Golden Compass daemon model — one agent per person. Realized agents need a human babysitter, and most people won't maintain their own. So: one super-agent, one forward-deployed engineer keeping it running.",
   },
   {
     id: "q3",
     prompt: "Why does Dan think SaaS margins might actually improve in the AI era?",
-    options: {
-      A: "Agents make products cheaper to build",
-      B: "Users bring their own tokens via Codex or Cowork",
-      C: "AI eliminates the need for customer support",
-      D: "Subscription prices will rise across the board",
-    },
+    options: { A: "Agents make products cheaper to build", B: "Users bring their own tokens via Codex or Cowork", C: "AI eliminates the need for customer support", D: "Subscription prices will rise across the board" },
     correct: "B",
     explain: "When users run his app Proof inside Codex, they spend their own OpenAI tokens, not his. Inverts the AI-crushes-margins story.",
   },
   {
     id: "q4",
     prompt: "Dan says CLIs are over. What replaces them as the main work surface?",
-    options: {
-      A: "Browser-based chat interfaces",
-      B: "Voice-only agents",
-      C: "GUI environments like Codex or Cowork with an in-app browser",
-      D: "Slack with embedded AI",
-    },
+    options: { A: "Browser-based chat interfaces", B: "Voice-only agents", C: "GUI environments like Codex or Cowork with an in-app browser", D: "Slack with embedded AI" },
     correct: "C",
     explain: "His exact phrase: we speed-ran the CLI era. The unlock was the in-app browser — agent and human watching the same screen, working together.",
   },
   {
     id: "q5",
     prompt: "What new role does Dan call the most essential in the AI era?",
-    options: {
-      A: "Prompt engineer",
-      B: "AI ethicist",
-      C: "Forward deployed engineer",
-      D: "Full-stack designer",
-    },
+    options: { A: "Prompt engineer", B: "AI ethicist", C: "Forward deployed engineer", D: "Full-stack designer" },
     correct: "C",
     explain: "The person who keeps the company's super-agent working. Every agent needs a human who cares about it. That's the new job that doesn't go away.",
   },
   {
     id: "q6",
     prompt: "Dan's mental model for why human jobs survive — models make blank cheap. Fill in the blank.",
-    options: {
-      A: "Software development",
-      B: "Yesterday's human competence",
-      C: "Customer acquisition",
-      D: "Writing and content",
-    },
+    options: { A: "Software development", B: "Yesterday's human competence", C: "Customer acquisition", D: "Writing and content" },
     correct: "B",
     explain: "Models ingest everything humans already figured out and commoditize it. Humans then push past the frontier. That gap is where the work is.",
   },
   {
     id: "q7",
     prompt: "Dan claims the edge of AI is not in San Francisco. Where is it?",
-    options: {
-      A: "Wherever AI meets a real human doing real work",
-      B: "Inside the model labs themselves",
-      C: "In Brooklyn, where Every is based",
-      D: "In enterprise companies adopting AI at scale",
-    },
+    options: { A: "Wherever AI meets a real human doing real work", B: "Inside the model labs themselves", C: "In Brooklyn, where Every is based", D: "In enterprise companies adopting AI at scale" },
     correct: "A",
     explain: "Model builders make the tool but don't know all the uses. The edge is the user who turns the rock over and finds a new use case.",
   },
   {
     id: "q8",
     prompt: "Dan's one-line career advice for staying employed in the AI era.",
-    options: {
-      A: "Learn to code",
-      B: "Become a manager",
-      C: "Specialize deeply in one domain",
-      D: "Ride the models",
-    },
+    options: { A: "Learn to code", B: "Become a manager", C: "Specialize deeply in one domain", D: "Ride the models" },
     correct: "D",
     explain: "Use every new model the day it drops on whatever you do. Turn the rock over again. The people who do this consistently are very hard to replace.",
   },
@@ -174,7 +135,7 @@ function shuffleArray(arr, seed) {
 
 function shuffleQuestions(round) {
   const seed = round * 1000 + 7;
-  const shuffled = shuffleArray(QUESTIONS, seed);
+  const shuffled = shuffleArray(QUIZ_QUESTIONS, seed);
   return shuffled.map((q, i) => {
     const letters = ["A", "B", "C", "D"];
     const shuffledLetters = shuffleArray(letters, seed + i * 17);
@@ -201,18 +162,9 @@ const answers = [];
 function buildQuestionText(q, idx) {
   return `Question ${idx + 1}. ${q.prompt} Say A for ${q.options.A}. Say B for ${q.options.B}. Say C for ${q.options.C}. Say D for ${q.options.D}.`;
 }
-
-function speak(text, rate = 0.95) {
-  return new Promise((resolve) => {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = rate;
-    u.pitch = 1.0;
-    u.onend = resolve;
-    u.onerror = resolve;
-    window.speechSynthesis.speak(u);
-  });
-}
+function buildCorrectText(q) { return `Correct. ${q.explain}`; }
+function buildWrongText(q) { return `Not quite. The answer was ${q.correct}. ${q.options[q.correct]}. ${q.explain}`; }
+function buildSkipText(q) { return `Skipping. The answer was ${q.correct}. ${q.options[q.correct]}. ${q.explain}`; }
 
 function listen() {
   return new Promise((resolve, reject) => {
@@ -252,7 +204,6 @@ function listen() {
 }
 
 function parseCommand(transcripts) {
-  // Returns "A", "B", "C", "D", or "REPEAT", or null
   const letterMap = {
     A: ["A", "AY", "EH"],
     B: ["B", "BE", "BEE", "BEA"],
@@ -286,19 +237,14 @@ function setProgress(text) { $progress.textContent = text; }
 function setHint(text) { $hint.textContent = text; }
 
 $badge.textContent = `Round ${round.num} / 3 · ${round.label}`;
-
-if (round.num > 3) {
-  showFinalResults();
-}
+if (round.num > 3) showFinalResults();
 
 async function onAction() {
   if (phase === "idle") {
-    if (round.num > 3) {
-      window.location.reload();
-      return;
-    }
+    if (round.num > 3) { window.location.reload(); return; }
     phase = "running";
     $action.style.display = "none";
+    await window.recallAudio.unlock();
     questions = shuffleQuestions(round.num);
     await runQuiz();
   } else if (phase === "results") {
@@ -310,33 +256,32 @@ async function onAction() {
 }
 
 async function runQuiz() {
-  await speak("");
-  await speak(`Round ${round.num}. ${questions.length} questions. Say A, B, C, or D. Or say repeat to hear the question again.`, 0.95);
-
+  await window.recallAudio.play(`round_intro_${round.num}`,
+    `Round ${round.num}. 8 questions. Say A, B, C, or D. Or say repeat to hear the question again.`);
   setHint("Say A, B, C, D, or 'repeat'");
 
   for (let i = 0; i < questions.length; i++) {
     setProgress(`${i + 1} / ${questions.length}`);
     const q = questions[i];
     setStatus(`Question ${i + 1}`);
-    await speak(buildQuestionText(q, i), 0.92);
+    const questionKey = `quiz_r${round.num}_q${i}`;
+    await window.recallAudio.play(questionKey, buildQuestionText(q, i));
 
     let answer = null;
     let attempts = 0;
-    const maxAttempts = 6; // allow several repeats
-
-    while (!answer && attempts < maxAttempts) {
+    while (!answer && attempts < 6) {
       attempts++;
       setStatus("Listening…", "listening");
       try {
         const result = await listen();
         if (result.word === "REPEAT") {
           setStatus("Repeating…");
-          await speak(buildQuestionText(q, i), 0.88); // slower on repeat
+          await window.recallAudio.play("repeating", "Repeating.");
+          await window.recallAudio.play(questionKey, buildQuestionText(q, i));
         } else if (["A", "B", "C", "D"].includes(result.word)) {
           answer = result.word;
-        } else if (attempts < maxAttempts) {
-          await speak("Didn't catch that. Say A, B, C, D, or repeat.", 0.95);
+        } else if (attempts < 6) {
+          await window.recallAudio.play("didnt_catch_quiz", "Didn't catch that. Say A, B, C, D, or repeat.");
         }
       } catch (err) {
         setStatus("Speech error: " + err.message, "error");
@@ -348,24 +293,23 @@ async function runQuiz() {
     answers.push({
       id: q.id,
       asked: q.prompt,
-      answer: answer,
+      answer,
       correct: q.correct,
       correctText: answer ? q.options[q.correct] : null,
-      isCorrect: isCorrect,
+      isCorrect,
     });
 
     if (answer) {
       if (isCorrect) {
         setStatus(`Correct.`, "correct");
-        await speak(`Correct. ${q.explain}`, 0.95);
+        await window.recallAudio.play(`${questionKey}_correct`, buildCorrectText(q));
       } else {
-        const correctOpt = q.options[q.correct];
         setStatus(`Not quite. The answer was ${q.correct}.`, "wrong");
-        await speak(`Not quite. The answer was ${q.correct}. ${correctOpt}. ${q.explain}`, 0.95);
+        await window.recallAudio.play(`${questionKey}_wrong`, buildWrongText(q));
       }
     } else {
       setStatus(`Skipping. The answer was ${q.correct}.`);
-      await speak(`Skipping. The answer was ${q.correct}. ${q.options[q.correct]}. ${q.explain}`, 0.95);
+      await window.recallAudio.play(`${questionKey}_skip`, buildSkipText(q));
     }
   }
 
@@ -375,8 +319,8 @@ async function runQuiz() {
     round: round.num,
     label: round.label,
     ts: Date.now(),
-    answers: answers,
-    score: score,
+    answers,
+    score,
     total: answers.length,
   });
   localStorage.setItem("recallfm_rounds", JSON.stringify(all));
@@ -385,7 +329,8 @@ async function runQuiz() {
   setHint("");
   phase = "results";
 
-  await speak(`Round ${round.num} complete. You got ${score} out of ${answers.length}.`, 0.95);
+  await window.recallAudio.play(`round_complete_${round.num}`, `Round ${round.num} complete.`);
+  await window.recallAudio.play(`score_${score}`, `You got ${score} out of ${answers.length}.`);
 
   if (round.num === 3) {
     showFinalResults();
@@ -394,7 +339,11 @@ async function runQuiz() {
     setStatus(`Round ${round.num} done: ${score} / ${answers.length}. Come back ${nextWhen}. Set a calendar reminder right now.`);
     $action.textContent = "Done";
     $action.style.display = "inline-block";
-    await speak(`Come back ${nextWhen}. Set a calendar reminder before you forget.`, 0.95);
+    const key = round.num === 1 ? "come_back_24h" : "come_back_1wk";
+    const fallback = round.num === 1
+      ? "Come back tomorrow. Set a calendar reminder before you forget."
+      : "Come back in 6 days. Set a calendar reminder before you forget.";
+    await window.recallAudio.play(key, fallback);
   }
 }
 
@@ -413,7 +362,6 @@ function showFinalResults() {
   html += "</div>";
   $status.innerHTML = html;
   $status.className = "status";
-
   $action.textContent = "Reset";
   $action.style.display = "inline-block";
   $action.onclick = () => {

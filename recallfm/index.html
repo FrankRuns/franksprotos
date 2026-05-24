@@ -32,7 +32,6 @@
     -webkit-tap-highlight-color: transparent;
   }
   button:active { transform: scale(0.97); }
-  button:disabled { opacity: 0.3; }
   .progress { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.4; letter-spacing: 2px; }
   input[type="email"] {
     margin-top: 24px;
@@ -50,7 +49,9 @@
   <div class="status" id="status">Tap start. Put your phone in your pocket. Answer out loud.</div>
   <button id="action" onclick="onAction()">Start</button>
 
+<script src="./audio.js"></script>
 <script>
+// Must stay in sync with generate-audio.js
 const PRIMER = [
   {
     id: "p1",
@@ -91,23 +92,12 @@ let phase = "idle";
 let qIdx = 0;
 const answers = [];
 
-function speak(text) {
-  return new Promise((resolve) => {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.0;
-    u.pitch = 1.0;
-    u.onend = resolve;
-    u.onerror = resolve;
-    window.speechSynthesis.speak(u);
-  });
-}
-
+// Speech recognition
 function listen() {
   return new Promise((resolve, reject) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      reject(new Error("Speech recognition not supported on this browser."));
+      reject(new Error("Speech recognition not supported."));
       return;
     }
     const rec = new SR();
@@ -115,7 +105,6 @@ function listen() {
     rec.interimResults = false;
     rec.maxAlternatives = 3;
     rec.continuous = false;
-
     let resolved = false;
     rec.onresult = (e) => {
       if (resolved) return;
@@ -123,9 +112,8 @@ function listen() {
       for (let i = 0; i < e.results[0].length; i++) {
         transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
       }
-      const letter = findLetter(transcripts);
       resolved = true;
-      resolve({ letter, raw: transcripts });
+      resolve({ letter: findLetter(transcripts), raw: transcripts });
     };
     rec.onerror = (e) => {
       if (resolved) return;
@@ -168,15 +156,13 @@ function setStatus(text, cls = "") {
   $status.textContent = text;
   $status.className = "status " + cls;
 }
-
-function setProgress(text) {
-  $progress.textContent = text;
-}
+function setProgress(text) { $progress.textContent = text; }
 
 async function onAction() {
   if (phase === "idle") {
     phase = "running";
     $action.style.display = "none";
+    await window.recallAudio.unlock();
     await runQuiz();
   } else if (phase === "email") {
     submitEmail();
@@ -184,14 +170,14 @@ async function onAction() {
 }
 
 async function runQuiz() {
-  await speak(""); // unlock iOS audio
-  await speak("Primer. Three questions. After each one, say A, B, C, or D out loud. You'll hear Dan Shipper's take after each answer.");
+  await window.recallAudio.play("primer_intro",
+    "Primer. Three questions. After each one, say A, B, C, or D out loud. You'll hear Dan Shipper's take after each answer.");
 
   for (qIdx = 0; qIdx < PRIMER.length; qIdx++) {
     setProgress(`${qIdx + 1} / ${PRIMER.length}`);
     const q = PRIMER[qIdx];
     setStatus(q.short);
-    await speak(q.text);
+    await window.recallAudio.play(`primer_q_${q.id}`, q.text);
 
     let answer = null;
     for (let attempt = 0; attempt < 3 && !answer; attempt++) {
@@ -201,23 +187,23 @@ async function runQuiz() {
         if (result.letter) {
           answer = result.letter;
         } else if (attempt < 2) {
-          await speak("Sorry, didn't catch that. Try again. Just say A, B, C, or D.");
+          await window.recallAudio.play("didnt_catch_primer",
+            "Sorry, didn't catch that. Try again. Just say A, B, C, or D.");
         }
       } catch (err) {
-        setStatus("Speech recognition failed: " + err.message, "error");
+        setStatus("Speech error: " + err.message, "error");
         return;
       }
     }
 
     if (!answer) {
-      await speak("Skipping this one. Moving on.");
+      await window.recallAudio.play("skipping_primer", "Skipping this one. Moving on.");
       answers.push({ id: q.id, answer: null });
     } else {
       answers.push({ id: q.id, answer });
-      const blurb = q.blurbs[answer];
       setStatus(`You said ${answer}. Here's Dan's take…`, "blurb");
-      await speak(`You said ${answer}.`);
-      await speak(blurb);
+      await window.recallAudio.play(`you_said_${answer}`, `You said ${answer}.`);
+      await window.recallAudio.play(`primer_blurb_${q.id}_${answer}`, q.blurbs[answer]);
     }
   }
 
@@ -227,7 +213,8 @@ async function runQuiz() {
   $action.textContent = "Enter email";
   $action.style.display = "inline-block";
 
-  await speak("Primer done. Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish listening, come back to this page and enter your email so we can schedule the followup quizzes.");
+  await window.recallAudio.play("primer_outro",
+    "Primer done. Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish listening, come back to this page and enter your email so we can schedule the followup quizzes.");
 }
 
 function submitEmail() {
