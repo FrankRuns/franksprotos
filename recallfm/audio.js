@@ -47,6 +47,12 @@
       currentAudio = audio;
       audio.onended = () => {
         if (currentAudio === audio) currentAudio = null;
+        // Explicitly release audio resources so iOS lets go of the audio session
+        try {
+          audio.pause();
+          audio.src = "";
+          audio.load();
+        } catch (e) {}
         resolve();
       };
       audio.onerror = () => {
@@ -93,20 +99,33 @@
   /**
    * Unlock audio on iOS (must be called from a user gesture).
    * Plays a silent audio element so subsequent .play() calls work without a tap.
+   * Also requests mic permission upfront so the first SpeechRecognition call
+   * doesn't get aborted by the permission prompt.
    */
   async function unlock() {
     try {
-      // Silent base64 mp3
+      // Silent base64 mp3 to unlock audio playback
       const silent = new Audio(
         "data:audio/mp3;base64,SUQzAwAAAAAAFlRTU0UAAAAMAAACTGF2ZjU5LjI3LjEwMA=="
       );
       await silent.play().catch(() => {});
-      // Also unlock speech synthesis
+      // Also unlock speech synthesis fallback
       if (window.speechSynthesis) {
         const u = new SpeechSynthesisUtterance("");
         window.speechSynthesis.speak(u);
       }
-    } catch (e) {}
+      // Request mic permission NOW (during user gesture) so the first
+      // SpeechRecognition.start() later doesn't get killed by the permission prompt.
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Immediately stop the tracks — we just needed the permission grant
+        stream.getTracks().forEach(t => t.stop());
+      } catch (e) {
+        console.warn("Mic permission denied or unavailable:", e);
+      }
+    } catch (e) {
+      console.warn("unlock failed:", e);
+    }
   }
 
   window.recallAudio = { play, unlock, stop: stopCurrent, speakBrowser };
