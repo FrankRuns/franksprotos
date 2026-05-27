@@ -1,11 +1,16 @@
 // audio.js — shared between index.html and quiz.html
 // Loads the manifest of pre-generated ElevenLabs MP3s and plays them by key.
-// Falls back to browser TTS if the manifest hasn't loaded or a key is missing.
+//
+// iOS Safari quirk: audio.play() only works during a user gesture. To work
+// around this, we create ONE Audio element during the Start button tap, give
+// it a silent payload, and call .play() while we still have the gesture. After
+// that, we mutate its .src to play subsequent MP3s — iOS treats this as the
+// same playback session and allows it.
 
 (function () {
   let manifest = null;
   let manifestLoadPromise = null;
-  let currentAudio = null;
+  let sharedAudio = null; // The single reused Audio element
 
   function loadManifest() {
     if (manifestLoadPromise) return manifestLoadPromise;
@@ -24,10 +29,9 @@
     return manifestLoadPromise;
   }
 
-  // Kick off manifest load immediately
   loadManifest();
 
-  // Browser TTS fallback
+  // Browser TTS fallback (only used if manifest is missing)
   function speakBrowser(text, rate = 0.95) {
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
@@ -42,52 +46,57 @@
 
   function playMp3(filename) {
     return new Promise((resolve) => {
-      stopCurrent();
-      const audio = new Audio(`./audio/${filename}`);
-      currentAudio = audio;
-      audio.onended = () => {
-        if (currentAudio === audio) currentAudio = null;
-        // Explicitly release audio resources so iOS lets go of the audio session
-        try {
-          audio.pause();
-          audio.src = "";
-          audio.load();
-        } catch (e) {}
+      if (!sharedAudio) {
+        console.warn("playMp3 called before unlock() — audio not initialized");
+        resolve();
+        return;
+      }
+      const src = `./audio/${filename}`;
+      // Set up handlers BEFORE changing src
+      const onEnded = () => {
+        cleanup();
         resolve();
       };
-      audio.onerror = () => {
-        console.warn(`Audio playback failed for ${filename}`);
-        if (currentAudio === audio) currentAudio = null;
+      const onError = (e) => {
+        console.warn(`Audio playback failed for ${filename}`, e);
+        cleanup();
         resolve();
       };
-      audio.play().catch((err) => {
-        console.warn("audio.play() rejected:", err);
-        resolve();
-      });
+      const cleanup = () => {
+        sharedAudio.removeEventListener("ended", onEnded);
+        sharedAudio.removeEventListener("error", onError);
+      };
+      sharedAudio.addEventListener("ended", onEnded);
+      sharedAudio.addEventListener("error", onError);
+
+      sharedAudio.src = src;
+      sharedAudio.load();
+      const playPromise = sharedAudio.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch((err) => {
+          console.warn("audio.play() rejected:", err);
+          cleanup();
+          resolve();
+        });
+      }
     });
   }
 
   function stopCurrent() {
-    if (currentAudio) {
+    if (sharedAudio) {
       try {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
+        sharedAudio.pause();
       } catch (e) {}
-      currentAudio = null;
     }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
   }
 
   /**
    * Play audio by semantic key.
-   *
-   * @param {string} key - The manifest key (e.g. "primer_q_p1", "quiz_r1_q0").
-   * @param {string} fallbackText - Text to speak via browser TTS if the MP3 is unavailable.
-   * @returns {Promise<void>}
    */
   async function play(key, fallbackText) {
     await loadManifest();
-    if (manifest && manifest[key]) {
+    if (manifest && manifest[key] && sharedAudio) {
       return playMp3(manifest[key]);
     }
     if (fallbackText) {
@@ -97,31 +106,33 @@
   }
 
   /**
-   * Unlock audio on iOS (must be called from a user gesture).
-   * Plays a silent audio element so subsequent .play() calls work without a tap.
-   * Also requests mic permission upfront so the first SpeechRecognition call
-   * doesn't get aborted by the permission prompt.
+   * Unlock audio on iOS (MUST be called from a user gesture, e.g. button onclick).
+   *
+   * Creates ONE Audio element and plays a silent payload to establish playback
+   * rights. After this, we mutate .src to play other MP3s — iOS treats this as
+   * the same user-initiated session.
+   *
+   * NOTE: We deliberately do NOT request mic permission here. The browser will
+   * prompt for mic the first time SpeechRecognition.start() runs. That first
+   * recognition may abort due to the prompt, but the retry logic handles it.
    */
   async function unlock() {
     try {
-      // Silent base64 mp3 to unlock audio playback
-      const silent = new Audio(
-        "data:audio/mp3;base64,SUQzAwAAAAAAFlRTU0UAAAAMAAACTGF2ZjU5LjI3LjEwMA=="
-      );
-      await silent.play().catch(() => {});
-      // Also unlock speech synthesis fallback
+      if (!sharedAudio) {
+        sharedAudio = new Audio();
+        sharedAudio.preload = "auto";
+      }
+      // Silent base64 mp3 to establish playback rights during the user gesture
+      sharedAudio.src =
+        "data:audio/mp3;base64,SUQzAwAAAAAAFlRTU0UAAAAMAAACTGF2ZjU5LjI3LjEwMA==";
+      sharedAudio.load();
+      await sharedAudio.play().catch((err) => {
+        console.warn("Initial unlock play failed:", err);
+      });
+      // Unlock speech synthesis fallback as well
       if (window.speechSynthesis) {
         const u = new SpeechSynthesisUtterance("");
         window.speechSynthesis.speak(u);
-      }
-      // Request mic permission NOW (during user gesture) so the first
-      // SpeechRecognition.start() later doesn't get killed by the permission prompt.
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Immediately stop the tracks — we just needed the permission grant
-        stream.getTracks().forEach(t => t.stop());
-      } catch (e) {
-        console.warn("Mic permission denied or unavailable:", e);
       }
     } catch (e) {
       console.warn("unlock failed:", e);
