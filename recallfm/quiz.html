@@ -61,6 +61,25 @@
     transition: background 0.1s;
   }
   .answer-btn:active { background: #333; transform: scale(0.97); }
+  .repeat-btn {
+    display: none;
+    margin-top: 12px;
+    background: transparent;
+    color: #888;
+    border: 1px solid #333;
+    border-radius: 999px;
+    padding: 14px 32px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    max-width: 360px;
+  }
+  .repeat-btn.show { display: inline-block; }
+  .repeat-btn:active { background: #222; transform: scale(0.97); }
 </style>
 </head>
 <body>
@@ -75,6 +94,7 @@
     <button class="answer-btn" data-letter="C">C</button>
     <button class="answer-btn" data-letter="D">D</button>
   </div>
+  <button class="repeat-btn" id="repeat-btn">↻ Repeat</button>
   <div class="hint" id="hint"></div>
 
 <script src="./audio.js"></script>
@@ -222,6 +242,7 @@ const $badge = document.getElementById("round-badge");
 const $hint = document.getElementById("hint");
 const $answerGrid = document.getElementById("answer-grid");
 const $answerBtns = document.querySelectorAll(".answer-btn");
+const $repeatBtn = document.getElementById("repeat-btn");
 
 function setStatus(text, cls = "") {
   $status.textContent = text;
@@ -229,19 +250,26 @@ function setStatus(text, cls = "") {
 }
 function setProgress(text) { $progress.textContent = text; }
 function setHint(text) { $hint.textContent = text; }
-function showAnswerButtons() { $answerGrid.classList.add("show"); }
-function hideAnswerButtons() { $answerGrid.classList.remove("show"); }
+function showAnswerButtons() {
+  $answerGrid.classList.add("show");
+  $repeatBtn.classList.add("show");
+}
+function hideAnswerButtons() {
+  $answerGrid.classList.remove("show");
+  $repeatBtn.classList.remove("show");
+}
 
 /**
- * Wait for an answer from EITHER voice OR a button tap, whichever fires first.
- * Returns { word, source } where source is "voice" or "tap".
+ * Wait for an answer from EITHER voice, an answer tap, or a Repeat tap.
+ * Returns { word, source } where word is "A"|"B"|"C"|"D"|"REPEAT",
+ * source is "voice"|"tap".
  */
 function getAnswerRace() {
   return new Promise((resolve, reject) => {
     let settled = false;
     let recHandle = null;
 
-    const onTap = (e) => {
+    const onAnswerTap = (e) => {
       if (settled) return;
       const letter = e.currentTarget.getAttribute("data-letter");
       settled = true;
@@ -249,17 +277,27 @@ function getAnswerRace() {
       resolve({ word: letter, source: "tap" });
     };
 
+    const onRepeatTap = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({ word: "REPEAT", source: "tap" });
+    };
+
     const cleanup = () => {
-      $answerBtns.forEach(btn => btn.removeEventListener("click", onTap));
+      $answerBtns.forEach(btn => btn.removeEventListener("click", onAnswerTap));
+      $repeatBtn.removeEventListener("click", onRepeatTap);
       if (recHandle && recHandle.abort) {
         try { recHandle.abort(); } catch (e) {}
       }
     };
 
-    $answerBtns.forEach(btn => btn.addEventListener("click", onTap));
+    $answerBtns.forEach(btn => btn.addEventListener("click", onAnswerTap));
+    $repeatBtn.addEventListener("click", onRepeatTap);
 
     // Start voice recognition in parallel
-    listenWithHandle().then(result => {
+    recHandle = listenWithHandle();
+    recHandle.then(result => {
       if (settled) return;
       settled = true;
       cleanup();
@@ -269,8 +307,6 @@ function getAnswerRace() {
       settled = true;
       cleanup();
       reject(err);
-    }).finally(() => {
-      // store nothing — handle already cleaned
     });
   });
 }
@@ -402,18 +438,35 @@ async function runQuiz() {
           continue;
         }
       } catch (err) {
-        setStatus("Speech error: " + err.message + " — tap an answer", "error");
-        // If voice fails fatally, keep the tap buttons visible and wait for tap
+        setStatus("Speech error: " + err.message + " — tap an answer or repeat", "error");
+        // If voice fails fatally, keep the buttons visible and wait for tap
         const tapResult = await new Promise(resolve => {
-          const handler = (e) => {
+          const answerHandler = (e) => {
             const letter = e.currentTarget.getAttribute("data-letter");
-            $answerBtns.forEach(b => b.removeEventListener("click", handler));
-            resolve(letter);
+            cleanupHandlers();
+            resolve({ word: letter, source: "tap" });
           };
-          $answerBtns.forEach(b => b.addEventListener("click", handler));
+          const repeatHandler = () => {
+            cleanupHandlers();
+            resolve({ word: "REPEAT", source: "tap" });
+          };
+          const cleanupHandlers = () => {
+            $answerBtns.forEach(b => b.removeEventListener("click", answerHandler));
+            $repeatBtn.removeEventListener("click", repeatHandler);
+          };
+          $answerBtns.forEach(b => b.addEventListener("click", answerHandler));
+          $repeatBtn.addEventListener("click", repeatHandler);
         });
-        answer = tapResult;
-        answerSource = "tap";
+
+        if (tapResult.word === "REPEAT") {
+          hideAnswerButtons();
+          setStatus("Repeating…");
+          await window.recallAudio.play("repeating", "Repeating.");
+          await window.recallAudio.play(questionKey, buildQuestionText(q, i));
+        } else {
+          answer = tapResult.word;
+          answerSource = "tap";
+        }
       }
     }
 
