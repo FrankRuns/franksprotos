@@ -38,6 +38,29 @@
   .hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 11px; opacity: 0.35; letter-spacing: 1px; text-transform: uppercase; }
   .results { font-size: 16px; line-height: 1.8; opacity: 0.8; max-width: 480px; text-align: left; margin-top: 24px; }
   .results .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
+  .answer-grid {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 32px;
+    width: 100%;
+    max-width: 360px;
+  }
+  .answer-grid.show { display: grid; }
+  .answer-btn {
+    background: #1a1a1a;
+    color: #e8e8e8;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 28px 0;
+    font-size: 32px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    transition: background 0.1s;
+  }
+  .answer-btn:active { background: #333; transform: scale(0.97); }
 </style>
 </head>
 <body>
@@ -46,6 +69,12 @@
   <h1>recallfm</h1>
   <div class="status" id="status">Tap start when ready. Say A, B, C, D — or say "repeat" to hear it again.</div>
   <button id="action" onclick="onAction()">Start</button>
+  <div class="answer-grid" id="answer-grid">
+    <button class="answer-btn" data-letter="A">A</button>
+    <button class="answer-btn" data-letter="B">B</button>
+    <button class="answer-btn" data-letter="C">C</button>
+    <button class="answer-btn" data-letter="D">D</button>
+  </div>
   <div class="hint" id="hint"></div>
 
 <script src="./audio.js"></script>
@@ -166,49 +195,6 @@ function buildCorrectText(q) { return `Correct. ${q.explain}`; }
 function buildWrongText(q) { return `Not quite. The answer was ${q.correct}. ${q.options[q.correct]}. ${q.explain}`; }
 function buildSkipText(q) { return `Skipping. The answer was ${q.correct}. ${q.options[q.correct]}. ${q.explain}`; }
 
-function listen() {
-  return new Promise((resolve, reject) => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      reject(new Error("Speech recognition not supported."));
-      return;
-    }
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.interimResults = false;
-    rec.maxAlternatives = 5;
-    rec.continuous = false;
-    let resolved = false;
-    rec.onresult = (e) => {
-      if (resolved) return;
-      const transcripts = [];
-      for (let i = 0; i < e.results[0].length; i++) {
-        transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
-      }
-      resolved = true;
-      resolve({ word: parseCommand(transcripts), raw: transcripts });
-    };
-    rec.onerror = (e) => {
-      if (resolved) return;
-      resolved = true;
-      // Treat common transient errors as "no answer heard" instead of fatal
-      const soft = ["aborted", "no-speech", "audio-capture"];
-      if (soft.includes(e.error)) {
-        resolve({ word: null, raw: [], softError: e.error });
-      } else {
-        reject(new Error("rec error: " + e.error));
-      }
-    };
-    rec.onend = () => {
-      if (!resolved) {
-        resolved = true;
-        resolve({ word: null, raw: [] });
-      }
-    };
-    rec.start();
-  });
-}
-
 function parseCommand(transcripts) {
   const letterMap = {
     A: ["A", "AY", "EH"],
@@ -234,6 +220,8 @@ const $action = document.getElementById("action");
 const $progress = document.getElementById("progress");
 const $badge = document.getElementById("round-badge");
 const $hint = document.getElementById("hint");
+const $answerGrid = document.getElementById("answer-grid");
+const $answerBtns = document.querySelectorAll(".answer-btn");
 
 function setStatus(text, cls = "") {
   $status.textContent = text;
@@ -241,6 +229,124 @@ function setStatus(text, cls = "") {
 }
 function setProgress(text) { $progress.textContent = text; }
 function setHint(text) { $hint.textContent = text; }
+function showAnswerButtons() { $answerGrid.classList.add("show"); }
+function hideAnswerButtons() { $answerGrid.classList.remove("show"); }
+
+/**
+ * Wait for an answer from EITHER voice OR a button tap, whichever fires first.
+ * Returns { word, source } where source is "voice" or "tap".
+ */
+function getAnswerRace() {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let recHandle = null;
+
+    const onTap = (e) => {
+      if (settled) return;
+      const letter = e.currentTarget.getAttribute("data-letter");
+      settled = true;
+      cleanup();
+      resolve({ word: letter, source: "tap" });
+    };
+
+    const cleanup = () => {
+      $answerBtns.forEach(btn => btn.removeEventListener("click", onTap));
+      if (recHandle && recHandle.abort) {
+        try { recHandle.abort(); } catch (e) {}
+      }
+    };
+
+    $answerBtns.forEach(btn => btn.addEventListener("click", onTap));
+
+    // Start voice recognition in parallel
+    listenWithHandle().then(result => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({ ...result, source: "voice" });
+    }).catch(err => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(err);
+    }).finally(() => {
+      // store nothing — handle already cleaned
+    });
+  });
+}
+
+/**
+ * Like listen() but exposes an abort handle.
+ */
+function listenWithHandle() {
+  let rec = null;
+  const promise = new Promise((resolve, reject) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      reject(new Error("Speech recognition not supported."));
+      return;
+    }
+    rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 5;
+    rec.continuous = false;
+    let resolved = false;
+    const startTime = Date.now();
+    console.log("[listen] starting recognition");
+
+    rec.onresult = (e) => {
+      if (resolved) return;
+      const elapsed = Date.now() - startTime;
+      const transcripts = [];
+      for (let i = 0; i < e.results[0].length; i++) {
+        transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
+      }
+      console.log(`[listen] result after ${elapsed}ms:`, transcripts);
+      resolved = true;
+      resolve({ word: parseCommand(transcripts), raw: transcripts });
+    };
+    rec.onerror = (e) => {
+      if (resolved) return;
+      const elapsed = Date.now() - startTime;
+      console.log(`[listen] error after ${elapsed}ms: ${e.error}`);
+      resolved = true;
+      const soft = ["aborted", "no-speech", "audio-capture"];
+      if (soft.includes(e.error)) {
+        resolve({ word: null, raw: [], softError: e.error });
+      } else {
+        reject(new Error("rec error: " + e.error));
+      }
+    };
+    rec.onend = () => {
+      if (!resolved) {
+        const elapsed = Date.now() - startTime;
+        console.log(`[listen] ended after ${elapsed}ms with no result`);
+        resolved = true;
+        resolve({ word: null, raw: [] });
+      }
+    };
+    rec.onstart = () => console.log("[listen] onstart fired");
+    rec.onspeechstart = () => console.log("[listen] speech detected");
+
+    try {
+      rec.start();
+    } catch (err) {
+      console.error("[listen] rec.start() threw:", err);
+      if (!resolved) {
+        resolved = true;
+        reject(err);
+      }
+    }
+  });
+  // Attach an abort handle to the promise
+  promise.abort = () => {
+    if (rec) {
+      try { rec.abort(); } catch (e) {}
+    }
+  };
+  return promise;
+}
 
 $badge.textContent = `Round ${round.num} / 3 · ${round.label}`;
 if (round.num > 3) showFinalResults();
@@ -263,8 +369,8 @@ async function onAction() {
 
 async function runQuiz() {
   await window.recallAudio.play(`round_intro_${round.num}`,
-    `Round ${round.num}. 8 questions. Say A, B, C, or D. Or say repeat to hear the question again.`);
-  setHint("Say A, B, C, D, or 'repeat'");
+    `Round ${round.num}. 8 questions. Say A, B, C, or D. Or tap a button. Say repeat to hear the question again.`);
+  setHint("Say A, B, C, D, 'repeat' — or tap");
 
   for (let i = 0; i < questions.length; i++) {
     setProgress(`${i + 1} / ${questions.length}`);
@@ -274,37 +380,50 @@ async function runQuiz() {
     await window.recallAudio.play(questionKey, buildQuestionText(q, i));
 
     let answer = null;
+    let answerSource = null;
     let attempts = 0;
     while (!answer && attempts < 6) {
       attempts++;
-      // Give iOS audio session a moment to release the mic before we grab it
-      await new Promise(r => setTimeout(r, 350));
-      setStatus("Listening…", "listening");
+      await new Promise(r => setTimeout(r, 400));
+      setStatus("Listening… or tap an answer", "listening");
+      showAnswerButtons();
       try {
-        const result = await listen();
+        const result = await getAnswerRace();
         if (result.word === "REPEAT") {
+          hideAnswerButtons();
           setStatus("Repeating…");
           await window.recallAudio.play("repeating", "Repeating.");
           await window.recallAudio.play(questionKey, buildQuestionText(q, i));
         } else if (["A", "B", "C", "D"].includes(result.word)) {
           answer = result.word;
-        } else if (result.softError === "aborted" && attempts < 6) {
-          // iOS audio glitch — silently retry without scolding the user
-          continue;
+          answerSource = result.source;
         } else if (attempts < 6) {
-          await window.recallAudio.play("didnt_catch_quiz", "Didn't catch that. Say A, B, C, D, or repeat.");
+          // No result from voice (timed out or empty), buttons still visible — wait again
+          continue;
         }
       } catch (err) {
-        setStatus("Speech error: " + err.message, "error");
-        return;
+        setStatus("Speech error: " + err.message + " — tap an answer", "error");
+        // If voice fails fatally, keep the tap buttons visible and wait for tap
+        const tapResult = await new Promise(resolve => {
+          const handler = (e) => {
+            const letter = e.currentTarget.getAttribute("data-letter");
+            $answerBtns.forEach(b => b.removeEventListener("click", handler));
+            resolve(letter);
+          };
+          $answerBtns.forEach(b => b.addEventListener("click", handler));
+        });
+        answer = tapResult;
+        answerSource = "tap";
       }
     }
 
+    hideAnswerButtons();
     const isCorrect = answer === q.correct;
     answers.push({
       id: q.id,
       asked: q.prompt,
       answer,
+      source: answerSource,
       correct: q.correct,
       correctText: answer ? q.options[q.correct] : null,
       isCorrect,
