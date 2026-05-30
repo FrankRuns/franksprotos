@@ -33,6 +33,7 @@
   }
   button:active { transform: scale(0.97); }
   .progress { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.4; letter-spacing: 2px; }
+  .hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 11px; opacity: 0.35; letter-spacing: 1px; text-transform: uppercase; }
   input[type="email"] {
     margin-top: 24px;
     background: #1a1a1a; color: #e8e8e8;
@@ -41,17 +42,66 @@
     width: 100%; max-width: 360px;
     -webkit-appearance: none;
   }
+  .answer-grid {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 32px;
+    width: 100%;
+    max-width: 360px;
+  }
+  .answer-grid.show { display: grid; }
+  .answer-btn {
+    background: #1a1a1a;
+    color: #e8e8e8;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 28px 0;
+    font-size: 32px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    transition: background 0.1s;
+  }
+  .answer-btn:active { background: #333; transform: scale(0.97); }
+  .repeat-btn {
+    display: none;
+    margin-top: 12px;
+    background: transparent;
+    color: #888;
+    border: 1px solid #333;
+    border-radius: 999px;
+    padding: 14px 32px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    max-width: 360px;
+  }
+  .repeat-btn.show { display: inline-block; }
+  .repeat-btn:active { background: #222; transform: scale(0.97); }
 </style>
 </head>
 <body>
   <div class="progress" id="progress"></div>
   <h1>recallfm</h1>
-  <div class="status" id="status">Tap start. Put your phone in your pocket. Answer out loud.</div>
+  <div class="status" id="status">Tap start. Put your phone in your pocket. Answer out loud — or tap.</div>
   <button id="action" onclick="onAction()">Start</button>
+  <div class="answer-grid" id="answer-grid">
+    <button class="answer-btn" data-letter="A">A</button>
+    <button class="answer-btn" data-letter="B">B</button>
+    <button class="answer-btn" data-letter="C">C</button>
+    <button class="answer-btn" data-letter="D">D</button>
+  </div>
+  <button class="repeat-btn" id="repeat-btn">↻ Repeat</button>
+  <div class="hint" id="hint"></div>
 
 <script src="./audio.js"></script>
 <script>
-// Must stay in sync with generate-audio.js
 const PRIMER = [
   {
     id: "p1",
@@ -92,60 +142,19 @@ let phase = "idle";
 let qIdx = 0;
 const answers = [];
 
-// Speech recognition
-function listen() {
-  return new Promise((resolve, reject) => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      reject(new Error("Speech recognition not supported."));
-      return;
-    }
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.interimResults = false;
-    rec.maxAlternatives = 3;
-    rec.continuous = false;
-    let resolved = false;
-    rec.onresult = (e) => {
-      if (resolved) return;
-      const transcripts = [];
-      for (let i = 0; i < e.results[0].length; i++) {
-        transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
-      }
-      resolved = true;
-      resolve({ letter: findLetter(transcripts), raw: transcripts });
-    };
-    rec.onerror = (e) => {
-      if (resolved) return;
-      resolved = true;
-      const soft = ["aborted", "no-speech", "audio-capture"];
-      if (soft.includes(e.error)) {
-        resolve({ letter: null, raw: [], softError: e.error });
-      } else {
-        reject(new Error("rec error: " + e.error));
-      }
-    };
-    rec.onend = () => {
-      if (!resolved) {
-        resolved = true;
-        resolve({ letter: null, raw: [] });
-      }
-    };
-    rec.start();
-  });
-}
-
-function findLetter(transcripts) {
-  const map = {
+function parseCommand(transcripts) {
+  const letterMap = {
     A: ["A", "AY", "EH"],
     B: ["B", "BE", "BEE", "BEA"],
     C: ["C", "SEE", "SEA", "CEE"],
     D: ["D", "DE", "DEE", "THE"],
   };
+  const repeatWords = ["REPEAT", "AGAIN", "RETRY", "ONCE", "SAY"];
   for (const t of transcripts) {
     const words = t.split(/\s+/);
     for (const w of words) {
-      for (const [letter, variants] of Object.entries(map)) {
+      if (repeatWords.includes(w)) return "REPEAT";
+      for (const [letter, variants] of Object.entries(letterMap)) {
         if (variants.includes(w)) return letter;
       }
     }
@@ -153,15 +162,133 @@ function findLetter(transcripts) {
   return null;
 }
 
+function listenWithHandle() {
+  let rec = null;
+  const promise = new Promise((resolve, reject) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      reject(new Error("Speech recognition not supported."));
+      return;
+    }
+    rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 5;
+    rec.continuous = false;
+    let resolved = false;
+    const startTime = Date.now();
+    console.log("[listen] starting recognition");
+
+    rec.onresult = (e) => {
+      if (resolved) return;
+      const transcripts = [];
+      for (let i = 0; i < e.results[0].length; i++) {
+        transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
+      }
+      console.log(`[listen] result after ${Date.now() - startTime}ms:`, transcripts);
+      resolved = true;
+      resolve({ word: parseCommand(transcripts), raw: transcripts });
+    };
+    rec.onerror = (e) => {
+      if (resolved) return;
+      console.log(`[listen] error: ${e.error}`);
+      resolved = true;
+      const soft = ["aborted", "no-speech", "audio-capture"];
+      if (soft.includes(e.error)) {
+        resolve({ word: null, raw: [], softError: e.error });
+      } else {
+        reject(new Error("rec error: " + e.error));
+      }
+    };
+    rec.onend = () => {
+      if (!resolved) {
+        resolved = true;
+        resolve({ word: null, raw: [] });
+      }
+    };
+    rec.onstart = () => console.log("[listen] onstart fired");
+    rec.onspeechstart = () => console.log("[listen] speech detected");
+
+    try {
+      rec.start();
+    } catch (err) {
+      console.error("[listen] rec.start() threw:", err);
+      if (!resolved) {
+        resolved = true;
+        reject(err);
+      }
+    }
+  });
+  promise.abort = () => {
+    if (rec) { try { rec.abort(); } catch (e) {} }
+  };
+  return promise;
+}
+
 const $status = document.getElementById("status");
 const $action = document.getElementById("action");
 const $progress = document.getElementById("progress");
+const $hint = document.getElementById("hint");
+const $answerGrid = document.getElementById("answer-grid");
+const $answerBtns = document.querySelectorAll(".answer-btn");
+const $repeatBtn = document.getElementById("repeat-btn");
 
 function setStatus(text, cls = "") {
   $status.textContent = text;
   $status.className = "status " + cls;
 }
 function setProgress(text) { $progress.textContent = text; }
+function setHint(text) { $hint.textContent = text; }
+function showAnswerButtons() {
+  $answerGrid.classList.add("show");
+  $repeatBtn.classList.add("show");
+}
+function hideAnswerButtons() {
+  $answerGrid.classList.remove("show");
+  $repeatBtn.classList.remove("show");
+}
+
+function getAnswerRace() {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let recHandle = null;
+
+    const onAnswerTap = (e) => {
+      if (settled) return;
+      const letter = e.currentTarget.getAttribute("data-letter");
+      settled = true;
+      cleanup();
+      resolve({ word: letter, source: "tap" });
+    };
+    const onRepeatTap = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({ word: "REPEAT", source: "tap" });
+    };
+    const cleanup = () => {
+      $answerBtns.forEach(btn => btn.removeEventListener("click", onAnswerTap));
+      $repeatBtn.removeEventListener("click", onRepeatTap);
+      if (recHandle && recHandle.abort) { try { recHandle.abort(); } catch (e) {} }
+    };
+
+    $answerBtns.forEach(btn => btn.addEventListener("click", onAnswerTap));
+    $repeatBtn.addEventListener("click", onRepeatTap);
+
+    recHandle = listenWithHandle();
+    recHandle.then(result => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({ ...result, source: "voice" });
+    }).catch(err => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(err);
+    });
+  });
+}
 
 async function onAction() {
   if (phase === "idle") {
@@ -176,7 +303,8 @@ async function onAction() {
 
 async function runQuiz() {
   await window.recallAudio.play("primer_intro",
-    "Primer. Three questions. After each one, say A, B, C, or D out loud. You'll hear Dan Shipper's take after each answer.");
+    "Primer. Three questions. After each one, say A, B, C, or D — or tap a button. You'll hear Dan Shipper's take after each answer.");
+  setHint("Say A, B, C, D, 'repeat' — or tap");
 
   for (qIdx = 0; qIdx < PRIMER.length; qIdx++) {
     setProgress(`${qIdx + 1} / ${PRIMER.length}`);
@@ -185,30 +313,65 @@ async function runQuiz() {
     await window.recallAudio.play(`primer_q_${q.id}`, q.text);
 
     let answer = null;
-    for (let attempt = 0; attempt < 4 && !answer; attempt++) {
-      await new Promise(r => setTimeout(r, 350));
-      setStatus("Listening…", "listening");
+    let answerSource = null;
+    let attempts = 0;
+    while (!answer && attempts < 6) {
+      attempts++;
+      await new Promise(r => setTimeout(r, 400));
+      setStatus("Listening… or tap an answer", "listening");
+      showAnswerButtons();
       try {
-        const result = await listen();
-        if (result.letter) {
-          answer = result.letter;
-        } else if (result.softError === "aborted" && attempt < 3) {
+        const result = await getAnswerRace();
+        if (result.word === "REPEAT") {
+          hideAnswerButtons();
+          setStatus("Repeating…");
+          await window.recallAudio.play("repeating", "Repeating.");
+          await window.recallAudio.play(`primer_q_${q.id}`, q.text);
+        } else if (["A", "B", "C", "D"].includes(result.word)) {
+          answer = result.word;
+          answerSource = result.source;
+        } else if (attempts < 6) {
           continue;
-        } else if (attempt < 3) {
-          await window.recallAudio.play("didnt_catch_primer",
-            "Sorry, didn't catch that. Try again. Just say A, B, C, or D.");
         }
       } catch (err) {
-        setStatus("Speech error: " + err.message, "error");
-        return;
+        setStatus("Speech error: " + err.message + " — tap an answer or repeat", "error");
+        const tapResult = await new Promise(resolve => {
+          const answerHandler = (e) => {
+            const letter = e.currentTarget.getAttribute("data-letter");
+            cleanupHandlers();
+            resolve({ word: letter, source: "tap" });
+          };
+          const repeatHandler = () => {
+            cleanupHandlers();
+            resolve({ word: "REPEAT", source: "tap" });
+          };
+          const cleanupHandlers = () => {
+            $answerBtns.forEach(b => b.removeEventListener("click", answerHandler));
+            $repeatBtn.removeEventListener("click", repeatHandler);
+          };
+          $answerBtns.forEach(b => b.addEventListener("click", answerHandler));
+          $repeatBtn.addEventListener("click", repeatHandler);
+        });
+
+        if (tapResult.word === "REPEAT") {
+          hideAnswerButtons();
+          setStatus("Repeating…");
+          await window.recallAudio.play("repeating", "Repeating.");
+          await window.recallAudio.play(`primer_q_${q.id}`, q.text);
+        } else {
+          answer = tapResult.word;
+          answerSource = "tap";
+        }
       }
     }
 
+    hideAnswerButtons();
+
     if (!answer) {
       await window.recallAudio.play("skipping_primer", "Skipping this one. Moving on.");
-      answers.push({ id: q.id, answer: null });
+      answers.push({ id: q.id, answer: null, source: null });
     } else {
-      answers.push({ id: q.id, answer });
+      answers.push({ id: q.id, answer, source: answerSource });
       setStatus(`You said ${answer}. Here's Dan's take…`, "blurb");
       await window.recallAudio.play(`you_said_${answer}`, `You said ${answer}.`);
       await window.recallAudio.play(`primer_blurb_${q.id}_${answer}`, q.blurbs[answer]);
@@ -216,6 +379,7 @@ async function runQuiz() {
   }
 
   setProgress("");
+  setHint("");
   phase = "email";
   setStatus("Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish, come back here and enter your email for the followup quizzes.");
   $action.textContent = "Enter email";
