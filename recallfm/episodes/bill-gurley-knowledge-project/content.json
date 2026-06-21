@@ -1,0 +1,108 @@
+{
+  "slug": "bill-gurley-knowledge-project",
+  "pageTitle": "recallfm — primer",
+  "primerIntroText": "Primer. Three questions. After each one, say A, B, C, or D — or tap a button. You'll hear Bill Gurley's take after each answer.",
+  "primerOutroSpoken": "Primer done. Now go listen to the Bill Gurley episode on The Knowledge Project with Shane Parrish. When you finish listening, come back to this page and enter your email so we can schedule the followup quizzes.",
+  "primerOutroDisplay": "Now go listen to Bill Gurley on The Knowledge Project. When you finish, come back here and enter your email for the followup quizzes.",
+  "primer": [
+    {
+      "id": "p1",
+      "text": "Question one. China now has around ten open-source AI models all sharing techniques with each other. What do you expect this does to China's pace of AI innovation versus a closed, competitive system like the US? Say A for slows it down. Say B for no real difference. Say C for speeds it up modestly. Say D for speeds it up dramatically.",
+      "short": "Open-source China vs closed US system",
+      "blurbs": {
+        "A": "Bill Gurley would strongly disagree. His systems-thinking frame: when competitors are forced to share best practices, as China's open-source labs effectively do, the whole system evolves faster, not slower. He uses a farmers'-market metaphor — sellers who must share techniques outpace sellers who hoard them.",
+        "B": "Bill Gurley thinks the difference is real and large. He says this is a textbook systems-thinking case: a system where everyone shares information compounds knowledge faster than one where firms stay siloed.",
+        "C": "Bill Gurley would push you further. He calls China's open, model-trains-model dynamic 'way more dynamic' than ours — not a modest edge, a structural one. American startups are quietly forking these Chinese open models all over Silicon Valley.",
+        "D": "This is exactly Bill's view. His farmers'-market metaphor: one market where sellers share techniques, one where they don't — the sharing market wins. China's 10 open-source models that train and test each other compound faster than a closed, competitive system can."
+      }
+    },
+    {
+      "id": "p2",
+      "text": "Question two. Bill Gurley says one of the most powerful ways labs are improving models right now involves paying people a lot of money for one specific task. Say A for scraping more of the internet. Say B for buying more GPUs. Say C for hiring domain experts at high hourly rates to fine-tune answers. Say D for running larger pretraining runs.",
+      "short": "Current edge in model improvement",
+      "blurbs": {
+        "A": "Not Bill's point here — he actually thinks the labs are running out of fresh internet data to scrape, what he calls 'painting in the corners.'",
+        "B": "Compute matters, but Bill's specific example was about people, not chips: labs hiring experts for thousands of dollars an hour to ask hard questions and tune the model's answers to them.",
+        "C": "Right. Bill's exact framing: 'hiring experts, literally hiring experts for thousands of dollars an hour to sit in and fine-tune and ask very hard questions.' He flags this can't scale forever — there's a real question of where the edge of human knowledge runs out.",
+        "D": "Bigger pretraining runs aren't what Bill highlighted. His point was about expert labor at the fine-tuning edge, and his worry that we're 'painting in the corners' on raw data."
+      }
+    },
+    {
+      "id": "p3",
+      "text": "Question three. Bill argues circular AI infrastructure deals — where a cloud provider funds a company so it can spend that money back on the provider's own services — do what to the AI buildout? Say A for nothing, it's accounting noise. Say B for they shrink the bubble by forcing discipline. Say C for they inflate growth now and extend the runway before any correction. Say D for they guarantee there will be no correction.",
+      "short": "Circular AI infrastructure deals",
+      "blurbs": {
+        "A": "Bill would disagree — he thinks these deals have real economic effects, not just accounting effects. They change what actually gets built and how fast.",
+        "B": "Bill's read is closer to the opposite: circular deals encourage more spending, not less, because the funder is incentivized to keep money flowing back to itself.",
+        "C": "This is Bill's exact take, echoing Dario Amodei's explanation. If a cloud provider gives a company money to spend on its own service, the buildout looks bigger and faster than it would on pure unsubsidized demand — and it pushes any reckoning further out.",
+        "D": "Bill doesn't think circular deals eliminate the possibility of a correction — he thinks they enhance the probability of one eventually, while also extending the time before it happens."
+      }
+    }
+  ],
+  "quiz": [
+    {
+      "id": "q1",
+      "prompt": "What mental model does Bill Gurley say he keeps coming back to, citing a book called 'Thinking in Systems' and his board seat at the Santa Fe Institute?",
+      "options": { "A": "First principles thinking", "B": "Systems thinking / complexity theory", "C": "Game theory", "D": "Behavioral economics" },
+      "correct": "B",
+      "explain": "Bill describes complex systems as multivariable, nonlinear, and hard to predict — a change in one variable can ripple into second- and third-order effects you only discover much later.",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "q2",
+      "prompt": "Bill's dating-site example: making profiles longer increased engagement immediately. What happened months later?",
+      "options": { "A": "Engagement kept rising", "B": "It turned out to hurt conversion once people knew too much about a match upfront", "C": "Users complained and the feature was removed within a week", "D": "Nothing changed" },
+      "correct": "B",
+      "explain": "A classic second-derivative effect: the simple heuristic tested true in the short term, but had a delayed negative consequence on conversion that only showed up much later.",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "q3",
+      "prompt": "Which investor and longtime friend, met early in Bill's career at First Boston, introduced him to legendary investor Bill Miller and shaped his thinking on network effects?",
+      "options": { "A": "Howard Marks", "B": "Mike Mauboussin", "C": "Peter Lynch", "D": "Warren Buffett" },
+      "correct": "B",
+      "explain": "Mike Mauboussin, a financial author Bill met at First Boston, became a lifelong friend and introduced him to Bill Miller, the famed value investor and longtime top Amazon shareholder.",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "q4",
+      "prompt": "Why does Bill think studying the history of your field is 'remarkably differentiating,' using the Pixar and Picasso examples?",
+      "options": { "A": "It guarantees better skills than peers", "B": "It signals genuine passion and gives you a frame most competitors skip building", "C": "It's required for certification in most fields", "D": "It replaces the need for new-edge knowledge" },
+      "correct": "B",
+      "explain": "His point: almost no one outside literature studies the masters of their own field, so doing it shows real passion and creates contrast — like John Lasseter's encyclopedic command of animation history, or Picasso's realist mastery before he went cubist.",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "q5",
+      "prompt": "Bill pairs 'know the history of your field' with a second habit he says every great entrepreneur also has. What is it?",
+      "options": { "A": "Obsessive learning at the bleeding edge of what's new", "B": "Daily meditation", "C": "Reading only biographies", "D": "Avoiding new tools until they're proven" },
+      "correct": "A",
+      "explain": "He calls it 'obsessive learning' — entrepreneurs riding a new wave (mobile then, AI now) go home and read everything they can because the edge keeps moving and they need to stay in the top percentile understanding it.",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "q6",
+      "prompt": "Comparing AI chatbots, what does Bill say he specifically uses Gemini for, because of one dataset advantage?",
+      "options": { "A": "Coding", "B": "Legal research", "C": "Restaurant recommendations, using Google's review data to find specific dishes worth ordering", "D": "Stock analysis" },
+      "correct": "C",
+      "explain": "Bill likes that Gemini can mine Google's restaurant review data to tell him which specific dishes people rave about versus warn against, rather than a generic 'this place is good.'",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "q7",
+      "prompt": "What is Bill's central disagreement with the view that one super-intelligent model will eventually do everything, making vertical AI startups pointless?",
+      "options": { "A": "He agrees fully with that view", "B": "He thinks workflows and data moats let focused vertical startups (e.g. legal AI ingesting case law) stay ahead of a general model", "C": "He thinks regulation will ban general models", "D": "He thinks only open-source models can win verticals" },
+      "correct": "B",
+      "explain": "Bill leans toward believing deep, accumulated workflow knowledge and proprietary data — like a legal AI startup that has fully ingested case law and built databases around it — are hard for a generalist model to just absorb and overtake.",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "q8",
+      "prompt": "What does Bill say is broken about how Institutional Shareholder Services (ISS) and similar proxy advisors operate?",
+      "options": { "A": "They are too slow to issue recommendations", "B": "They score companies with an opaque black-box methodology, then sell consulting to help companies improve that same score", "C": "They only serve index funds", "D": "They have no real influence on voting outcomes" },
+      "correct": "B",
+      "explain": "Bill calls it 'more of a heist' — these services score firms on opaque criteria, won't explain the scoring, and then get paid again by the same companies who hire them to learn how to score better, drifting from shareholder interest toward rigid rule enforcement.",
+      "type": "multiple_choice"
+    }
+  ]
+}

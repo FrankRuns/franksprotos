@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>recallfm — quiz</title>
+<title>__PAGE_TITLE_QUIZ__</title>
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -97,69 +97,13 @@
   <button class="repeat-btn" id="repeat-btn">↻ Repeat</button>
   <div class="hint" id="hint"></div>
 
-<script src="./audio.js"></script>
+<script src="__AUDIO_JS_PATH__"></script>
 <script>
-const QUIZ_QUESTIONS = [
-  {
-    id: "q1",
-    prompt: "Dan's super-agent prediction — which two companies did he name as already having one?",
-    options: { A: "OpenAI and Anthropic", B: "Shopify and Ramp", C: "Google and Meta", D: "Cursor and Vercel" },
-    correct: "B",
-    explain: "Shopify has one called Sidekick, Ramp has Ramp Agent. Dan held them up as the model — one super-agent per company instead of one per employee.",
-  },
-  {
-    id: "q2",
-    prompt: "Dan flipped his view this past year on agent architecture. What did he move from and to?",
-    options: { A: "Personal agents per employee, to one super-agent per company", B: "Super-agents, to personal agents per employee", C: "Human-only workflows, to fully autonomous agents", D: "Slack-based agents, to CLI-based agents" },
-    correct: "A",
-    explain: "He started bullish on the Golden Compass daemon model — one agent per person. Realized agents need a human babysitter, and most people won't maintain their own. So: one super-agent, one forward-deployed engineer keeping it running.",
-  },
-  {
-    id: "q3",
-    prompt: "Why does Dan think SaaS margins might actually improve in the AI era?",
-    options: { A: "Agents make products cheaper to build", B: "Users bring their own tokens via Codex or Cowork", C: "AI eliminates the need for customer support", D: "Subscription prices will rise across the board" },
-    correct: "B",
-    explain: "When users run his app Proof inside Codex, they spend their own OpenAI tokens, not his. Inverts the AI-crushes-margins story.",
-  },
-  {
-    id: "q4",
-    prompt: "Dan says CLIs are over. What replaces them as the main work surface?",
-    options: { A: "Browser-based chat interfaces", B: "Voice-only agents", C: "GUI environments like Codex or Cowork with an in-app browser", D: "Slack with embedded AI" },
-    correct: "C",
-    explain: "His exact phrase: we speed-ran the CLI era. The unlock was the in-app browser — agent and human watching the same screen, working together.",
-  },
-  {
-    id: "q5",
-    prompt: "What new role does Dan call the most essential in the AI era?",
-    options: { A: "Prompt engineer", B: "AI ethicist", C: "Forward deployed engineer", D: "Full-stack designer" },
-    correct: "C",
-    explain: "The person who keeps the company's super-agent working. Every agent needs a human who cares about it. That's the new job that doesn't go away.",
-  },
-  {
-    id: "q6",
-    prompt: "Dan's mental model for why human jobs survive — models make blank cheap. Fill in the blank.",
-    options: { A: "Software development", B: "Yesterday's human competence", C: "Customer acquisition", D: "Writing and content" },
-    correct: "B",
-    explain: "Models ingest everything humans already figured out and commoditize it. Humans then push past the frontier. That gap is where the work is.",
-  },
-  {
-    id: "q7",
-    prompt: "Dan claims the edge of AI is not in San Francisco. Where is it?",
-    options: { A: "Wherever AI meets a real human doing real work", B: "Inside the model labs themselves", C: "In Brooklyn, where Every is based", D: "In enterprise companies adopting AI at scale" },
-    correct: "A",
-    explain: "Model builders make the tool but don't know all the uses. The edge is the user who turns the rock over and finds a new use case.",
-  },
-  {
-    id: "q8",
-    prompt: "Dan's one-line career advice for staying employed in the AI era.",
-    options: { A: "Learn to code", B: "Become a manager", C: "Specialize deeply in one domain", D: "Ride the models" },
-    correct: "D",
-    explain: "Use every new model the day it drops on whatever you do. Turn the rock over again. The people who do this consistently are very hard to replace.",
-  },
-];
+const STORAGE_KEY = "__STORAGE_KEY__";
+const QUIZ_QUESTIONS = __QUIZ_JSON__;
 
 function getRound() {
-  const completed = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
+  const completed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   if (completed.length === 0) return { num: 1, label: "Immediate" };
   if (completed.length === 1) return { num: 2, label: "24-hour" };
   if (completed.length === 2) return { num: 3, label: "1-week" };
@@ -259,11 +203,6 @@ function hideAnswerButtons() {
   $repeatBtn.classList.remove("show");
 }
 
-/**
- * Wait for an answer from EITHER voice, an answer tap, or a Repeat tap.
- * Returns { word, source } where word is "A"|"B"|"C"|"D"|"REPEAT",
- * source is "voice"|"tap".
- */
 function getAnswerRace() {
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -295,7 +234,6 @@ function getAnswerRace() {
     $answerBtns.forEach(btn => btn.addEventListener("click", onAnswerTap));
     $repeatBtn.addEventListener("click", onRepeatTap);
 
-    // Start voice recognition in parallel
     recHandle = listenWithHandle();
     recHandle.then(result => {
       if (settled) return;
@@ -311,9 +249,6 @@ function getAnswerRace() {
   });
 }
 
-/**
- * Like listen() but exposes an abort handle.
- */
 function listenWithHandle() {
   let rec = null;
   const promise = new Promise((resolve, reject) => {
@@ -375,7 +310,6 @@ function listenWithHandle() {
       }
     }
   });
-  // Attach an abort handle to the promise
   promise.abort = () => {
     if (rec) {
       try { rec.abort(); } catch (e) {}
@@ -434,12 +368,10 @@ async function runQuiz() {
           answer = result.word;
           answerSource = result.source;
         } else if (attempts < 6) {
-          // No result from voice (timed out or empty), buttons still visible — wait again
           continue;
         }
       } catch (err) {
         setStatus("Speech error: " + err.message + " — tap an answer or repeat", "error");
-        // If voice fails fatally, keep the buttons visible and wait for tap
         const tapResult = await new Promise(resolve => {
           const answerHandler = (e) => {
             const letter = e.currentTarget.getAttribute("data-letter");
@@ -496,7 +428,7 @@ async function runQuiz() {
     }
   }
 
-  const all = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   const score = answers.filter(a => a.isCorrect).length;
   all.push({
     round: round.num,
@@ -506,7 +438,7 @@ async function runQuiz() {
     score,
     total: answers.length,
   });
-  localStorage.setItem("recallfm_rounds", JSON.stringify(all));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 
   setProgress("");
   setHint("");
@@ -531,7 +463,7 @@ async function runQuiz() {
 }
 
 function showFinalResults() {
-  const all = JSON.parse(localStorage.getItem("recallfm_rounds") || "[]");
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   if (all.length === 0) {
     setStatus("No rounds completed yet.");
     return;
@@ -549,7 +481,7 @@ function showFinalResults() {
   $action.style.display = "inline-block";
   $action.onclick = () => {
     if (confirm("Wipe all recallfm data and start over?")) {
-      localStorage.removeItem("recallfm_rounds");
+      localStorage.removeItem(STORAGE_KEY);
       window.location.reload();
     }
   };

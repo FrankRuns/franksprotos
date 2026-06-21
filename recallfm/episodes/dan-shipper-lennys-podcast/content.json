@@ -1,0 +1,100 @@
+{
+  "slug": "dan-shipper-lennys-podcast",
+  "pageTitle": "recallfm — primer",
+  "primerIntroText": "Primer. Three questions. After each one, say A, B, C, or D — or tap a button. You'll hear Dan Shipper's take after each answer.",
+  "primerOutroSpoken": "Primer done. Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish listening, come back to this page and enter your email so we can schedule the followup quizzes.",
+  "primerOutroDisplay": "Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish, come back here and enter your email for the followup quizzes.",
+  "primer": [
+    {
+      "id": "p1",
+      "text": "Question one. When AI gets better at doing knowledge work, what do you expect happens to the number of humans employed at AI-forward companies? Say A for drops sharply. Say B for drops slightly. Say C for stays flat. Say D for grows.",
+      "short": "AI-forward headcount over time",
+      "blurbs": {
+        "A": "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
+        "B": "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
+        "C": "Closer to Dan's view but still too pessimistic. He'd say you're missing that AI generates more work to do — more pull requests to review, more agents to maintain, more output to curate.",
+        "D": "You'd be in violent agreement with Dan. He calls the AI jobpocalypse not really a thing and is hiring aggressively. His mental model: models make yesterday's human competence cheap, which frees humans to push the frontier further."
+      }
+    },
+    {
+      "id": "p2",
+      "text": "Question two. Where will most professional work happen in a year? Say A for a traditional SaaS app with AI features. Say B for a chat interface like ChatGPT. Say C for a coding agent environment like Codex or Claude Code. Say D for the command line.",
+      "short": "Future work surface",
+      "blurbs": {
+        "A": "Dan thinks this is wrong but not for the reason you'd expect. He's actually bullish on SaaS — would buy SaaS stocks today. But he thinks the SaaS apps will run inside a coding agent's browser, with you and the agent collaborating on them. SaaS survives, but the container changes.",
+        "B": "Dan would say you were right a year ago. But the new pattern is agents that live on your computer with full access to your files and an in-app browser. Chat alone is too thin a surface — the agent needs to see what you see.",
+        "C": "Dead on. Dan calls Codex his daily driver and says all knowledge work is migrating there. The unlock was when these agents got an in-app browser, so the agent watches you work in real time. He hit inbox zero for ten days using it — unprecedented for him.",
+        "D": "Dan would say you're six months behind. His phrase: we speed-ran the CLI era. GUIs are back because the in-app browser pattern needs visual surface. CLIs aren't dying, but they're not the main work surface anymore."
+      }
+    },
+    {
+      "id": "p3",
+      "text": "Question three. What's the biggest risk to a SaaS company in the AI era? Say A for AI agents replace SaaS entirely. Say B for margins crushed by token costs. Say C for users will demand AI features they can't afford to build. Say D for nothing major, SaaS will thrive.",
+      "short": "SaaS risk",
+      "blurbs": {
+        "A": "Dan calls this take dumb. His contrarian bet: agents increase the number of users of SaaS, not get rid of it. Every employee at his company uses tons of SaaS even though they're maximally AI-forward.",
+        "B": "Interesting one — Dan flipped this. He argues margins actually improve because users bring their own tokens via Codex or Cowork. The SaaS company doesn't pay for the AI, the user's agent does. Inverts the usual margin-crush story.",
+        "C": "Partially right but Dan's reframe is that you shouldn't be building the AI features inside your product anyway. Build for humans and agents to collaborate on your product together. The agent comes with the user.",
+        "D": "You'd be aligned with Dan's most contrarian take in the whole episode. I would buy SaaS stocks right now. The world thinks SaaS is dying. Dan thinks it's about to see an insane spike in demand from agent users."
+      }
+    }
+  ],
+  "quiz": [
+    {
+      "id": "q1",
+      "prompt": "Dan's super-agent prediction — which two companies did he name as already having one?",
+      "options": { "A": "OpenAI and Anthropic", "B": "Shopify and Ramp", "C": "Google and Meta", "D": "Cursor and Vercel" },
+      "correct": "B",
+      "explain": "Shopify has one called Sidekick, Ramp has Ramp Agent. Dan held them up as the model — one super-agent per company instead of one per employee."
+    },
+    {
+      "id": "q2",
+      "prompt": "Dan flipped his view this past year on agent architecture. What did he move from and to?",
+      "options": { "A": "Personal agents per employee, to one super-agent per company", "B": "Super-agents, to personal agents per employee", "C": "Human-only workflows, to fully autonomous agents", "D": "Slack-based agents, to CLI-based agents" },
+      "correct": "A",
+      "explain": "He started bullish on the Golden Compass daemon model — one agent per person. Realized agents need a human babysitter, and most people won't maintain their own. So: one super-agent, one forward-deployed engineer keeping it running."
+    },
+    {
+      "id": "q3",
+      "prompt": "Why does Dan think SaaS margins might actually improve in the AI era?",
+      "options": { "A": "Agents make products cheaper to build", "B": "Users bring their own tokens via Codex or Cowork", "C": "AI eliminates the need for customer support", "D": "Subscription prices will rise across the board" },
+      "correct": "B",
+      "explain": "When users run his app Proof inside Codex, they spend their own OpenAI tokens, not his. Inverts the AI-crushes-margins story."
+    },
+    {
+      "id": "q4",
+      "prompt": "Dan says CLIs are over. What replaces them as the main work surface?",
+      "options": { "A": "Browser-based chat interfaces", "B": "Voice-only agents", "C": "GUI environments like Codex or Cowork with an in-app browser", "D": "Slack with embedded AI" },
+      "correct": "C",
+      "explain": "His exact phrase: we speed-ran the CLI era. The unlock was the in-app browser — agent and human watching the same screen, working together."
+    },
+    {
+      "id": "q5",
+      "prompt": "What new role does Dan call the most essential in the AI era?",
+      "options": { "A": "Prompt engineer", "B": "AI ethicist", "C": "Forward deployed engineer", "D": "Full-stack designer" },
+      "correct": "C",
+      "explain": "The person who keeps the company's super-agent working. Every agent needs a human who cares about it. That's the new job that doesn't go away."
+    },
+    {
+      "id": "q6",
+      "prompt": "Dan's mental model for why human jobs survive — models make blank cheap. Fill in the blank.",
+      "options": { "A": "Software development", "B": "Yesterday's human competence", "C": "Customer acquisition", "D": "Writing and content" },
+      "correct": "B",
+      "explain": "Models ingest everything humans already figured out and commoditize it. Humans then push past the frontier. That gap is where the work is."
+    },
+    {
+      "id": "q7",
+      "prompt": "Dan claims the edge of AI is not in San Francisco. Where is it?",
+      "options": { "A": "Wherever AI meets a real human doing real work", "B": "Inside the model labs themselves", "C": "In Brooklyn, where Every is based", "D": "In enterprise companies adopting AI at scale" },
+      "correct": "A",
+      "explain": "Model builders make the tool but don't know all the uses. The edge is the user who turns the rock over and finds a new use case."
+    },
+    {
+      "id": "q8",
+      "prompt": "Dan's one-line career advice for staying employed in the AI era.",
+      "options": { "A": "Learn to code", "B": "Become a manager", "C": "Specialize deeply in one domain", "D": "Ride the models" },
+      "correct": "D",
+      "explain": "Use every new model the day it drops on whatever you do. Turn the rock over again. The people who do this consistently are very hard to replace."
+    }
+  ]
+}

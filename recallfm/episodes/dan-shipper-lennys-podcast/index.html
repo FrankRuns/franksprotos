@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>recallfm — primer</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #0a0a0a; color: #e8e8e8;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    height: 100vh; width: 100vw; overflow: hidden;
+  }
+  body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px; text-align: center;
+  }
+  h1 { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; opacity: 0.5; margin: 0 0 48px; font-weight: 400; }
+  .status { font-size: 24px; line-height: 1.4; min-height: 140px; max-width: 540px; }
+  .status.listening { color: #4ade80; }
+  .status.error { color: #f87171; }
+  .status.blurb { font-size: 18px; opacity: 0.85; }
+  button {
+    margin-top: 48px;
+    background: #e8e8e8; color: #0a0a0a;
+    border: none; border-radius: 999px;
+    padding: 20px 48px;
+    font-size: 18px; font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active { transform: scale(0.97); }
+  .progress { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.4; letter-spacing: 2px; }
+  .hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 11px; opacity: 0.35; letter-spacing: 1px; text-transform: uppercase; }
+  input[type="email"] {
+    margin-top: 24px;
+    background: #1a1a1a; color: #e8e8e8;
+    border: 1px solid #333; border-radius: 12px;
+    padding: 16px 20px; font-size: 18px;
+    width: 100%; max-width: 360px;
+    -webkit-appearance: none;
+  }
+  .answer-grid {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 32px;
+    width: 100%;
+    max-width: 360px;
+  }
+  .answer-grid.show { display: grid; }
+  .answer-btn {
+    background: #1a1a1a;
+    color: #e8e8e8;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 28px 0;
+    font-size: 32px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    transition: background 0.1s;
+  }
+  .answer-btn:active { background: #333; transform: scale(0.97); }
+  .repeat-btn {
+    display: none;
+    margin-top: 12px;
+    background: transparent;
+    color: #888;
+    border: 1px solid #333;
+    border-radius: 999px;
+    padding: 14px 32px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    max-width: 360px;
+  }
+  .repeat-btn.show { display: inline-block; }
+  .repeat-btn:active { background: #222; transform: scale(0.97); }
+</style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <h1>recallfm</h1>
+  <div class="status" id="status">Tap start. Put your phone in your pocket. Answer out loud — or tap.</div>
+  <button id="action" onclick="onAction()">Start</button>
+  <div class="answer-grid" id="answer-grid">
+    <button class="answer-btn" data-letter="A">A</button>
+    <button class="answer-btn" data-letter="B">B</button>
+    <button class="answer-btn" data-letter="C">C</button>
+    <button class="answer-btn" data-letter="D">D</button>
+  </div>
+  <button class="repeat-btn" id="repeat-btn">↻ Repeat</button>
+  <div class="hint" id="hint"></div>
+
+<script src="../../audio.js"></script>
+<script>
+const PRIMER = [
+  {
+    "id": "p1",
+    "text": "Question one. When AI gets better at doing knowledge work, what do you expect happens to the number of humans employed at AI-forward companies? Say A for drops sharply. Say B for drops slightly. Say C for stays flat. Say D for grows.",
+    "short": "AI-forward headcount over time",
+    "blurbs": {
+      "A": "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
+      "B": "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
+      "C": "Closer to Dan's view but still too pessimistic. He'd say you're missing that AI generates more work to do — more pull requests to review, more agents to maintain, more output to curate.",
+      "D": "You'd be in violent agreement with Dan. He calls the AI jobpocalypse not really a thing and is hiring aggressively. His mental model: models make yesterday's human competence cheap, which frees humans to push the frontier further."
+    }
+  },
+  {
+    "id": "p2",
+    "text": "Question two. Where will most professional work happen in a year? Say A for a traditional SaaS app with AI features. Say B for a chat interface like ChatGPT. Say C for a coding agent environment like Codex or Claude Code. Say D for the command line.",
+    "short": "Future work surface",
+    "blurbs": {
+      "A": "Dan thinks this is wrong but not for the reason you'd expect. He's actually bullish on SaaS — would buy SaaS stocks today. But he thinks the SaaS apps will run inside a coding agent's browser, with you and the agent collaborating on them. SaaS survives, but the container changes.",
+      "B": "Dan would say you were right a year ago. But the new pattern is agents that live on your computer with full access to your files and an in-app browser. Chat alone is too thin a surface — the agent needs to see what you see.",
+      "C": "Dead on. Dan calls Codex his daily driver and says all knowledge work is migrating there. The unlock was when these agents got an in-app browser, so the agent watches you work in real time. He hit inbox zero for ten days using it — unprecedented for him.",
+      "D": "Dan would say you're six months behind. His phrase: we speed-ran the CLI era. GUIs are back because the in-app browser pattern needs visual surface. CLIs aren't dying, but they're not the main work surface anymore."
+    }
+  },
+  {
+    "id": "p3",
+    "text": "Question three. What's the biggest risk to a SaaS company in the AI era? Say A for AI agents replace SaaS entirely. Say B for margins crushed by token costs. Say C for users will demand AI features they can't afford to build. Say D for nothing major, SaaS will thrive.",
+    "short": "SaaS risk",
+    "blurbs": {
+      "A": "Dan calls this take dumb. His contrarian bet: agents increase the number of users of SaaS, not get rid of it. Every employee at his company uses tons of SaaS even though they're maximally AI-forward.",
+      "B": "Interesting one — Dan flipped this. He argues margins actually improve because users bring their own tokens via Codex or Cowork. The SaaS company doesn't pay for the AI, the user's agent does. Inverts the usual margin-crush story.",
+      "C": "Partially right but Dan's reframe is that you shouldn't be building the AI features inside your product anyway. Build for humans and agents to collaborate on your product together. The agent comes with the user.",
+      "D": "You'd be aligned with Dan's most contrarian take in the whole episode. I would buy SaaS stocks right now. The world thinks SaaS is dying. Dan thinks it's about to see an insane spike in demand from agent users."
+    }
+  }
+];
+const PRIMER_INTRO_TEXT = "Primer. Three questions. After each one, say A, B, C, or D — or tap a button. You'll hear Dan Shipper's take after each answer.";
+const PRIMER_OUTRO_SPOKEN = "Primer done. Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish listening, come back to this page and enter your email so we can schedule the followup quizzes.";
+const PRIMER_OUTRO_DISPLAY = "Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish, come back here and enter your email for the followup quizzes.";
+
+let phase = "idle";
+let qIdx = 0;
+const answers = [];
+
+function parseCommand(transcripts) {
+  const letterMap = {
+    A: ["A", "AY", "EH"],
+    B: ["B", "BE", "BEE", "BEA"],
+    C: ["C", "SEE", "SEA", "CEE"],
+    D: ["D", "DE", "DEE", "THE"],
+  };
+  const repeatWords = ["REPEAT", "AGAIN", "RETRY", "ONCE", "SAY"];
+  for (const t of transcripts) {
+    const words = t.split(/\s+/);
+    for (const w of words) {
+      if (repeatWords.includes(w)) return "REPEAT";
+      for (const [letter, variants] of Object.entries(letterMap)) {
+        if (variants.includes(w)) return letter;
+      }
+    }
+  }
+  return null;
+}
+
+function listenWithHandle() {
+  let rec = null;
+  const promise = new Promise((resolve, reject) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      reject(new Error("Speech recognition not supported."));
+      return;
+    }
+    rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 5;
+    rec.continuous = false;
+    let resolved = false;
+    const startTime = Date.now();
+    console.log("[listen] starting recognition");
+
+    rec.onresult = (e) => {
+      if (resolved) return;
+      const transcripts = [];
+      for (let i = 0; i < e.results[0].length; i++) {
+        transcripts.push(e.results[0][i].transcript.trim().toUpperCase());
+      }
+      console.log(`[listen] result after ${Date.now() - startTime}ms:`, transcripts);
+      resolved = true;
+      resolve({ word: parseCommand(transcripts), raw: transcripts });
+    };
+    rec.onerror = (e) => {
+      if (resolved) return;
+      console.log(`[listen] error: ${e.error}`);
+      resolved = true;
+      const soft = ["aborted", "no-speech", "audio-capture"];
+      if (soft.includes(e.error)) {
+        resolve({ word: null, raw: [], softError: e.error });
+      } else {
+        reject(new Error("rec error: " + e.error));
+      }
+    };
+    rec.onend = () => {
+      if (!resolved) {
+        resolved = true;
+        resolve({ word: null, raw: [] });
+      }
+    };
+    rec.onstart = () => console.log("[listen] onstart fired");
+    rec.onspeechstart = () => console.log("[listen] speech detected");
+
+    try {
+      rec.start();
+    } catch (err) {
+      console.error("[listen] rec.start() threw:", err);
+      if (!resolved) {
+        resolved = true;
+        reject(err);
+      }
+    }
+  });
+  promise.abort = () => {
+    if (rec) { try { rec.abort(); } catch (e) {} }
+  };
+  return promise;
+}
+
+const $status = document.getElementById("status");
+const $action = document.getElementById("action");
+const $progress = document.getElementById("progress");
+const $hint = document.getElementById("hint");
+const $answerGrid = document.getElementById("answer-grid");
+const $answerBtns = document.querySelectorAll(".answer-btn");
+const $repeatBtn = document.getElementById("repeat-btn");
+
+function setStatus(text, cls = "") {
+  $status.textContent = text;
+  $status.className = "status " + cls;
+}
+function setProgress(text) { $progress.textContent = text; }
+function setHint(text) { $hint.textContent = text; }
+function showAnswerButtons() {
+  $answerGrid.classList.add("show");
+  $repeatBtn.classList.add("show");
+}
+function hideAnswerButtons() {
+  $answerGrid.classList.remove("show");
+  $repeatBtn.classList.remove("show");
+}
+
+function getAnswerRace() {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let recHandle = null;
+
+    const onAnswerTap = (e) => {
+      if (settled) return;
+      const letter = e.currentTarget.getAttribute("data-letter");
+      settled = true;
+      cleanup();
+      resolve({ word: letter, source: "tap" });
+    };
+    const onRepeatTap = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({ word: "REPEAT", source: "tap" });
+    };
+    const cleanup = () => {
+      $answerBtns.forEach(btn => btn.removeEventListener("click", onAnswerTap));
+      $repeatBtn.removeEventListener("click", onRepeatTap);
+      if (recHandle && recHandle.abort) { try { recHandle.abort(); } catch (e) {} }
+    };
+
+    $answerBtns.forEach(btn => btn.addEventListener("click", onAnswerTap));
+    $repeatBtn.addEventListener("click", onRepeatTap);
+
+    recHandle = listenWithHandle();
+    recHandle.then(result => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({ ...result, source: "voice" });
+    }).catch(err => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(err);
+    });
+  });
+}
+
+async function onAction() {
+  if (phase === "idle") {
+    phase = "running";
+    $action.style.display = "none";
+    await window.recallAudio.unlock();
+    await runQuiz();
+  } else if (phase === "email") {
+    submitEmail();
+  }
+}
+
+async function runQuiz() {
+  await window.recallAudio.play("primer_intro", PRIMER_INTRO_TEXT);
+  setHint("Say A, B, C, D, 'repeat' — or tap");
+
+  for (qIdx = 0; qIdx < PRIMER.length; qIdx++) {
+    setProgress(`${qIdx + 1} / ${PRIMER.length}`);
+    const q = PRIMER[qIdx];
+    setStatus(q.short);
+    await window.recallAudio.play(`primer_q_${q.id}`, q.text);
+
+    let answer = null;
+    let answerSource = null;
+    let attempts = 0;
+    while (!answer && attempts < 6) {
+      attempts++;
+      await new Promise(r => setTimeout(r, 400));
+      setStatus("Listening… or tap an answer", "listening");
+      showAnswerButtons();
+      try {
+        const result = await getAnswerRace();
+        if (result.word === "REPEAT") {
+          hideAnswerButtons();
+          setStatus("Repeating…");
+          await window.recallAudio.play("repeating", "Repeating.");
+          await window.recallAudio.play(`primer_q_${q.id}`, q.text);
+        } else if (["A", "B", "C", "D"].includes(result.word)) {
+          answer = result.word;
+          answerSource = result.source;
+        } else if (attempts < 6) {
+          continue;
+        }
+      } catch (err) {
+        setStatus("Speech error: " + err.message + " — tap an answer or repeat", "error");
+        const tapResult = await new Promise(resolve => {
+          const answerHandler = (e) => {
+            const letter = e.currentTarget.getAttribute("data-letter");
+            cleanupHandlers();
+            resolve({ word: letter, source: "tap" });
+          };
+          const repeatHandler = () => {
+            cleanupHandlers();
+            resolve({ word: "REPEAT", source: "tap" });
+          };
+          const cleanupHandlers = () => {
+            $answerBtns.forEach(b => b.removeEventListener("click", answerHandler));
+            $repeatBtn.removeEventListener("click", repeatHandler);
+          };
+          $answerBtns.forEach(b => b.addEventListener("click", answerHandler));
+          $repeatBtn.addEventListener("click", repeatHandler);
+        });
+
+        if (tapResult.word === "REPEAT") {
+          hideAnswerButtons();
+          setStatus("Repeating…");
+          await window.recallAudio.play("repeating", "Repeating.");
+          await window.recallAudio.play(`primer_q_${q.id}`, q.text);
+        } else {
+          answer = tapResult.word;
+          answerSource = "tap";
+        }
+      }
+    }
+
+    hideAnswerButtons();
+
+    if (!answer) {
+      await window.recallAudio.play("skipping_primer", "Skipping this one. Moving on.");
+      answers.push({ id: q.id, answer: null, source: null });
+    } else {
+      answers.push({ id: q.id, answer, source: answerSource });
+      setStatus(`You said ${answer}. Here's the take…`, "blurb");
+      await window.recallAudio.play(`you_said_${answer}`, `You said ${answer}.`);
+      await window.recallAudio.play(`primer_blurb_${q.id}_${answer}`, q.blurbs[answer]);
+    }
+  }
+
+  setProgress("");
+  setHint("");
+  phase = "email";
+  setStatus(PRIMER_OUTRO_DISPLAY);
+  $action.textContent = "Enter email";
+  $action.style.display = "inline-block";
+
+  await window.recallAudio.play("primer_outro", PRIMER_OUTRO_SPOKEN);
+}
+
+function submitEmail() {
+  if (!document.getElementById("email")) {
+    const input = document.createElement("input");
+    input.type = "email";
+    input.id = "email";
+    input.placeholder = "you@example.com";
+    input.autocomplete = "email";
+    document.body.insertBefore(input, $action);
+    $action.textContent = "Schedule quizzes";
+    input.focus();
+    return;
+  }
+  const email = document.getElementById("email").value.trim();
+  if (!email || !email.includes("@")) {
+    setStatus("Need a real email.", "error");
+    return;
+  }
+  const payload = { email, primerAnswers: answers, ts: Date.now() };
+  console.log("Would POST to /start:", payload);
+  setStatus("Saved. Check your email after you finish the episode and tap the link.");
+  $action.style.display = "none";
+  document.getElementById("email").style.display = "none";
+}
+</script>
+</body>
+</html>
