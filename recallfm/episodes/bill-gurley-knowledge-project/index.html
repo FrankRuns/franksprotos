@@ -100,43 +100,46 @@
   <button class="repeat-btn" id="repeat-btn">↻ Repeat</button>
   <div class="hint" id="hint"></div>
 
-<script src="./audio.js"></script>
+<script src="../../audio.js"></script>
 <script>
 const PRIMER = [
   {
-    id: "p1",
-    text: "Question one. When AI gets better at doing knowledge work, what do you expect happens to the number of humans employed at AI-forward companies? Say A for drops sharply. Say B for drops slightly. Say C for stays flat. Say D for grows.",
-    short: "AI-forward headcount over time",
-    blurbs: {
-      A: "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
-      B: "Dan Shipper would push back hard. His company Every doubled headcount in the last year while becoming more AI-forward, not less. His frame: every agent needs a human babysitter, and automation creates new work as fast as it removes old work.",
-      C: "Closer to Dan's view but still too pessimistic. He'd say you're missing that AI generates more work to do — more pull requests to review, more agents to maintain, more output to curate.",
-      D: "You'd be in violent agreement with Dan. He calls the AI jobpocalypse not really a thing and is hiring aggressively. His mental model: models make yesterday's human competence cheap, which frees humans to push the frontier further.",
-    },
+    "id": "p1",
+    "text": "Question one. China now has around ten open-source AI models all sharing techniques with each other. What do you expect this does to China's pace of AI innovation versus a closed, competitive system like the US? Say A for slows it down. Say B for no real difference. Say C for speeds it up modestly. Say D for speeds it up dramatically.",
+    "short": "Open-source China vs closed US system",
+    "blurbs": {
+      "A": "Bill Gurley would strongly disagree. His systems-thinking frame: when competitors are forced to share best practices, as China's open-source labs effectively do, the whole system evolves faster, not slower. He uses a farmers'-market metaphor — sellers who must share techniques outpace sellers who hoard them.",
+      "B": "Bill Gurley thinks the difference is real and large. He says this is a textbook systems-thinking case: a system where everyone shares information compounds knowledge faster than one where firms stay siloed.",
+      "C": "Bill Gurley would push you further. He calls China's open, model-trains-model dynamic 'way more dynamic' than ours — not a modest edge, a structural one. American startups are quietly forking these Chinese open models all over Silicon Valley.",
+      "D": "This is exactly Bill's view. His farmers'-market metaphor: one market where sellers share techniques, one where they don't — the sharing market wins. China's 10 open-source models that train and test each other compound faster than a closed, competitive system can."
+    }
   },
   {
-    id: "p2",
-    text: "Question two. Where will most professional work happen in a year? Say A for a traditional SaaS app with AI features. Say B for a chat interface like ChatGPT. Say C for a coding agent environment like Codex or Claude Code. Say D for the command line.",
-    short: "Future work surface",
-    blurbs: {
-      A: "Dan thinks this is wrong but not for the reason you'd expect. He's actually bullish on SaaS — would buy SaaS stocks today. But he thinks the SaaS apps will run inside a coding agent's browser, with you and the agent collaborating on them. SaaS survives, but the container changes.",
-      B: "Dan would say you were right a year ago. But the new pattern is agents that live on your computer with full access to your files and an in-app browser. Chat alone is too thin a surface — the agent needs to see what you see.",
-      C: "Dead on. Dan calls Codex his daily driver and says all knowledge work is migrating there. The unlock was when these agents got an in-app browser, so the agent watches you work in real time. He hit inbox zero for ten days using it — unprecedented for him.",
-      D: "Dan would say you're six months behind. His phrase: we speed-ran the CLI era. GUIs are back because the in-app browser pattern needs visual surface. CLIs aren't dying, but they're not the main work surface anymore.",
-    },
+    "id": "p2",
+    "text": "Question two. Bill Gurley says one of the most powerful ways labs are improving models right now involves paying people a lot of money for one specific task. Say A for scraping more of the internet. Say B for buying more GPUs. Say C for hiring domain experts at high hourly rates to fine-tune answers. Say D for running larger pretraining runs.",
+    "short": "Current edge in model improvement",
+    "blurbs": {
+      "A": "Not Bill's point here — he actually thinks the labs are running out of fresh internet data to scrape, what he calls 'painting in the corners.'",
+      "B": "Compute matters, but Bill's specific example was about people, not chips: labs hiring experts for thousands of dollars an hour to ask hard questions and tune the model's answers to them.",
+      "C": "Right. Bill's exact framing: 'hiring experts, literally hiring experts for thousands of dollars an hour to sit in and fine-tune and ask very hard questions.' He flags this can't scale forever — there's a real question of where the edge of human knowledge runs out.",
+      "D": "Bigger pretraining runs aren't what Bill highlighted. His point was about expert labor at the fine-tuning edge, and his worry that we're 'painting in the corners' on raw data."
+    }
   },
   {
-    id: "p3",
-    text: "Question three. What's the biggest risk to a SaaS company in the AI era? Say A for AI agents replace SaaS entirely. Say B for margins crushed by token costs. Say C for users will demand AI features they can't afford to build. Say D for nothing major, SaaS will thrive.",
-    short: "SaaS risk",
-    blurbs: {
-      A: "Dan calls this take dumb. His contrarian bet: agents increase the number of users of SaaS, not get rid of it. Every employee at his company uses tons of SaaS even though they're maximally AI-forward.",
-      B: "Interesting one — Dan flipped this. He argues margins actually improve because users bring their own tokens via Codex or Cowork. The SaaS company doesn't pay for the AI, the user's agent does. Inverts the usual margin-crush story.",
-      C: "Partially right but Dan's reframe is that you shouldn't be building the AI features inside your product anyway. Build for humans and agents to collaborate on your product together. The agent comes with the user.",
-      D: "You'd be aligned with Dan's most contrarian take in the whole episode. I would buy SaaS stocks right now. The world thinks SaaS is dying. Dan thinks it's about to see an insane spike in demand from agent users.",
-    },
-  },
+    "id": "p3",
+    "text": "Question three. Bill argues circular AI infrastructure deals — where a cloud provider funds a company so it can spend that money back on the provider's own services — do what to the AI buildout? Say A for nothing, it's accounting noise. Say B for they shrink the bubble by forcing discipline. Say C for they inflate growth now and extend the runway before any correction. Say D for they guarantee there will be no correction.",
+    "short": "Circular AI infrastructure deals",
+    "blurbs": {
+      "A": "Bill would disagree — he thinks these deals have real economic effects, not just accounting effects. They change what actually gets built and how fast.",
+      "B": "Bill's read is closer to the opposite: circular deals encourage more spending, not less, because the funder is incentivized to keep money flowing back to itself.",
+      "C": "This is Bill's exact take, echoing Dario Amodei's explanation. If a cloud provider gives a company money to spend on its own service, the buildout looks bigger and faster than it would on pure unsubsidized demand — and it pushes any reckoning further out.",
+      "D": "Bill doesn't think circular deals eliminate the possibility of a correction — he thinks they enhance the probability of one eventually, while also extending the time before it happens."
+    }
+  }
 ];
+const PRIMER_INTRO_TEXT = "Primer. Three questions. After each one, say A, B, C, or D — or tap a button. You'll hear Bill Gurley's take after each answer.";
+const PRIMER_OUTRO_SPOKEN = "Primer done. Now go listen to the Bill Gurley episode on The Knowledge Project with Shane Parrish. When you finish listening, come back to this page and enter your email so we can schedule the followup quizzes.";
+const PRIMER_OUTRO_DISPLAY = "Now go listen to Bill Gurley on The Knowledge Project. When you finish, come back here and enter your email for the followup quizzes.";
 
 let phase = "idle";
 let qIdx = 0;
@@ -302,8 +305,7 @@ async function onAction() {
 }
 
 async function runQuiz() {
-  await window.recallAudio.play("primer_intro",
-    "Primer. Three questions. After each one, say A, B, C, or D — or tap a button. You'll hear Dan Shipper's take after each answer.");
+  await window.recallAudio.play("primer_intro", PRIMER_INTRO_TEXT);
   setHint("Say A, B, C, D, 'repeat' — or tap");
 
   for (qIdx = 0; qIdx < PRIMER.length; qIdx++) {
@@ -372,7 +374,7 @@ async function runQuiz() {
       answers.push({ id: q.id, answer: null, source: null });
     } else {
       answers.push({ id: q.id, answer, source: answerSource });
-      setStatus(`You said ${answer}. Here's Dan's take…`, "blurb");
+      setStatus(`You said ${answer}. Here's the take…`, "blurb");
       await window.recallAudio.play(`you_said_${answer}`, `You said ${answer}.`);
       await window.recallAudio.play(`primer_blurb_${q.id}_${answer}`, q.blurbs[answer]);
     }
@@ -381,12 +383,11 @@ async function runQuiz() {
   setProgress("");
   setHint("");
   phase = "email";
-  setStatus("Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish, come back here and enter your email for the followup quizzes.");
+  setStatus(PRIMER_OUTRO_DISPLAY);
   $action.textContent = "Enter email";
   $action.style.display = "inline-block";
 
-  await window.recallAudio.play("primer_outro",
-    "Primer done. Now go listen to the Dan Shipper episode on Lenny's podcast. When you finish listening, come back to this page and enter your email so we can schedule the followup quizzes.");
+  await window.recallAudio.play("primer_outro", PRIMER_OUTRO_SPOKEN);
 }
 
 function submitEmail() {
