@@ -1,0 +1,192 @@
+{
+  "version": "0.1",
+  "rules": [
+    {
+      "id": "R001",
+      "name": "Consider centralized distribution",
+      "trigger": {
+        "channels": [
+          "retail",
+          "ecommerce"
+        ],
+        "network": "multiple origins or stores"
+      },
+      "hypothesis": "Test whether central distribution facilities aggregate supply before final-channel delivery.",
+      "alternatives": [
+        "regional DCs",
+        "direct-to-store",
+        "drop shipping"
+      ],
+      "validate": [
+        "Actual DC list",
+        "replenishment frequency",
+        "transport cost",
+        "service targets"
+      ],
+      "source_cases": [
+        "inditex-central"
+      ],
+      "strength": "documented example; not universal"
+    },
+    {
+      "id": "R002",
+      "name": "Compare domestic and imported landed costs",
+      "trigger": {
+        "sourcing": "domestic and international"
+      },
+      "hypothesis": "Evaluate purchase, freight, duties, lead-time and carrying cost before choosing supply paths.",
+      "alternatives": [
+        "local sourcing",
+        "import direct",
+        "import via consolidation hub"
+      ],
+      "validate": [
+        "Incoterms",
+        "port of entry",
+        "duty",
+        "freight",
+        "inventory cost"
+      ],
+      "source_cases": [
+        "cscmp-import-domestic"
+      ],
+      "strength": "case abstract supports analytical method"
+    },
+    {
+      "id": "R003",
+      "name": "Evaluate shared distribution infrastructure",
+      "trigger": {
+        "company_scale": "small or mid-sized",
+        "origins": "domestic and imported"
+      },
+      "hypothesis": "Test imported goods moving through existing domestic distribution capacity before assuming separate import DCs.",
+      "alternatives": [
+        "port-adjacent 3PL",
+        "direct-to-retailer DC",
+        "regional DC"
+      ],
+      "validate": [
+        "Warehouse import handling",
+        "SKU ownership",
+        "capacity",
+        "distance",
+        "customs process"
+      ],
+      "source_cases": [
+        "cscmp-import-domestic",
+        "inditex-central"
+      ],
+      "strength": "inference; NOT directly established by cited cases"
+    },
+    {
+      "id": "R004",
+      "name": "Use pull replenishment when feasible",
+      "trigger": {
+        "manufacturing": "repeatable flow",
+        "supplier_integration": "high"
+      },
+      "hypothesis": "Explore replenishment signals driven by downstream consumption.",
+      "alternatives": [
+        "forecast push",
+        "hybrid push-pull"
+      ],
+      "validate": [
+        "Demand volatility",
+        "supplier reliability",
+        "replenishment cadence"
+      ],
+      "source_cases": [
+        "toyota-jit"
+      ],
+      "strength": "directly documented at Toyota"
+    },
+    {
+      "id": "R005",
+      "name": "Small buffers require reliable replenishment",
+      "trigger": {
+        "inventory_strategy": "low buffer"
+      },
+      "hypothesis": "Model synchronization, supplier reliability and shortage risk together.",
+      "alternatives": [
+        "larger safety stocks",
+        "dual sourcing"
+      ],
+      "validate": [
+        "Supplier OTIF",
+        "lead time variability",
+        "disruption frequency"
+      ],
+      "source_cases": [
+        "toyota-jit"
+      ],
+      "strength": "generalized inference from Toyota approach"
+    },
+    {
+      "id": "R006",
+      "name": "External operators can complement central hubs",
+      "trigger": {
+        "distribution": "multi-market"
+      },
+      "hypothesis": "Evaluate central owned hubs with outsourced logistics legs.",
+      "alternatives": [
+        "fully owned transport",
+        "fully outsourced 3PL network"
+      ],
+      "validate": [
+        "Operator contracts",
+        "freight lanes",
+        "cost-to-serve"
+      ],
+      "source_cases": [
+        "inditex-central"
+      ],
+      "strength": "documented example"
+    },
+    {
+      "id": "R007",
+      "name": "Forecast quality affects operations",
+      "trigger": {
+        "products": "perishable or shelf-life constrained"
+      },
+      "hypothesis": "Test whether forecast errors cause stockouts, excess, or production disruption.",
+      "alternatives": [
+        "order-driven production",
+        "shorter planning cycles"
+      ],
+      "validate": [
+        "Forecast bias",
+        "stockouts",
+        "waste",
+        "lead times"
+      ],
+      "source_cases": [
+        "cscmp-creamery"
+      ],
+      "strength": "case abstract"
+    },
+    {
+      "id": "R008",
+      "name": "Ingredient disruptions can force process changes",
+      "trigger": {
+        "manufacturing": "food",
+        "supply_risk": "critical ingredient"
+      },
+      "hypothesis": "Model alternative suppliers and ingredient forms with manufacturing compatibility constraints.",
+      "alternatives": [
+        "alternate ingredient form",
+        "inventory buffer",
+        "supplier diversification"
+      ],
+      "validate": [
+        "Recipe requirements",
+        "shelf life",
+        "qualification",
+        "total landed cost"
+      ],
+      "source_cases": [
+        "cscmp-egg"
+      ],
+      "strength": "case abstract"
+    }
+  ]
+}
