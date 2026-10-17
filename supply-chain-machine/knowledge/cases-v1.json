@@ -1,0 +1,63 @@
+{
+  "version": "0.1",
+  "cases": [
+    {
+      "id": "toyota-jit",
+      "name": "Toyota production system",
+      "sector": "automotive",
+      "source": "https://global.toyota/en/company/vision-and-philosophy/production-system/?pStoreID=Http",
+      "evidence": "Toyota describes synchronized replenishment between processes and suppliers, using pull signals and minimum buffers.",
+      "rules": [
+        "R004",
+        "R005"
+      ],
+      "status": "documented"
+    },
+    {
+      "id": "inditex-central",
+      "name": "Inditex centralized logistics",
+      "sector": "apparel retail",
+      "source": "https://static.inditex.com/annual_report_2023/en/Inditex_Group_Annual_Accounts_2023.pdf?ts=20250206021205",
+      "evidence": "Inditex reports centralized logistics centers and external logistics operators distributing brand inventory to stores and online warehouses.",
+      "rules": [
+        "R001",
+        "R006"
+      ],
+      "status": "documented"
+    },
+    {
+      "id": "cscmp-import-domestic",
+      "name": "Innovative Distribution Company: A Total Cost Approach",
+      "sector": "distribution",
+      "source": "https://education.cscmp.org/products/case-study-innovative-distribution-company-a-total-cost-approach",
+      "evidence": "CSCMP describes a comparison of international and domestic supply chains using landed cost, shipping, inventory carrying cost and safety stock; full case gated.",
+      "rules": [
+        "R002",
+        "R003"
+      ],
+      "status": "abstract-only"
+    },
+    {
+      "id": "cscmp-creamery",
+      "name": "EC-Creamery Forecasting Challenge",
+      "sector": "dairy",
+      "source": "https://education.cscmp.org/casestudy",
+      "evidence": "CSCMP describes Midwest yogurt producer suffering stockouts and operational issues from inaccurate forecasts; full case gated.",
+      "rules": [
+        "R007"
+      ],
+      "status": "abstract-only"
+    },
+    {
+      "id": "cscmp-egg",
+      "name": "Summer Garden Food Manufacturing egg sourcing disruption",
+      "sector": "food manufacturing",
+      "source": "https://cscmp.org/CSCMP/CSCMP/Educate/Case_Studies.aspx",
+      "evidence": "CSCMP describes a disruption to egg-yolk supply for Alfredo sauce, requiring supplier changes and process revision; full case gated.",
+      "rules": [
+        "R008"
+      ],
+      "status": "abstract-only"
+    }
+  ]
+}
