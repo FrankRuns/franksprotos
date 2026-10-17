@@ -1,0 +1,56 @@
+{
+  "version": "0.1.0",
+  "status": "modeling guidance; not actual company distribution data",
+  "principles": [
+    {
+      "id": "brand_scope",
+      "rule": "Determine national versus regional brand availability before assigning demand coverage. Separate company, brand and SKU footprints."
+    },
+    {
+      "id": "population",
+      "rule": "Allocate baseline consumer demand using Census population geography, including suburban and rural areas; do not use DC positions as demand centroids."
+    },
+    {
+      "id": "retail",
+      "rule": "Adjust population-weighted demand for retail door coverage, category purchase propensity, and channel mix. Unknown retail coverage must be labeled assumed."
+    },
+    {
+      "id": "maturity",
+      "rule": "Classify emerging, regional, expanding-national, or national distribution with evidence; do not infer coverage from plant location."
+    },
+    {
+      "id": "import",
+      "rule": "Separate imported finished goods from domestically manufactured products. Do not assume Virginia facilities originate Bonne Maman shipments."
+    },
+    {
+      "id": "echelons",
+      "rule": "Infer distributor and retailer DC service territories from geography and transport economics, not by treating DCs as consumer demand."
+    }
+  ],
+  "andros": {
+    "brands": [
+      {
+        "name": "Bonne Maman",
+        "scope_hypothesis": "national retail presence",
+        "product_origin": "imported finished goods; specific ports and DCs unverified"
+      },
+      {
+        "name": "Buddy Fruits",
+        "scope_hypothesis": "unknown until independently researched",
+        "product_origin": "domestic production possible; verify by SKU"
+      }
+    ],
+    "uncertainties": [
+      "store-level availability",
+      "import gateways",
+      "actual DCs and distributor territories",
+      "unit demand and seasonal factors"
+    ]
+  },
+  "acceptance_tests": [
+    "Texas demand appears outside Dallas and Houston",
+    "national demand includes smaller cities and rural markets",
+    "brand-specific source and coverage assumptions remain distinct",
+    "verified facilities are not conflated with synthetic demand points"
+  ]
+}
