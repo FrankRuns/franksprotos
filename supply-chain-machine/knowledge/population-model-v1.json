@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "status": "source integration specification; state and county weights NOT yet loaded into map",
+  "census": {
+    "dataset": "Vintage 2025 population estimates",
+    "state_csv": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv",
+    "field": "POPESTIMATE2025",
+    "source_page": "https://www.census.gov/data/tables/time-series/demo/popest/2020s-state-total.html"
+  },
+  "method": {
+    "state_weight": "state population / sum population for contiguous states",
+    "county_weight": "county population / state population",
+    "demand_weight": "population × assumed category consumption × assumed brand penetration × retail availability",
+    "sampling": "draw state by state_weight, county by county_weight, then sample geographic locations inside county; do not center samples on DCs"
+  },
+  "guardrails": [
+    "Do not call generated points actual stores",
+    "Do not equate national availability with equal brand penetration",
+    "Keep Alaska and Hawaii separately from continental freight modeling",
+    "Do not claim Census weighting is active until data loads and tests pass"
+  ],
+  "tests": [
+    "Texas demand appears beyond Dallas and Houston",
+    "Sum of demand weights equals 1",
+    "County samples belong to correct state",
+    "Brand origins and customer demand layers are independent"
+  ]
+}
