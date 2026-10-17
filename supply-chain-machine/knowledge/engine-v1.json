@@ -1,0 +1,151 @@
+{
+  "version": "0.1.0",
+  "purpose": "Composable hypotheses, not claims about any company's actual operations",
+  "dimensions": {
+    "product": [
+      "shelf_stable",
+      "perishable",
+      "temperature_controlled",
+      "hazardous",
+      "bulky",
+      "high_value"
+    ],
+    "demand": [
+      "baseline",
+      "seasonal",
+      "promotional",
+      "intermittent"
+    ],
+    "fulfillment": [
+      "make_to_stock",
+      "make_to_order",
+      "assemble_to_order"
+    ],
+    "channels": [
+      "retailer_dc",
+      "wholesaler",
+      "direct_to_store",
+      "direct_to_consumer",
+      "foodservice"
+    ],
+    "transport": [
+      "parcel",
+      "ltl",
+      "truckload",
+      "intermodal",
+      "ocean"
+    ],
+    "network": [
+      "centralized",
+      "regional_dc",
+      "cross_dock",
+      "hybrid"
+    ]
+  },
+  "principles": [
+    {
+      "id": "retail_dc",
+      "when": [
+        "channels:retailer_dc"
+      ],
+      "hypothesis": "Ship consolidated loads to retailer distribution centers; retailer handles store replenishment.",
+      "caveat": "Retailer receiving contracts and routing guides may change responsibility."
+    },
+    {
+      "id": "distributor",
+      "when": [
+        "channels:wholesaler"
+      ],
+      "hypothesis": "Deliver larger replenishment orders to wholesalers that service local accounts.",
+      "caveat": "Some wholesalers require mixed-SKU LTL deliveries."
+    },
+    {
+      "id": "national_mts",
+      "when": [
+        "fulfillment:make_to_stock",
+        "product:shelf_stable"
+      ],
+      "hypothesis": "Centralized production can feed regional DCs or retailer DCs using truckload consolidation.",
+      "caveat": "Do not infer owned DCs from geographic demand alone."
+    },
+    {
+      "id": "imports",
+      "when": [
+        "transport:ocean"
+      ],
+      "hypothesis": "Model ports and import gateways separately from domestic manufacturing.",
+      "caveat": "Import gateway and port choice require evidence."
+    },
+    {
+      "id": "ltl",
+      "when": [
+        "transport:ltl"
+      ],
+      "hypothesis": "LTL may be rational for small orders; compare total landed cost and service before flagging an opportunity.",
+      "caveat": "Do not label LTL irrational without volumes, service constraints, and rates."
+    }
+  ],
+  "andros_example": {
+    "company": "Andros North America",
+    "url": "https://androsna.com/",
+    "classification": [
+      "product:shelf_stable",
+      "fulfillment:make_to_stock",
+      "channels:retailer_dc",
+      "channels:wholesaler",
+      "network:hybrid"
+    ],
+    "classification_status": "working hypothesis, not verified",
+    "verified_context": [
+      {
+        "claim": "Mount Jackson, Virginia manufacturing operations",
+        "status": "publicly reported, verify source before customer presentation"
+      }
+    ],
+    "alternatives": [
+      {
+        "name": "Retailer DC replenishment",
+        "confidence": "plausible",
+        "flow": [
+          "manufacturer_or_import_gateway",
+          "retailer_dc",
+          "stores"
+        ]
+      },
+      {
+        "name": "Wholesale distribution",
+        "confidence": "plausible",
+        "flow": [
+          "manufacturer_or_import_gateway",
+          "wholesaler",
+          "stores"
+        ]
+      },
+      {
+        "name": "Direct ship",
+        "confidence": "possible",
+        "flow": [
+          "manufacturer_or_import_gateway",
+          "customer"
+        ]
+      }
+    ],
+    "guardrails": [
+      "Never draw manufacturer-to-store freight lanes unless direct-ship is explicitly assumed.",
+      "Distinguish actual facilities, inferred intermediaries, and synthetic demand nodes.",
+      "Avoid claiming Andros owns retailer or wholesaler DCs.",
+      "Do not route imported Bonne Maman finished goods through Virginia manufacturing without evidence."
+    ]
+  },
+  "benchmark": {
+    "sample_target": 50,
+    "metrics": [
+      "topology_plausibility",
+      "evidence_label_accuracy",
+      "alternatives_coverage",
+      "assumption_transparency",
+      "model_build_latency"
+    ],
+    "pass_criteria": "To be calibrated against expert-labeled cases; not yet validated."
+  }
+}
