@@ -57,14 +57,9 @@ function renderRuleNetwork(matched){
  // Baseline: imported products consolidate in Virginia, rather than an invented West Coast gateway.
  add(importGateways[0].point,warehouseNode,'#c69afa','Import hypothesis: illustrative New York/New Jersey gateway → existing Virginia warehouse. Actual port, routing and warehouse handling unverified.',false);
  for(const r of marketNodes){
-   const source=importGateways.reduce((best,g)=>Math.abs(g.point[1]-r.lng)<Math.abs(best.point[1]-r.lng)?g:best,importGateways[0]);
-   add(source.point,[r.lat,r.lng],'#c69afa','Alternative import-to-distributor route: '+r.name+'. R003 shared-hub rule not selected. Unverified.',false);
-  }
- }
- for(const r of marketNodes){
   const target=[r.lat,r.lng];
   if(domestic.includes(r.name))add(warehouseNode,target,'#2bbf82','Domestic Andros distribution hypothesis to '+r.name+'. R001 central distribution '+(central?'selected':'not selected')+'. Unverified.',true);
-  if(true)add(warehouseNode,target,'#c69afa','Bonne Maman imported product outbound from shared Virginia warehouse to '+r.name+' (R003). Unverified.',false);
+  add(warehouseNode,target,'#c69afa','Bonne Maman imported product outbound from shared Virginia warehouse to '+r.name+' (R003). Unverified.',false);
   L.circleMarker(target,{radius:8,color:'#09221b',weight:2,fillColor:'#79b6e7',fillOpacity:1}).addTo(ruleNetworkLayer).bindPopup('<b>Hypothetical distribution intermediary</b><br>'+r.name+'<br>'+(outsourced?'R006: external logistics operator is an option. ':'')+'Ownership, facility and shipments unverified.');
  }
  const evidence=el('networkGeneration');
