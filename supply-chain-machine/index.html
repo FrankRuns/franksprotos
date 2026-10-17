@@ -116,7 +116,7 @@ const scmDefaults={gateway:'nj',routing:'virginia',notes:'',units:1000000,domest
 let scm={...scmDefaults};
 try{const saved=JSON.parse(localStorage.getItem('scm-andros-v1')||'{}');for(const k of Object.keys(scmDefaults))if(Object.prototype.hasOwnProperty.call(saved,k))scm[k]=saved[k]}catch(e){}
 window.scmScenario=scm;
-const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+const scmMoney=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
 const costDefs=[['units','Monthly units',1],['domesticPct','Domestic share (%)',1],['manufacturing','Domestic manufacturing ($/unit)',.01],['handling','Warehouse handling ($/unit)',.01],['capacity','Units per truckload',1],['miles','Average miles per load',1],['rate','Trucking ($/mile)',.01],['fixed','Fixed charge ($/load)',1]];
 function refreshCosts(){
  const values={};for(const [key] of costDefs){const node=el('cost_'+key);const val=Number(node.value);values[key]=Number.isFinite(val)?Math.max(0,val):0}
@@ -126,7 +126,7 @@ function refreshCosts(){
  const domestic=scm.units*scm.domesticPct/100*scm.manufacturing;
  const warehouse=scm.units*scm.handling;
  const transport=loads*(scm.fixed+scm.miles*scm.rate);
- el('costResults').innerHTML='<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))"><div class="stat"><small>Domestic manufacturing</small><b>'+money(domestic)+'</b></div><div class="stat"><small>Warehouse handling</small><b>'+money(warehouse)+'</b></div><div class="stat"><small>Road freight ('+loads+' loads)</small><b>'+money(transport)+'</b></div><div class="stat savings"><small>Partial monthly total</small><b>'+money(domestic+warehouse+transport)+'</b></div></div>';
+ el('costResults').innerHTML='<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))"><div class="stat"><small>Domestic manufacturing</small><b>'+scmMoney(domestic)+'</b></div><div class="stat"><small>Warehouse handling</small><b>'+scmMoney(warehouse)+'</b></div><div class="stat"><small>Road freight ('+loads+' loads)</small><b>'+scmMoney(transport)+'</b></div><div class="stat savings"><small>Partial monthly total</small><b>'+scmMoney(domestic+warehouse+transport)+'</b></div></div>';
 }
 for(const [key,label,step] of costDefs){const div=document.createElement('label');div.style.cssText='display:block;font-size:12px;color:#b7d2c5';div.textContent=label;const input=document.createElement('input');input.id='cost_'+key;input.type='number';input.min='0';if(key==='domesticPct')input.max='100';input.step=String(step);input.value=String(scm[key]);input.style.cssText='display:block;width:100%;margin-top:6px;background:#152b2a;color:white;border:1px solid #29443e;border-radius:9px;padding:10px';input.addEventListener('input',refreshCosts);div.appendChild(input);el('costInputs').appendChild(div)}
 el('gatewayChoice').value=scm.gateway;el('importRouting').value=scm.routing;el('correctionNotes').value=scm.notes;
