@@ -77,19 +77,35 @@ function playMapStory(){
  geoMap._storyTimers=[];
  const later=(fn,ms)=>geoMap._storyTimers.push(setTimeout(fn,ms));
  const story=el('mapStoryText');
- let token=0;geoMap._storyToken=(geoMap._storyToken||0)+1;token=geoMap._storyToken;
+ geoMap._storyToken=(geoMap._storyToken||0)+1;
+ const token=geoMap._storyToken;
  introFacilities.clearLayers();ruleNetworkLayer.remove();geoFlows.remove();geoCustomers.remove();
- const type=(message,done)=>{story.textContent='';let i=0;const tick=()=>{if(token!==geoMap._storyToken)return;story.textContent=message.slice(0,++i);if(i<message.length)later(tick,28);else later(done,850)};tick()};
- type('First, an imported-product warehouse in Virginia. This is a hypothesis, not a verified import route.',()=>{
-  introFacilities.addLayer(warehousePin);
-  later(()=>type('Nearby in Virginia: a documented manufacturing plant and a warehouse. These are separate facilities.',()=>{
-   introFacilities.addLayer(plantPin);geoFlows.addTo(geoMap);
-   later(()=>type('Next, modeled full-truckload flows from Virginia to regional distributors across the US.',()=>{
-    ruleNetworkLayer.addTo(geoMap);geoCustomers.addTo(geoMap);
-    story.textContent='Network built. Tap a facility or route to explore assumptions.';
-    try{sessionStorage.setItem('scm-map-story-seen','1')}catch(e){}
-   }),500);
-  }),500);
+ const fadeLayer=(layer,group,ms=1050)=>{
+  group.addLayer(layer);
+  const path=layer.getElement&&layer.getElement();
+  if(path){path.style.transition='none';path.style.opacity='0';path.getBoundingClientRect();path.style.transition='opacity '+ms+'ms ease-in-out';path.style.opacity='1'}
+ };
+ const fadeGroup=(group,ms=1400)=>{
+  group.addTo(geoMap);
+  group.eachLayer(layer=>{
+   const path=layer.getElement&&layer.getElement();
+   if(path){path.style.transition='none';path.style.opacity='0';path.getBoundingClientRect();path.style.transition='opacity '+ms+'ms ease-in-out';path.style.opacity='1'}
+  });
+ };
+ const type=(message,done)=>{
+  story.textContent='';let i=0;
+  const tick=()=>{if(token!==geoMap._storyToken)return;story.textContent=message.slice(0,++i);if(i<message.length)later(tick,65);else later(done,1100)};
+  tick();
+ };
+ type('Virginia import warehouse (assumed).',()=>{
+  fadeLayer(warehousePin,introFacilities);
+  later(()=>type('Virginia manufacturing plant.',()=>{
+   fadeLayer(plantPin,introFacilities);fadeGroup(geoFlows);
+   later(()=>type('FTL flows to regional distributors (modeled).',()=>{
+    fadeGroup(ruleNetworkLayer,1600);
+    later(()=>{fadeGroup(geoCustomers,1300);story.textContent='Network ready. Tap a route to explore.';try{sessionStorage.setItem('scm-map-story-seen','1')}catch(e){}},700);
+   }),1450);
+  }),1450);
  });
 }
 geoMap._playStory=playMapStory;
