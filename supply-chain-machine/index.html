@@ -133,6 +133,15 @@ body:not(.modelOpen) #network,body:not(.modelOpen) #discovery{display:none!impor
 .utahSaving{color:#17664a}.utahIncrease{color:#9b4931}
 .utahCompareNote{font-size:11px;line-height:1.45;color:#627267;margin-top:10px}
 #scenarioMapBanner{font-weight:normal!important;padding:9px!important;background:transparent!important;border:0!important}
+</style><style>
+.utahBridge{background:#fff;border:1px solid #c9d9cc;border-radius:13px;margin:12px 0;padding:14px;color:#213d31}
+.utahBridgeRow{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #e5ece6;align-items:center}
+.utahBridgeRow strong{display:block;font-size:13px}
+.utahBridgeRow small{display:block;color:#687a6e;font-size:11px;line-height:1.4;margin-top:4px}
+.utahBridgeRow b{font-size:15px;white-space:nowrap}
+.utahCostUp{color:#a14a34}.utahCostDown{color:#167050}
+.utahBridgeTotal{display:flex;justify-content:space-between;gap:8px;padding-top:13px;font-size:17px}
+.utahBridgeFoot{display:block;margin-top:10px;color:#6a796e;line-height:1.45;font-size:10px}
 </style></head><body>
 <header><div><div class="brand">◈ SUPPLY CHAIN MACHINE</div><div class="tag">Experiment at the speed of thought.</div></div><div class="pill">NETWORK DISCOVERY · V9</div></header>
 <main><section id="homeScreen"><div class="eyebrow">Supply Chain Machine</div><h1>What would you like to do?</h1><div class="homeChoices"><button id="chooseUrl" class="homeChoice"><span>↗</span><strong>Enter your company URL</strong><small>Start a new supply chain model</small></button><button id="chooseModels" class="homeChoice"><span>▦</span><strong>Go to My Models</strong><small>Open and continue an existing model</small></button></div><div id="urlEntry"><div class="panel"><label for="companyUrl" class="eyebrow">Company website</label><div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"><input id="companyUrl" type="url" value="https://androsna.com/" style="flex:1;min-width:180px;background:#152b2a;border:1px solid #29443e;border-radius:9px;padding:12px;color:white"><button id="buildNetwork" style="width:auto">Build hypothesis ↗</button></div><div id="companyContext" class="meta"><b>Andros North America / Bonne Maman</b> · Public context: food products, U.S. operations in Virginia, retail and foodservice channels. This prototype uses a curated Andros example, not live website extraction.</div></div>
@@ -396,13 +405,29 @@ function runUtahScenario(){
  const common=scm.units*scm.handling;
  const baseline=baselineDomestic+common,scenario=scenarioDomestic+common,difference=baseline-scenario;
  const movedTotal=assigned.reduce((n,r)=>n+r.volume,0);
+ const productionChange=12*movedTotal*(unit-scm.manufacturing);
+ const freightChange=12*regions.reduce((sum,r)=>{
+  const moved=assigned.find(a=>a.name===r.name)?.volume||0;
+  return sum+transport(moved,r.ut)+transport(r.volume-moved,r.va)-transport(r.volume,r.va);
+ },0);
+ const fixedChange=12*fixed;
+ const reconciledDelta=fixedChange+productionChange+freightChange;
+ const costLine=(name,value,detail)=>'<div class="utahBridgeRow"><div><strong>'+name+'</strong><small>'+detail+'</small></div><b class="'+(value>0?'utahCostUp':'utahCostDown')+'">'+(value>0?'+':value<0?'−':'')+scmMoney(Math.abs(value))+'</b></div>';
+ const costBridge='<div class="utahBridge"><div class="utahCompareTitle">WHY THE COST CHANGES · ANNUAL</div>'+
+ costLine('New Utah plant fixed cost',fixedChange,scmMoney(fixed)+'/month × 12')+
+ costLine('Production cost difference',productionChange,Math.round(movedTotal*12).toLocaleString()+' jars/year moved × ('+scmMoney(unit)+' − '+scmMoney(scm.manufacturing)+')/jar')+
+ costLine('Outbound freight difference',freightChange,'Changed transport distances and split loads for reassigned regions')+
+ costLine('Warehouse handling change',0,'Same total volume and handling rate in both scenarios')+
+ '<div class="utahBridgeTotal"><strong>Net annual change</strong><b>'+ (reconciledDelta>0?'+':reconciledDelta<0?'−':'')+scmMoney(Math.abs(reconciledDelta))+'</b></div>'+
+ '<small class="utahBridgeFoot">Positive amounts increase cost. Negative amounts are savings. Components reconcile to the scenario total, subject to rounding.</small></div>';
+
 
  const annualBaseline=baseline*12,annualScenario=scenario*12,annualDelta=(scenario-baseline)*12;
  const changePct=baseline>0?100*(scenario-baseline)/baseline:0;
  const deltaText=(annualDelta<=0?'Saves ':'Costs an additional ')+scmMoney(Math.abs(annualDelta))+'/year';
  const comparison='<div class="utahComparison"><div class="utahCompareTitle">UTAH PLANT · ANNUAL COST COMPARISON</div><div class="utahCompareGrid"><div><small>Baseline / year</small><strong>'+scmMoney(annualBaseline)+'</strong></div><div><small>With Utah / year</small><strong>'+scmMoney(annualScenario)+'</strong></div></div><div class="utahDelta '+(annualDelta<=0?'utahSaving':'utahIncrease')+'">'+deltaText+' <span>('+Math.abs(changePct).toFixed(1)+'% '+(annualDelta<=0?'lower':'higher')+')</span></div><div class="utahCompareNote">Comparable scope: domestic production, modeled domestic outbound freight and warehouse handling, plus Utah fixed operating cost. Imported goods and other unmodeled costs are excluded from both.</div></div>';
- el('utahResults').innerHTML=comparison+'<p class="meta">Utah production: '+Math.round(movedTotal).toLocaleString()+' units/month · Assigned: '+(assigned.map(x=>x.name).join(', ')||'none')+'.</p><p class="hint">Illustrative scenario. Domestic freight uses region-specific distance estimates, unlike the simplified main cost card. Do not compare these absolute totals directly with that card. Utah capital, startup and ramp-up costs are excluded.</p>';
- window.scmUtahComparison={annualBaseline,annualScenario,annualDelta,changePct,deltaText,comparison};
+ el('utahResults').innerHTML=comparison+costBridge+'<p class="meta">Utah production: '+Math.round(movedTotal).toLocaleString()+' units/month · Assigned: '+(assigned.map(x=>x.name).join(', ')||'none')+'.</p><p class="hint">Illustrative scenario. Domestic freight uses region-specific distance estimates, unlike the simplified main cost card. Do not compare these absolute totals directly with that card. Utah capital, startup and ramp-up costs are excluded.</p>';
+ window.scmUtahComparison={annualBaseline,annualScenario,annualDelta,changePct,deltaText,comparison,bridge:costBridge};
 
  if(geoMap){if(geoMap._utahLayer)geoMap.removeLayer(geoMap._utahLayer);const layer=L.layerGroup().addTo(geoMap);geoMap._utahLayer=layer;L.circleMarker(utahPlant,{radius:6,color:'#fff',weight:1.5,fillColor:'#e7af39',fillOpacity:1}).addTo(layer).bindPopup('Proposed Utah plant · Salt Lake City area');for(const r of assigned)L.polyline([utahPlant,r.point],{color:'#ffbb65',weight:2+Math.sqrt(r.volume/Math.max(1,domesticUnits))*10,opacity:.85,dashArray:'5 5'}).addTo(layer).bindPopup('Scenario: Utah → '+r.name+' · '+Math.round(r.volume).toLocaleString()+' units/month');}
 }
@@ -427,7 +452,7 @@ el('runUtah').onclick=runUtahScenario;
    let banner=el('scenarioMapBanner');
    if(!banner){banner=document.createElement('div');banner.id='scenarioMapBanner';banner.style.cssText='padding:11px 13px;background:#fff9e6;color:#4b3816;border:1px solid #d8b963;border-radius:10px;margin:10px 0;font-weight:600';el('geoMap').before(banner)}
    const comparison=window.scmUtahComparison;
-   banner.innerHTML=comparison?comparison.comparison:'Utah scenario active. Orange lanes show reassigned production.';
+   banner.innerHTML=comparison?comparison.comparison+comparison.bridge:'Utah scenario active. Orange lanes show reassigned production.';
    el('geoMap').scrollIntoView({behavior:'smooth',block:'center'});
    setTimeout(()=>geoMap.invalidateSize(),120);
   }
