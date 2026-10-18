@@ -110,6 +110,17 @@ body:not(.modelOpen) #network,body:not(.modelOpen) #discovery{display:none!impor
 #costPanel .costTotal{transition:opacity 1.6s,transform 1.6s}
 #costPanel .costNode:nth-of-type(5){align-self:flex-end;border-right:5px solid #d5a63b}
 #costPanel .costNode:nth-of-type(7){align-self:flex-start;border-left:5px solid #4c8e79}
+</style><style>
+/* Hide unrevealed cost stages from layout, not just visually. */
+#costPanel #costFlow>.costNode:not(.revealed),
+#costPanel #costFlow>.costArrow:not(.revealed),
+#costPanel #costFlow>.costTotal:not(.revealed){display:none!important}
+#costPanel #costFlow>.costNode.revealed{display:grid!important}
+#costPanel #costFlow>.costArrow.revealed{display:block!important}
+#costPanel #costFlow>.costTotal.revealed{display:flex!important}
+#costPanel #costFlow>.costArrow.revealed{height:38px}
+#costPanel #costFlow{min-height:0!important}
+#costPanel #costFlow>.portBranch{margin:10px 0}
 </style></head><body>
 <header><div><div class="brand">◈ SUPPLY CHAIN MACHINE</div><div class="tag">Experiment at the speed of thought.</div></div><div class="pill">NETWORK DISCOVERY · V9</div></header>
 <main><section id="homeScreen"><div class="eyebrow">Supply Chain Machine</div><h1>What would you like to do?</h1><div class="homeChoices"><button id="chooseUrl" class="homeChoice"><span>↗</span><strong>Enter your company URL</strong><small>Start a new supply chain model</small></button><button id="chooseModels" class="homeChoice"><span>▦</span><strong>Go to My Models</strong><small>Open and continue an existing model</small></button></div><div id="urlEntry"><div class="panel"><label for="companyUrl" class="eyebrow">Company website</label><div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"><input id="companyUrl" type="url" value="https://androsna.com/" style="flex:1;min-width:180px;background:#152b2a;border:1px solid #29443e;border-radius:9px;padding:12px;color:white"><button id="buildNetwork" style="width:auto">Build hypothesis ↗</button></div><div id="companyContext" class="meta"><b>Andros North America / Bonne Maman</b> · Public context: food products, U.S. operations in Virginia, retail and foodservice channels. This prototype uses a curated Andros example, not live website extraction.</div></div>
