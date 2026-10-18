@@ -1,0 +1,11 @@
+name = "supply-chain-scenarios"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://franksprotos.com"
+OPENAI_MODEL = "gpt-4.1-mini"
+
+# Set OPENAI_API_KEY with: npx wrangler secret put OPENAI_API_KEY
+# Deploy: npx wrangler deploy
+# Configure the site to call the resulting worker URL via window.SCM_LLM_ENDPOINT.
