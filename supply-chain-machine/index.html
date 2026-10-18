@@ -142,6 +142,20 @@ body:not(.modelOpen) #network,body:not(.modelOpen) #discovery{display:none!impor
 .utahCostUp{color:#a14a34}.utahCostDown{color:#167050}
 .utahBridgeTotal{display:flex;justify-content:space-between;gap:8px;padding-top:13px;font-size:17px}
 .utahBridgeFoot{display:block;margin-top:10px;color:#6a796e;line-height:1.45;font-size:10px}
+</style><style>
+.utahWaterfall{background:#fff;border:1px solid #cbdacb;border-radius:14px;padding:14px 10px;margin:12px 0;color:#254234}
+.wfAxis{display:flex;justify-content:space-between;font-size:10px;color:#738477;padding:0 3px 7px}
+.wfRow{border-top:1px solid #edf0eb}
+.wfRow summary{list-style:none;display:grid;grid-template-columns:75px minmax(0,1fr) 94px;gap:7px;align-items:center;min-height:57px;cursor:pointer}
+.wfRow summary::-webkit-details-marker{display:none}
+.wfLabel{font-size:11px;font-weight:700}
+.wfTrack{height:27px;position:relative;border-left:1px solid #b6c9bb;background:repeating-linear-gradient(90deg,#eef3ed 0,#eef3ed 1px,transparent 1px,transparent 25%)}
+.wfBar{position:absolute;top:5px;height:17px;border-radius:3px;min-width:2px;transition:width .5s,left .5s}
+.wfTotal{background:#315c49}.wfUp{background:#b85a45}.wfDown{background:#3c9b72}.wfFlat{background:#a7b4a8}
+.wfRow strong{font-size:11px;text-align:right;white-space:nowrap}
+.wfDetail{font-size:11px;color:#64776b;padding:0 8px 12px 82px;line-height:1.4}
+.wfFoot{font-size:10px;color:#6a7b6c;margin-top:10px;line-height:1.5}
+@media(max-width:400px){.wfRow summary{grid-template-columns:66px minmax(0,1fr) 84px;gap:5px}.wfRow strong{font-size:10px}.wfDetail{padding-left:70px}}
 </style></head><body>
 <header><div><div class="brand">◈ SUPPLY CHAIN MACHINE</div><div class="tag">Experiment at the speed of thought.</div></div><div class="pill">NETWORK DISCOVERY · V9</div></header>
 <main><section id="homeScreen"><div class="eyebrow">Supply Chain Machine</div><h1>What would you like to do?</h1><div class="homeChoices"><button id="chooseUrl" class="homeChoice"><span>↗</span><strong>Enter your company URL</strong><small>Start a new supply chain model</small></button><button id="chooseModels" class="homeChoice"><span>▦</span><strong>Go to My Models</strong><small>Open and continue an existing model</small></button></div><div id="urlEntry"><div class="panel"><label for="companyUrl" class="eyebrow">Company website</label><div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"><input id="companyUrl" type="url" value="https://androsna.com/" style="flex:1;min-width:180px;background:#152b2a;border:1px solid #29443e;border-radius:9px;padding:12px;color:white"><button id="buildNetwork" style="width:auto">Build hypothesis ↗</button></div><div id="companyContext" class="meta"><b>Andros North America / Bonne Maman</b> · Public context: food products, U.S. operations in Virginia, retail and foodservice channels. This prototype uses a curated Andros example, not live website extraction.</div></div>
@@ -413,13 +427,28 @@ function runUtahScenario(){
  const fixedChange=12*fixed;
  const reconciledDelta=fixedChange+productionChange+freightChange;
  const costLine=(name,value,detail)=>'<div class="utahBridgeRow"><div><strong>'+name+'</strong><small>'+detail+'</small></div><b class="'+(value>0?'utahCostUp':'utahCostDown')+'">'+(value>0?'+':value<0?'−':'')+scmMoney(Math.abs(value))+'</b></div>';
- const costBridge='<div class="utahBridge"><div class="utahCompareTitle">WHY THE COST CHANGES · ANNUAL</div>'+
- costLine('New Utah plant fixed cost',fixedChange,scmMoney(fixed)+'/month × 12')+
- costLine('Production cost difference',productionChange,Math.round(movedTotal*12).toLocaleString()+' jars/year moved × ('+scmMoney(unit)+' − '+scmMoney(scm.manufacturing)+')/jar')+
- costLine('Outbound freight difference',freightChange,'Changed transport distances and split loads for reassigned regions')+
- costLine('Warehouse handling change',0,'Same total volume and handling rate in both scenarios')+
- '<div class="utahBridgeTotal"><strong>Net annual change</strong><b>'+ (reconciledDelta>0?'+':reconciledDelta<0?'−':'')+scmMoney(Math.abs(reconciledDelta))+'</b></div>'+
- '<small class="utahBridgeFoot">Positive amounts increase cost. Negative amounts are savings. Components reconcile to the scenario total, subject to rounding.</small></div>';
+
+ const wfSteps=[
+  {label:'Baseline',value:baseline*12,total:true,detail:'Existing Virginia production, outbound freight and warehouse handling'},
+  {label:'Utah fixed',value:fixedChange,detail:scmMoney(fixed)+'/month × 12'},
+  {label:'Production',value:productionChange,detail:Math.round(movedTotal*12).toLocaleString()+' jars/year moved × change in manufacturing cost per jar'},
+  {label:'Freight',value:freightChange,detail:'Regional outbound freight changes due to new production assignments'},
+  {label:'With Utah',value:scenario*12,total:true,detail:'New annual scenario total on the same cost basis'}
+ ];
+ const wfMin=Math.min(0,...wfSteps.map((x,i)=>i===0?x.value:i===4?x.value:baseline*12+wfSteps.slice(1,i+1).reduce((a,y)=>a+y.value,0)));
+ const wfMax=Math.max(...wfSteps.map((x,i)=>i===0?x.value:i===4?x.value:baseline*12+wfSteps.slice(1,i+1).reduce((a,y)=>a+y.value,0)));
+ const wfRange=Math.max(1,wfMax-wfMin),wfBase=baseline*12;
+ let wfRunning=wfBase;
+ const wfRows=wfSteps.map((x,i)=>{
+  const before=wfRunning;if(i>0&&i<4)wfRunning+=x.value;
+  const after=i===0?wfBase:i===4?scenario*12:wfRunning;
+  const lower=x.total?0:Math.min(before,after),upper=x.total?x.value:Math.max(before,after);
+  const left=Math.max(0,100*(lower-wfMin)/wfRange),width=Math.max(1.5,100*(upper-lower)/wfRange);
+  const value=x.total?scmMoney(x.value):(x.value>0?'+':x.value<0?'−':'')+scmMoney(Math.abs(x.value));
+  const color=x.total?'wfTotal':x.value>0?'wfUp':x.value<0?'wfDown':'wfFlat';
+  return '<details class="wfRow"><summary><span class="wfLabel">'+x.label+'</span><span class="wfTrack"><span class="wfBar '+color+'" style="left:'+left+'%;width:'+width+'%"></span></span><strong>'+value+'</strong></summary><div class="wfDetail">'+x.detail+'</div></details>';
+ }).join('');
+ const costBridge='<div class="utahWaterfall"><div class="utahCompareTitle">ANNUAL COST WATERFALL · TAP ANY BAR</div><div class="wfAxis"><span>$0</span><span>'+scmMoney(wfMax)+'</span></div>'+wfRows+'<div class="wfFoot">Red increases cost · green saves cost · dark bars are annual totals. The bars share a dollar scale.</div></div>';
 
 
  const annualBaseline=baseline*12,annualScenario=scenario*12,annualDelta=(scenario-baseline)*12;
