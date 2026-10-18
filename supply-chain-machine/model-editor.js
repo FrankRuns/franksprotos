@@ -20,8 +20,22 @@ $('flowAnnual').textContent=total.toLocaleString('en-US',{style:'currency',curre
 $('flowAnnualContext').textContent='Partial annual cost including '+(state.enabled?'modeled inbound port freight':'no inbound port freight');
 }
 window.refreshCosts=function(){oldRefresh();render()};
+async function askLLM(){
+ const endpoint=window.SCM_LLM_ENDPOINT;
+ if(!endpoint){feedback.textContent='Live LLM not connected yet. Deploy the scenario worker and set SCM_LLM_ENDPOINT. Local commands still work.';return}
+ const question=input.value.trim();if(!question)return;
+ const button=$('applyModelEdit');button.disabled=true;feedback.textContent='Asking the LLM to interpret your scenario…';
+ try{
+  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,model:{monthly_units:Number($('cost_units').value),domestic_share:Number($('cost_domesticPct').value),manufacturing_per_unit:Number($('cost_manufacturing').value)}})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||'Service unavailable');
+  const assumptions=(data.assumptions||[]).join('; ');
+  feedback.textContent='LLM interpreted: '+data.action+(data.city?' in '+data.city:'')+'. '+data.explanation+(assumptions?' Assumptions: '+assumptions:'')+' This is a preview only; no cost model changes were applied.';
+ }catch(error){feedback.textContent='LLM connection failed: '+error.message}
+ finally{button.disabled=false}
+}
 function apply(){
 const q=input.value.toLowerCase().trim();let message='';
+if(window.SCM_LLM_ENDPOINT && /warehouse|reno|plant|facility|scenario|what if|why|compare|cheaper|save|cost/i.test(q)){askLLM();return}
 if(/port|inbound/.test(q)&&/freight|transport|warehouse|trucking/.test(q)){
 if(/remove|delete|exclude|without/.test(q)){state.enabled=false;message='Removed port-to-warehouse freight.'}
 else{state.enabled=true;const miles=q.match(/([\d,.]+)\s*(?:miles|mile|mi)\b/),rate=q.match(/\$([\d,.]+)\s*(?:per mile|\/mile|\/mi)/);
