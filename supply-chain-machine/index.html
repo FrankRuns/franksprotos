@@ -121,6 +121,18 @@ body:not(.modelOpen) #network,body:not(.modelOpen) #discovery{display:none!impor
 #costPanel #costFlow>.costArrow.revealed{height:38px}
 #costPanel #costFlow{min-height:0!important}
 #costPanel #costFlow>.portBranch{margin:10px 0}
+</style><style>
+.utahComparison{background:#fffdf4;border:1px solid #c6d5c6;border-radius:14px;padding:15px;color:#203b30;box-shadow:0 3px 12px #18372910}
+.utahCompareTitle{font-size:10px;letter-spacing:1.4px;font-weight:800;color:#5b7868;margin-bottom:12px}
+.utahCompareGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.utahCompareGrid>div{background:#edf4ec;border-radius:10px;padding:10px;min-width:0}
+.utahCompareGrid small{display:block;font-size:11px;color:#4b695a;margin-bottom:5px}
+.utahCompareGrid strong{display:block;font-size:clamp(16px,4.1vw,23px);white-space:nowrap;letter-spacing:-.5px}
+.utahDelta{margin-top:12px;font-size:clamp(17px,4.3vw,24px);font-weight:800}
+.utahDelta span{font-size:12px;font-weight:600;white-space:nowrap}
+.utahSaving{color:#17664a}.utahIncrease{color:#9b4931}
+.utahCompareNote{font-size:11px;line-height:1.45;color:#627267;margin-top:10px}
+#scenarioMapBanner{font-weight:normal!important;padding:9px!important;background:transparent!important;border:0!important}
 </style></head><body>
 <header><div><div class="brand">◈ SUPPLY CHAIN MACHINE</div><div class="tag">Experiment at the speed of thought.</div></div><div class="pill">NETWORK DISCOVERY · V9</div></header>
 <main><section id="homeScreen"><div class="eyebrow">Supply Chain Machine</div><h1>What would you like to do?</h1><div class="homeChoices"><button id="chooseUrl" class="homeChoice"><span>↗</span><strong>Enter your company URL</strong><small>Start a new supply chain model</small></button><button id="chooseModels" class="homeChoice"><span>▦</span><strong>Go to My Models</strong><small>Open and continue an existing model</small></button></div><div id="urlEntry"><div class="panel"><label for="companyUrl" class="eyebrow">Company website</label><div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"><input id="companyUrl" type="url" value="https://androsna.com/" style="flex:1;min-width:180px;background:#152b2a;border:1px solid #29443e;border-radius:9px;padding:12px;color:white"><button id="buildNetwork" style="width:auto">Build hypothesis ↗</button></div><div id="companyContext" class="meta"><b>Andros North America / Bonne Maman</b> · Public context: food products, U.S. operations in Virginia, retail and foodservice channels. This prototype uses a curated Andros example, not live website extraction.</div></div>
@@ -384,7 +396,14 @@ function runUtahScenario(){
  const common=scm.units*scm.handling;
  const baseline=baselineDomestic+common,scenario=scenarioDomestic+common,difference=baseline-scenario;
  const movedTotal=assigned.reduce((n,r)=>n+r.volume,0);
- el('utahResults').innerHTML='<div class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="stat"><small>Baseline / month</small><b>'+scmMoney(baseline)+'</b></div><div class="stat"><small>With Utah / month</small><b>'+scmMoney(scenario)+'</b></div></div><p style="margin-top:12px"><b>'+ (difference>=0?'Modeled savings: ':'Modeled additional cost: ')+scmMoney(Math.abs(difference))+'/month</b></p><p class="meta">Utah production: '+Math.round(movedTotal).toLocaleString()+' units/month · Assigned: '+(assigned.map(x=>x.name).join(', ')||'none')+'.</p><p class="hint">Comparison covers modeled domestic production, domestic outbound FTL, Utah fixed cost, and common warehouse handling only. This is a different, more granular freight calculation than the simplified baseline card above.</p>';
+
+ const annualBaseline=baseline*12,annualScenario=scenario*12,annualDelta=(scenario-baseline)*12;
+ const changePct=baseline>0?100*(scenario-baseline)/baseline:0;
+ const deltaText=(annualDelta<=0?'Saves ':'Costs an additional ')+scmMoney(Math.abs(annualDelta))+'/year';
+ const comparison='<div class="utahComparison"><div class="utahCompareTitle">UTAH PLANT · ANNUAL COST COMPARISON</div><div class="utahCompareGrid"><div><small>Baseline / year</small><strong>'+scmMoney(annualBaseline)+'</strong></div><div><small>With Utah / year</small><strong>'+scmMoney(annualScenario)+'</strong></div></div><div class="utahDelta '+(annualDelta<=0?'utahSaving':'utahIncrease')+'">'+deltaText+' <span>('+Math.abs(changePct).toFixed(1)+'% '+(annualDelta<=0?'lower':'higher')+')</span></div><div class="utahCompareNote">Comparable scope: domestic production, modeled domestic outbound freight and warehouse handling, plus Utah fixed operating cost. Imported goods and other unmodeled costs are excluded from both.</div></div>';
+ el('utahResults').innerHTML=comparison+'<p class="meta">Utah production: '+Math.round(movedTotal).toLocaleString()+' units/month · Assigned: '+(assigned.map(x=>x.name).join(', ')||'none')+'.</p><p class="hint">Illustrative scenario. Domestic freight uses region-specific distance estimates, unlike the simplified main cost card. Do not compare these absolute totals directly with that card. Utah capital, startup and ramp-up costs are excluded.</p>';
+ window.scmUtahComparison={annualBaseline,annualScenario,annualDelta,changePct,deltaText,comparison};
+
  if(geoMap){if(geoMap._utahLayer)geoMap.removeLayer(geoMap._utahLayer);const layer=L.layerGroup().addTo(geoMap);geoMap._utahLayer=layer;L.circleMarker(utahPlant,{radius:6,color:'#fff',weight:1.5,fillColor:'#e7af39',fillOpacity:1}).addTo(layer).bindPopup('Proposed Utah plant · Salt Lake City area');for(const r of assigned)L.polyline([utahPlant,r.point],{color:'#ffbb65',weight:2+Math.sqrt(r.volume/Math.max(1,domesticUnits))*10,opacity:.85,dashArray:'5 5'}).addTo(layer).bindPopup('Scenario: Utah → '+r.name+' · '+Math.round(r.volume).toLocaleString()+' units/month');}
 }
 el('runUtah').onclick=runUtahScenario;
@@ -407,7 +426,8 @@ el('runUtah').onclick=runUtahScenario;
    const headline=result&&result.querySelector('p b');
    let banner=el('scenarioMapBanner');
    if(!banner){banner=document.createElement('div');banner.id='scenarioMapBanner';banner.style.cssText='padding:11px 13px;background:#fff9e6;color:#4b3816;border:1px solid #d8b963;border-radius:10px;margin:10px 0;font-weight:600';el('geoMap').before(banner)}
-   banner.textContent='Utah scenario on map · '+(headline?headline.textContent:'Orange lanes show reassigned production.');
+   const comparison=window.scmUtahComparison;
+   banner.innerHTML=comparison?comparison.comparison:'Utah scenario active. Orange lanes show reassigned production.';
    el('geoMap').scrollIntoView({behavior:'smooth',block:'center'});
    setTimeout(()=>geoMap.invalidateSize(),120);
   }
