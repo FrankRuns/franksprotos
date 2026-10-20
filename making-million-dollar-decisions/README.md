@@ -2,7 +2,7 @@
 
 University of Hartford interactive workshop on problem framing, constrained optimization, AI analysis, and storytelling.
 
-Planned files: `index.html` (seven-slide presentation), `activities.html` (interactive exercises).
+Planned files: `index.html` (seven-slide presentation), `activities.html` (four-tab student lab: Frame, Optimize, Challenge with AI, Tell the story).
 
 Illustrative decision: whether and where to open a $30M distribution center, with $4M annual operating costs.
 

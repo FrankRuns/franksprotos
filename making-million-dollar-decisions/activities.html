@@ -1,14 +1,684 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Making Million-Dollar Decisions | Student Lab</title><style>:root{--r:#c8102e;--b:#15171c}*{box-sizing:border-box}body{margin:0;background:#f6f3ed;color:var(--b);font:16px/1.5 system-ui}header{background:var(--b);color:white;padding:35px max(24px,7vw)}h1{font-size:clamp(38px,6vw,75px);letter-spacing:-.06em;line-height:1;margin:10px 0}h2{font-size:32px;letter-spacing:-.04em}main{max-width:1200px;margin:auto;padding:24px}section{background:white;padding:28px;margin:22px 0;border-radius:12px;box-shadow:0 2px 16px #0000000b;border-top:5px solid var(--r)}.muted{color:#686b70}button{background:var(--r);border:0;color:white;padding:12px 17px;border-radius:7px;cursor:pointer;font-weight:700;margin:5px 5px 5px 0}button.secondary{background:var(--b)}input,textarea,select{font:inherit;border:1px solid #b7b8bb;padding:9px;border-radius:5px;max-width:100%}textarea{width:100%;min-height:85px}label{display:block;margin:12px 0}.layout{display:grid;grid-template-columns:1.3fr 1fr;gap:22px}.map{width:100%;height:auto;background:#edf1f4;border:1px solid #ccd3d8;border-radius:9px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{background:#f4f4f4;padding:15px;border-radius:8px}.stat strong{display:block;font-size:24px}.sites{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}.sites label{margin:2px}.note{border-left:4px solid var(--r);padding:10px 16px;background:#f9f1f2}.prompt{background:#f2f3f5;padding:15px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #ddd;padding:6px;text-align:left}@media(max-width:750px){.layout,.stats{grid-template-columns:1fr}section{padding:18px}}</style><body><header><div style="color:#ff6680;letter-spacing:.2em;font-size:12px">UNIVERSITY OF HARTFORD · STUDENT LAB</div><h1>Making Million-Dollar Decisions<span style="color:#ff5471">.</span></h1><p>One $30 million decision. Four activities. Two hours. No installations required.</p><a href="index.html" style="color:white">← Presentation</a></header><main><div class="note"><b>Scenario:</b> A national retailer serves 18 stores from a Chicago distribution center. Demand is shifting west. A new 200,000 sq. ft. DC would require an illustrative $30M upfront investment plus $4M in annual operating costs. You are the supply chain engineering team deciding whether to open another DC. All figures are illustrative synthetic classroom data, not real company data.</div>
-<section><h2>01 / Frame the problem <small class="muted">· 30 min</small></h2><p>Inspect the store demand and network map. What is the decision, who owns it, and how will you know if you've made a good one?</p><button onclick="drawMap()">Generate network map</button><button class="secondary" onclick="downloadCSV()">Download shipment data CSV</button><div class="layout"><svg id="map" class="map" viewBox="0 0 760 420" role="img" aria-label="Schematic continental US network map"><text x="20" y="32" fill="#777">Click Generate network map to reveal the network</text></svg><div><b>Legend</b><p>🔴 Stores, sized by annual demand<br>⬛ Current DC: Chicago<br>🔵 Candidate new DCs</p><p class="muted">This is a schematic map using approximate geographic positions, not a routing engine.</p><label>Decision statement<textarea id="decision" placeholder="We need to decide... for... to minimize... while... "></textarea></label><label>What is the most important constraint?<textarea id="constraint" placeholder="Capacity, delivery distance, budget, ..."></textarea></label></div></div></section>
-<section><h2>02 / Optimize, don't guess <small class="muted">· 30 min</small></h2><p>Choose which candidate sites the solver may consider, the maximum number of new DCs, and demand growth. Then compare a forced scenario with the best feasible network.</p><div class="layout"><div><div class="sites" id="sites"></div><label>Maximum new DCs <select id="maxdc"><option value="0">0</option><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select></label><label>Demand growth <input id="growth" type="range" min="0" max="40" value="0" oninput="document.getElementById('growVal').textContent=this.value+'%'"> <span id="growVal">0%</span></label><label>Distance-based service target (max weighted average miles) <input id="service" type="number" min="0" value="1000" step="50"></label><button onclick="solve()">Optimize network</button><button class="secondary" onclick="forceSite()">Compare first selected site only</button><p class="muted">The in-browser enumerator searches all allowed site combinations (up to 3 new DCs), then allocates store demand under DC capacity constraints using min-cost flow. This is a small, exact discrete optimization demonstration, not a production MIP package. Each new DC costs $30M upfront, modeled as $3.06M/year annualized capital plus $4M/year operating. Distances are straight-line proxies.</p></div><div><div id="result" class="note">Run a scenario to see results.</div><div id="comparison"></div></div></div></section>
-<section><h2>03 / AI as detective and skeptic <small class="muted">· 30 min</small></h2><p>Export your optimization result, then ask AI to explain and challenge it. Change one assumption and rerun the optimization.</p><div class="layout"><div><button onclick="makePrompt('detective')">Generate detective prompt</button><button onclick="makePrompt('skeptic')">Generate skeptic prompt</button><button class="secondary" onclick="copyPrompt()">Copy prompt</button><div class="prompt" id="aiPrompt">Run the optimizer first, then generate a prompt.</div><p class="muted">Paste the prompt into your own AI chat. No API key is embedded or required. Treat AI claims as hypotheses and check them against the model.</p></div><div><label>AI's most useful challenge<textarea id="challenge" placeholder="What assumption should we test?"></textarea></label><label>What changed when you reran the model?<textarea id="changed" placeholder="Old recommendation vs. new recommendation..."></textarea></label></div></div></section>
-<section><h2>04 / Tell a story that changes a decision <small class="muted">· 30 min</small></h2><p>The full hero's journey is useful, but you only have 60 seconds with an executive. Pick a short opening: insight, proof point, or lesson learned. These are classroom adaptations, not verbatim quotations from Mike Adams.</p><label>Choose your opening <select id="story" onchange="storyStarter()"><option value="insight">Insight: what surprised us?</option><option value="proof">Proof: what does the evidence show?</option><option value="lesson">Lesson: what did we learn from a failure?</option></select></label><div id="starter" class="note">We thought our problem was ___, but the data revealed ___.</div><label>Your 60-second opening<textarea id="pitch" placeholder="Hook → evidence → recommendation → ask"></textarea></label><button onclick="exportWork()">Download my workshop notes</button><p class="muted">Volunteer pitch round: What is the decision? What makes the story persuasive? What evidence is missing?</p></section><section style="background:#15171c;color:white;border-radius:18px;padding:28px;margin:28px 0"><div style="font-size:12px;letter-spacing:.16em;color:#ff7890">TAKE IT BEYOND THE WAREHOUSE</div><h2 style="color:white;margin:10px 0">One method. Thousands of decisions.</h2><p style="color:#e5e5e5">Today you decided where to invest $30 million in a distribution center. The same approach works for transportation routing, staffing, scheduling, allocating scarce resources, or optimizing an entire ski season.</p><div style="display:flex;flex-wrap:wrap;gap:10px;margin:14px 0"><span style="background:#ffffff20;padding:9px;border-radius:8px">🚚 Route deliveries</span><span style="background:#ffffff20;padding:9px;border-radius:8px">🏥 Schedule teams</span><span style="background:#ffffff20;padding:9px;border-radius:8px">⛷️ Optimize ski days</span></div><strong>Frame the problem → optimize → challenge assumptions → persuade someone to act.</strong></section></main><script>
-const stores=[['Seattle',47.61,-122.33,90],['Portland',45.52,-122.68,55],['San Francisco',37.77,-122.42,100],['Los Angeles',34.05,-118.24,140],['San Diego',32.72,-117.16,55],['Phoenix',33.45,-112.07,95],['Denver',39.74,-104.99,80],['Dallas',32.78,-96.8,120],['Houston',29.76,-95.37,105],['Minneapolis',44.98,-93.27,65],['Chicago',41.88,-87.63,110],['Atlanta',33.75,-84.39,95],['Miami',25.76,-80.19,80],['Nashville',36.16,-86.78,55],['Washington DC',38.9,-77.04,90],['New York',40.71,-74.01,115],['Boston',42.36,-71.06,60],['St Louis',38.63,-90.2,55]];
-const NEW_DC_ANNUAL_FIXED_COST=7.06e6; // $4M annual operating + $30M amortized over 20 years at 8% ($3.06M/year)\nconst sites=[['Denver',39.74,-104.99,420,1.3],['Phoenix',33.45,-112.07,430,1.25],['Dallas',32.78,-96.8,480,1.35],['Reno',39.53,-119.81,350,1.15],['Atlanta',33.75,-84.39,430,1.2],['Kansas City',39.1,-94.58,440,1.1],['Salt Lake City',40.76,-111.89,360,1.05],['Columbus',39.96,-83,400,1.1]];
-const chicago=['Chicago DC',41.88,-87.63,1050,0];const rad=Math.PI/180;function dist(a,b){const dlat=(a[1]-b[1])*rad,dlon=(a[2]-b[2])*rad;const q=Math.sin(dlat/2)**2+Math.cos(a[1]*rad)*Math.cos(b[1]*rad)*Math.sin(dlon/2)**2;return 3959*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q))}function xy(a){return [(a[2]+125)/59*710+25,(50-a[1])/26*360+28]}function drawMap(){const s=document.getElementById('map');s.innerHTML='<rect width="760" height="420" fill="#edf1f4"/><path d="M35 72 L120 57 174 95 245 92 317 72 389 102 483 84 570 100 699 58 728 141 684 202 700 271 648 316 572 296 517 343 441 302 354 326 286 288 220 322 163 260 102 232 72 174 Z" fill="#e1e7e9" stroke="#aab8c2" stroke-width="2"/>';stores.forEach(a=>{const [x,y]=xy(a);s.innerHTML+=`<circle cx="${x}" cy="${y}" r="${3+a[3]/35}" fill="#c8102e" opacity=".8"><title>${a[0]}: ${a[3]}k units</title></circle>`});sites.forEach(a=>{const [x,y]=xy(a);s.innerHTML+=`<circle cx="${x}" cy="${y}" r="7" fill="#2075b9" stroke="white" stroke-width="2"><title>Candidate: ${a[0]}</title></circle>`});const [x,y]=xy(chicago);s.innerHTML+=`<rect x="${x-9}" y="${y-9}" width="18" height="18" fill="#17191e" stroke="white" stroke-width="2"/><text x="${x+12}" y="${y-12}" font-size="13">Chicago DC</text>`}document.getElementById('sites').innerHTML=sites.map((s,i)=>`<label><input type="checkbox" class="site" value="${i}" checked> ${s[0]} <span class="muted">(${s[3]}k capacity)</span></label>`).join('');
-function downloadCSV(){const csv='store,latitude,longitude,annual_demand_thousand_units\n'+stores.map(s=>s.join(',')).join('\n');download('retailer_shipments.csv',csv,'text/csv')}function download(name,data,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-// Exact minimum-cost transportation via successive shortest augmenting paths on a small bipartite network.
-function flow(dcs,demands){const N=2+dcs.length+stores.length,S=N-2,T=N-1,G=Array.from({length:N},()=>[]);function edge(u,v,cap,cost){let a={v,cap,cost,rev:G[v].length},b={v:u,cap:0,cost:-cost,rev:G[u].length};G[u].push(a);G[v].push(b)}dcs.forEach((d,i)=>edge(S,i,d[3],0));let arcs=[];dcs.forEach((d,i)=>stores.forEach((s,j)=>{let idx=G[i].length;edge(i,dcs.length+j,1e8,dist(d,s)*.15);arcs.push([i,idx,j])}));demands.forEach((v,j)=>edge(dcs.length+j,T,v,0));let target=demands.reduce((a,b)=>a+b,0),sent=0,cost=0;while(sent<target-1e-7){let D=Array(N).fill(Infinity),p=Array(N).fill(null),used=Array(N).fill(false);D[S]=0;for(let k=0;k<N;k++){let u=-1;for(let i=0;i<N;i++)if(!used[i]&&(u<0||D[i]<D[u]))u=i;if(u<0||!isFinite(D[u]))break;used[u]=true;G[u].forEach((e,idx)=>{if(e.cap>1e-7&&D[e.v]>D[u]+e.cost+1e-8){D[e.v]=D[u]+e.cost;p[e.v]=[u,idx]}})}if(!p[T])return null;let add=target-sent;for(let v=T;v!==S;){let [u,i]=p[v];add=Math.min(add,G[u][i].cap);v=u}for(let v=T;v!==S;){let [u,i]=p[v],e=G[u][i];e.cap-=add;G[v][e.rev].cap+=add;cost+=add*e.cost;v=u}sent+=add}let weighted=0,loads=Array(dcs.length).fill(0);arcs.forEach(([i,idx,j])=>{let e=G[i][idx],f=G[e.v][e.rev].cap;weighted+=f*dist(dcs[i],stores[j]);loads[i]+=f});return {transport:cost,avg:weighted/target,loads}}
-let latest=null,previous=null;function selected(){return [...document.querySelectorAll('.site:checked')].map(e=>+e.value)}function combinations(a,max){let out=[[]];for(let x of a){let extra=out.filter(c=>c.length<max).map(c=>[...c,x]);out.push(...extra)}return out}function calc(indices){const ds=[chicago,...indices.map(i=>sites[i])],demand=stores.map(s=>s[3]*(1+Number(document.getElementById('growth').value)/100)),f=flow(ds,demand);if(!f)return null;const fixed=indices.reduce((a,i)=>a+NEW_DC_ANNUAL_FIXED_COST,0),transport=f.transport*1000;return {names:ds.map(d=>d[0]),indices,total:fixed+transport,fixed,transport,avg:f.avg,loads:f.loads,capacity:ds.map(d=>d[3]),growth:Number(document.getElementById('growth').value)}}function fmt(n){return '$'+(n/1e6).toFixed(2)+'M'}function solve(){previous=latest;let allowed=selected(),max=+document.getElementById('maxdc').value,target=+document.getElementById('service').value;let all=combinations(allowed,max).map(calc).filter(Boolean).filter(x=>x.avg<=target);all.sort((a,b)=>a.total-b.total);latest=all[0]||null;show()}function forceSite(){previous=latest;const a=selected();latest=a.length?calc([a[0]]):calc([]);show()}function show(){const el=document.getElementById('result');if(!latest){el.textContent='No feasible network meets the capacity and service target. Try more DCs, a higher service-distance target, or lower demand growth.';return}el.innerHTML=`<b>Recommended network</b><h3>${latest.names.join(' + ')}</h3><div class="stats"><div class="stat">Annual cost<strong>${fmt(latest.total)}</strong></div><div class="stat">Transport<strong>${fmt(latest.transport)}</strong></div><div class="stat">Average distance<strong>${Math.round(latest.avg)} mi</strong></div></div><p>DC loads (thousand units): ${latest.names.map((n,i)=>n+': '+Math.round(latest.loads[i])+'/'+latest.capacity[i]).join('; ')}</p><p class="muted">Fixed costs: ${fmt(latest.fixed)} annually. Annualized illustrative costs: $4M/year operating plus $3.06M/year annualized investment for each new DC (20 years, 8% discount rate). Transportation is a distance-based proxy; allocation respects capacity.</p>`;document.getElementById('comparison').textContent=previous?'Previous: '+previous.names.join(' + ')+' · '+fmt(previous.total)+' · '+Math.round(previous.avg)+' mi':''}
-function makePrompt(mode){if(!latest){document.getElementById('aiPrompt').textContent='Run the optimizer first.';return}const task=mode==='detective'?'Explain why this configuration might be chosen. Identify the three most important drivers, and distinguish facts in the results from hypotheses.':'Act as a skeptical supply chain executive. Suggest three plausible assumption changes that could reverse the recommendation. Prioritize one test and say what to change in the app.';document.getElementById('aiPrompt').textContent=`You are helping me learn supply chain network design. Use ONLY these synthetic scenario results and clearly identify missing information. Do not fabricate solver details.\n\nRESULT: ${JSON.stringify(latest,null,2)}\n\nTASK: ${task}\n\nRespond in under 250 words and end with one concrete scenario to rerun.`}function copyPrompt(){navigator.clipboard?.writeText(document.getElementById('aiPrompt').textContent).catch(()=>alert('Select and copy the prompt manually.'))}function storyStarter(){let v=document.getElementById('story').value;document.getElementById('starter').textContent=({insight:'We thought our problem was ___, but the data revealed ___.',proof:'Our analysis compared ___ scenarios. The strongest evidence was ___, so we recommend ___.',lesson:'Last quarter, ___ happened. We learned ___, and this decision prevents ___.'})[v]}function exportWork(){let t=`MAKING MILLION-DOLLAR DECISIONS - WORKSHOP NOTES\nDecision: ${document.getElementById('decision').value}\nConstraint: ${document.getElementById('constraint').value}\nScenario: ${JSON.stringify(latest,null,2)}\nAI challenge: ${document.getElementById('challenge').value}\nWhat changed: ${document.getElementById('changed').value}\nStory opening: ${document.getElementById('pitch').value}`;download('workshop_notes.txt',t,'text/plain')}
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Making Million-Dollar Decisions | Student Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+:root{--red:#c8102e;--red-ink:#a30d26;--ink:#15171c;--muted:#5a5d65;--cream:#f5f3ef;--line:#e2dfd8;--card:#fff;--gold:#c98a00;--blue:#2f6fba}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 Inter,system-ui,Arial,sans-serif}
+a{color:var(--red-ink)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid #2f6fba;outline-offset:2px}
+
+/* Header */
+.top{background:#0d0f14;color:#f8f7f4;border-top:7px solid var(--red)}
+.top-inner{max-width:1240px;margin:auto;padding:26px 24px 22px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#ff6b81}
+.top h1{margin:8px 0 6px;font-size:clamp(30px,4.2vw,52px);line-height:1;letter-spacing:-.05em;font-weight:900}
+.top h1 span{color:var(--red)}
+.top p{margin:0;color:#c9cbd2;max-width:720px;font-size:15px}
+.top a{color:#fff;font-weight:700;font-size:14px;text-decoration:none;border:1px solid #3a3f4c;border-radius:30px;padding:9px 16px;white-space:nowrap}
+.top a:hover{border-color:#fff}
+
+/* Tabs */
+.tabs{position:sticky;top:0;z-index:20;background:#0d0f14;border-bottom:1px solid #262a33}
+.tabs-inner{max-width:1240px;margin:auto;padding:0 24px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.tab{background:none;border:0;color:#aeb1ba;padding:14px 16px 13px;border-bottom:3px solid transparent;display:flex;align-items:center;gap:10px;white-space:nowrap;font-weight:700;font-size:15px}
+.tab:hover{color:#fff}
+.tab[aria-selected="true"]{color:#fff;border-bottom-color:var(--red)}
+.tab .num{font-size:11px;letter-spacing:.14em;color:#ff6b81}
+.tab .time{font-size:12px;font-weight:600;color:#8b8f99}
+.tab .done{display:none;width:18px;height:18px;border-radius:50%;background:#2e9d62;color:#fff;font-size:12px;line-height:18px;text-align:center}
+.tab.is-done .done{display:inline-block}
+
+main{max-width:1240px;margin:auto;padding:26px 24px 60px}
+.panel[hidden]{display:none}
+.panel-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+.panel-head h2{margin:4px 0 0;font-size:clamp(28px,3.4vw,42px);letter-spacing:-.045em;line-height:1.05}
+.panel-head p{margin:8px 0 0;color:var(--muted);max-width:760px}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--red-ink)}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.card h3{margin:0 0 12px;font-size:18px;letter-spacing:-.02em}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px}
+.kpi b{display:block;font-size:24px;letter-spacing:-.03em;line-height:1.1}
+.kpi span{font-size:12.5px;color:var(--muted);line-height:1.35;display:block;margin-top:4px}
+
+/* Map */
+.map-card{padding:12px}
+.map-wrap{position:relative;border-radius:12px;overflow:hidden;background:#f0ede6}
+.map-wrap svg{display:block;width:100%;height:auto}
+.map-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:10px 6px 2px;font-size:13px;color:var(--muted)}
+.map-legend i{display:inline-block;vertical-align:-2px;margin-right:6px}
+.dot{width:12px;height:12px;border-radius:50%}
+.q{width:16px;height:16px;border-radius:50%;border:2px solid var(--gold);color:var(--gold);font-style:normal;font-size:10px;font-weight:900;text-align:center;line-height:12px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);margin-left:auto}
+
+/* Forms */
+label.field{display:block;font-weight:700;font-size:14px;margin-bottom:14px}
+label.field small{display:block;font-weight:500;color:var(--muted);margin:2px 0 6px}
+textarea,input[type=number],select{width:100%;font:inherit;font-size:15px;border:1px solid #c9c6bf;border-radius:10px;padding:10px 12px;background:#fff;color:var(--ink)}
+textarea{min-height:76px;resize:vertical}
+textarea,input,select{font-weight:400}
+textarea::placeholder{color:#8a8d94}
+.sites{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;margin:6px 0 16px}
+.sites label{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;min-height:32px}
+.sites input{width:18px;height:18px;accent-color:var(--red)}
+.range-row{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:14px}
+.range-row output{font-variant-numeric:tabular-nums;color:var(--red-ink)}
+input[type=range]{width:100%;accent-color:var(--red);margin:6px 0 14px}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:6px 0 16px}
+.seg button{border:1px solid #c9c6bf;background:#fff;border-radius:9px;padding:8px 0;font-weight:700;font-size:14px;color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn{border:0;border-radius:10px;padding:12px 18px;font-weight:800;font-size:15px;background:var(--red);color:#fff;min-height:44px}
+.btn:hover{background:var(--red-ink)}
+.btn.dark{background:var(--ink)}.btn.dark:hover{background:#000}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid #c9c6bf}.btn.ghost:hover{border-color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fine{font-size:12.5px;color:var(--muted);line-height:1.5}
+.divider{height:1px;background:var(--line);margin:16px 0}
+
+/* Results */
+.result-empty{color:var(--muted);font-size:15px;padding:30px 10px;text-align:center}
+.verdict{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red-ink)}
+.network-name{font-size:26px;font-weight:900;letter-spacing:-.04em;margin:4px 0 12px;line-height:1.1}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stat{background:var(--cream);border-radius:10px;padding:10px 12px}
+.stat span{font-size:12px;color:var(--muted);display:block}
+.stat b{font-size:20px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.callout{margin-top:12px;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.45;background:#fff6e0;border:1px solid #f0d58f}
+.callout.bad{background:#fdecee;border-color:#f3b9c2}
+.util{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.util-row{display:grid;grid-template-columns:110px 1fr 60px;gap:8px;align-items:center;font-size:13px}
+.bar{height:10px;border-radius:6px;background:#ece9e2;overflow:hidden}
+.bar i{display:block;height:100%}
+.util-row span:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.table-wrap{overflow-x:auto}
+.pos{color:#1e7a4b;font-weight:700}.neg{color:var(--red-ink);font-weight:700}
+
+/* AI */
+.prompt{background:#0d0f14;color:#e9eaee;border-radius:12px;padding:16px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;margin:12px 0 0}
+.mode-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mode{border:2px solid var(--line);background:#fff;border-radius:12px;padding:14px;text-align:left;color:var(--ink)}
+.mode b{display:block;font-size:16px}.mode span{font-size:13px;color:var(--muted)}
+.mode[aria-pressed="true"]{border-color:var(--red)}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+
+/* Story */
+.openings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.opening{border:2px solid var(--line);background:#fff;border-radius:12px;padding:14px;text-align:left;color:var(--ink);display:flex;flex-direction:column;gap:4px}
+.opening b{font-size:12px;letter-spacing:.16em;color:var(--red-ink)}
+.opening span{font-size:15px;font-weight:700}
+.opening small{font-size:12.5px;color:var(--muted)}
+.opening[aria-pressed="true"]{border-color:var(--red);box-shadow:0 0 0 3px #c8102e1f}
+.starter{background:var(--cream);border-radius:12px;padding:14px 16px;font-size:16px;line-height:1.5;margin:14px 0 10px}
+.timer{font-size:44px;font-weight:900;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.timer.low{color:var(--red)}
+.beyond{margin-top:22px;background:#0d0f14;color:#f8f7f4;border-radius:18px;padding:26px}
+.beyond h3{font-size:26px;letter-spacing:-.03em;margin:6px 0 8px}
+.beyond p{color:#c9cbd2;margin:0 0 14px;max-width:760px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{background:#ffffff14;border:1px solid #ffffff22;border-radius:30px;padding:7px 14px;font-size:14px;font-weight:600}
+.next{display:flex;justify-content:flex-end;margin-top:20px}
+
+@media(max-width:960px){.grid{grid-template-columns:minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.openings{grid-template-columns:1fr}}
+@media(max-width:560px){.mode-cards,.sites{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}main{padding:18px 16px 50px}.top-inner,.tabs-inner{padding-left:16px;padding-right:16px}.tab .time{display:none}}
+@media print{.tabs,.top a,.btn{display:none}.panel[hidden]{display:block}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <div class="eyebrow">University of Hartford · Student lab</div>
+      <h1>Making <span>Million-Dollar Decisions.</span></h1>
+      <p>A Midwest retailer ships all 45 stores from one Chicago DC. Its newest stores are on the coasts, 700 to 2,000 miles away. Should it spend $30M on a second DC, and where?</p>
+    </div>
+    <a href="index.html">← Presentation</a>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Lab activities">
+  <div class="tabs-inner" role="tablist">
+    <button class="tab" role="tab" id="tab-frame" aria-controls="frame" aria-selected="true" data-tab="frame"><span class="num">01</span>Frame<span class="time">30 min</span><span class="done" aria-label="done">✓</span></button>
+    <button class="tab" role="tab" id="tab-optimize" aria-controls="optimize" aria-selected="false" tabindex="-1" data-tab="optimize"><span class="num">02</span>Optimize<span class="time">30 min</span><span class="done" aria-label="done">✓</span></button>
+    <button class="tab" role="tab" id="tab-challenge" aria-controls="challenge" aria-selected="false" tabindex="-1" data-tab="challenge"><span class="num">03</span>Challenge with AI<span class="time">30 min</span><span class="done" aria-label="done">✓</span></button>
+    <button class="tab" role="tab" id="tab-story" aria-controls="story" aria-selected="false" tabindex="-1" data-tab="story"><span class="num">04</span>Tell the story<span class="time">30 min</span><span class="done" aria-label="done">✓</span></button>
+  </div>
+</nav>
+
+<main>
+<!-- ============ 01 FRAME ============ -->
+<section class="panel" id="frame" role="tabpanel" aria-labelledby="tab-frame">
+  <div class="panel-head">
+    <div>
+      <div class="kicker">01 · Clarity before code</div>
+      <h2>Frame the decision.</h2>
+      <p>Before anyone runs a model, get crisp on what you're deciding, who decides, and how you'll know you got it right. Explore the network, then write it down.</p>
+    </div>
+    <button class="btn ghost" id="csvBtn" type="button">Download store data (CSV)</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="card map-card">
+      <div class="map-wrap"><svg id="frameMap" viewBox="0 0 1200 720" role="img" aria-label="Map of the retailer's 45 stores, the Chicago distribution center, and 8 candidate sites"></svg></div>
+      <div class="map-legend">
+        <span><i class="dot" style="background:#c8102e;border:2px solid #fff;box-shadow:0 0 0 1px #c8102e"></i>Chicago DC</span>
+        <span><i class="dot" style="background:#2f6fba"></i>Store, sized by demand</span>
+        <span><i class="q">?</i>Candidate DC site</span>
+        <label class="toggle"><input type="checkbox" id="showFlows" checked> Show today's shipments</label>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Your problem statement</h3>
+      <label class="field">The decision<small>We need to decide whether… and where…</small><textarea data-note="decision" placeholder="We need to decide whether to open a second DC, and where, so that…"></textarea></label>
+      <label class="field">Who owns it?<small>Whose name is on the $30M request?</small><textarea data-note="owner" style="min-height:48px" placeholder="e.g. VP of Supply Chain, with CFO sign-off"></textarea></label>
+      <label class="field">How will we know it was a good decision?<small>Pick one or two measures you'd defend to the CFO.</small><textarea data-note="metric" placeholder="Total annual cost, delivery distance to coastal stores, payback period…"></textarea></label>
+      <label class="field">Most important constraint<textarea data-note="constraint" style="min-height:56px" placeholder="Chicago capacity, $30M budget, service to new stores…"></textarea></label>
+      <p class="fine">Your notes save in this browser automatically.</p>
+    </div>
+  </div>
+  <div class="next"><button class="btn dark" type="button" data-goto="optimize">Next: Optimize →</button></div>
+</section>
+
+<!-- ============ 02 OPTIMIZE ============ -->
+<section class="panel" id="optimize" role="tabpanel" aria-labelledby="tab-optimize" hidden>
+  <div class="panel-head">
+    <div>
+      <div class="kicker">02 · Operations research</div>
+      <h2>Don't guess the answer.</h2>
+      <p>Set the assumptions, let the solver test every allowed network, and compare it with what your gut said. Then force a site you believe in and see what it costs.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="stack">
+      <div class="card map-card">
+        <div class="map-wrap"><svg id="optMap" viewBox="0 0 1200 720" role="img" aria-label="Map of the recommended network and which DC serves each store"></svg></div>
+        <div class="map-legend" id="optLegend"></div>
+      </div>
+      <div class="card" id="resultCard"><div class="result-empty">Run the optimizer to see the best network.</div></div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:6px"><h3 style="margin:0">Scenarios you've run</h3><button class="btn ghost" type="button" id="clearRuns" style="padding:8px 14px;min-height:36px;font-size:13px">Clear</button></div>
+        <div class="table-wrap"><table><thead><tr><th>#</th><th>Network</th><th>Assumptions</th><th>Annual cost</th><th>vs. not building</th><th>Within 800 mi</th></tr></thead><tbody id="runsBody"><tr><td colspan="6" class="fine">No scenarios yet.</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h3>Assumptions</h3>
+        <div class="range-row"><span>Freight cost</span><output id="cOut"></output></div>
+        <input type="range" id="cost" min="15" max="45" step="1" aria-label="Freight cost in dollars per thousand units per mile">
+        <div class="range-row"><span>Midwest demand growth</span><output id="gmOut"></output></div>
+        <input type="range" id="gMW" min="0" max="20" step="1" aria-label="Midwest demand growth percent">
+        <div class="range-row"><span>Coastal demand growth</span><output id="gcOut"></output></div>
+        <input type="range" id="gCoast" min="0" max="100" step="5" aria-label="Coastal demand growth percent">
+        <div class="range-row"><span>Service target</span><output id="svcOut"></output></div>
+        <div class="fine">Minimum share of demand within 800 miles of its DC (about two days by truck).</div>
+        <div class="seg" id="svcSeg" role="group" aria-label="Service target">
+          <button type="button" data-v="0">Off</button><button type="button" data-v="90">90%</button><button type="button" data-v="95">95%</button><button type="button" data-v="99">99%</button>
+        </div>
+        <div class="range-row"><span>Maximum new DCs</span></div>
+        <div class="seg" id="maxSeg" role="group" aria-label="Maximum new DCs">
+          <button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button>
+        </div>
+        <div class="range-row"><span>Sites the solver may use</span></div>
+        <div class="sites" id="siteBoxes"></div>
+        <div class="row"><button class="btn" type="button" id="solveBtn">Optimize network</button></div>
+        <div class="divider"></div>
+        <label class="field" style="margin-bottom:8px">Or force a network you believe in
+          <select id="forceSel"></select>
+        </label>
+        <button class="btn dark" type="button" id="forceBtn">Evaluate this network</button>
+      </div>
+      <p class="fine">How the model works: it tries every combination of allowed sites (up to the maximum), then assigns each store's demand to the cheapest DC with spare capacity using an exact min-cost flow. A new DC costs $30M upfront (annualized at $3.06M a year over 20 years at 8%) plus $4M a year to operate, with 400k units of capacity. Chicago holds 2,300k units. Freight is straight-line miles × units × rate. Illustrative synthetic data.</p>
+    </div>
+  </div>
+  <div class="next"><button class="btn dark" type="button" data-goto="challenge">Next: Challenge with AI →</button></div>
+</section>
+
+<!-- ============ 03 CHALLENGE ============ -->
+<section class="panel" id="challenge" role="tabpanel" aria-labelledby="tab-challenge" hidden>
+  <div class="panel-head">
+    <div>
+      <div class="kicker">03 · AI as an analytical partner</div>
+      <h2>Ask. Investigate. Challenge.</h2>
+      <p>The model gave you an answer. Now try to break it. Use AI as a detective to explain the result, then as a skeptic to attack it. Treat every AI claim as a hypothesis you test in the model.</p>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>1 · Pick a role for the AI</h3>
+      <div class="mode-cards">
+        <button class="mode" type="button" data-mode="detective" aria-pressed="true"><b>Detective</b><span>Explain why the model chose this network and what drives it.</span></button>
+        <button class="mode" type="button" data-mode="skeptic" aria-pressed="false"><b>Skeptic</b><span>Play the CFO. Find the assumptions that would reverse it.</span></button>
+      </div>
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <h3 style="margin:0">2 · Copy this into your AI chat</h3>
+        <button class="btn" type="button" id="copyBtn">Copy prompt</button>
+      </div>
+      <div class="prompt" id="promptBox" tabindex="0" aria-label="Generated AI prompt"></div>
+      <p class="fine">Built from your latest result and scenario history. Paste it into any AI assistant. No account or API key is built in.</p>
+    </div>
+    <div class="card">
+      <h3>3 · Test what it told you</h3>
+      <ol class="steps">
+        <li>Pick the AI's single most useful challenge.</li>
+        <li>Go back to Optimize and change <b>one</b> assumption to test it.</li>
+        <li>Rerun and record whether the recommendation held.</li>
+      </ol>
+      <div class="divider"></div>
+      <label class="field">The AI's most useful challenge<textarea data-note="challenge" placeholder="It argued the recommendation depends on…"></textarea></label>
+      <label class="field">What changed when you reran the model?<textarea data-note="changed" placeholder="Before: … After: … So the decision is (robust / fragile) because…"></textarea></label>
+      <button class="btn ghost" type="button" data-goto="optimize">← Back to Optimize to rerun</button>
+    </div>
+  </div>
+  <div class="next"><button class="btn dark" type="button" data-goto="story">Next: Tell the story →</button></div>
+</section>
+
+<!-- ============ 04 STORY ============ -->
+<section class="panel" id="story" role="tabpanel" aria-labelledby="tab-story" hidden>
+  <div class="panel-head">
+    <div>
+      <div class="kicker">04 · Storytelling</div>
+      <h2>Get someone to act.</h2>
+      <p>You have 60 seconds with the executive who owns the $30M. The opening earns attention. Pick one, make it yours, then pitch it.</p>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>1 · Choose your opening</h3>
+      <div class="openings">
+        <button class="opening" type="button" data-open="insight" aria-pressed="true"><b>INSIGHT</b><span>What surprised us?</span><small>Flip an assumption the room holds.</small></button>
+        <button class="opening" type="button" data-open="proof" aria-pressed="false"><b>PROOF</b><span>What does the evidence show?</span><small>Lead with your model's numbers.</small></button>
+        <button class="opening" type="button" data-open="origin" aria-pressed="false"><b>ORIGIN</b><span>Why are we here?</span><small>The moment that started it.</small></button>
+      </div>
+      <div class="starter" id="starter" aria-live="polite"></div>
+      <button class="btn ghost" type="button" id="useStarter">Use this starter</button>
+      <label class="field" style="margin-top:16px">2 · Your 60-second pitch<small>Hook → evidence → recommendation → the ask.</small><textarea data-note="pitch" id="pitchBox" style="min-height:150px" placeholder="Start with your opening, then…"></textarea></label>
+      <p class="fine">Openings adapted from Mike Adams, <i>Seven Stories Every Salesperson Must Tell</i>.</p>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <h3>3 · Pitch it</h3>
+        <div class="row" style="justify-content:space-between">
+          <div class="timer" id="timer" role="timer" aria-live="off">1:00</div>
+          <div class="row"><button class="btn" type="button" id="timerBtn">Start</button><button class="btn ghost" type="button" id="timerReset">Reset</button></div>
+        </div>
+        <div class="divider"></div>
+        <b style="font-size:14px">Listeners, ask:</b>
+        <ol class="steps" style="margin-top:6px">
+          <li>What exactly is the decision?</li>
+          <li>What made it persuasive?</li>
+          <li>What evidence is missing?</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Take your work with you</h3>
+        <p class="fine" style="margin-top:0">Downloads your problem statement, every scenario you ran, the AI challenge, and your pitch.</p>
+        <button class="btn dark" type="button" id="notesBtn">Download my workshop notes</button>
+      </div>
+    </div>
+  </div>
+  <div class="beyond">
+    <div class="eyebrow">Take it beyond the warehouse</div>
+    <h3>One method. Thousands of decisions.</h3>
+    <p>Today you decided whether to put $30 million into a distribution center. The same moves work for routing trucks, scheduling teams, allocating scarce resources, even planning an entire ski season.</p>
+    <div class="chips"><span>Frame it</span><span>Optimize it</span><span>Challenge it</span><span>Tell the story</span></div>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+// ---------- Data (illustrative, synthetic) ----------
+// [name, lat, lon, annual demand in thousand units, region]
+const STORES=[
+['Chicago',41.88,-87.63,110,'mw'],['Naperville',41.75,-88.15,55,'mw'],['Rockford',42.27,-89.09,40,'mw'],['Peoria',40.69,-89.59,40,'mw'],['Springfield IL',39.78,-89.65,35,'mw'],
+['Milwaukee',43.04,-87.91,75,'mw'],['Madison',43.07,-89.4,50,'mw'],['Green Bay',44.51,-88.01,35,'mw'],['Duluth',46.79,-92.1,25,'mw'],['Minneapolis',44.98,-93.27,95,'mw'],['Rochester MN',44.02,-92.47,30,'mw'],
+['Fargo',46.88,-96.79,30,'mw'],['Sioux Falls',43.54,-96.73,30,'mw'],['Des Moines',41.59,-93.62,55,'mw'],['Cedar Rapids',41.98,-91.67,35,'mw'],['Omaha',41.26,-95.93,55,'mw'],['Lincoln',40.81,-96.7,35,'mw'],
+['Kansas City',39.1,-94.58,75,'mw'],['Wichita',37.69,-97.34,40,'mw'],['St Louis',38.63,-90.2,85,'mw'],['Springfield MO',37.21,-93.29,35,'mw'],['Indianapolis',39.77,-86.16,80,'mw'],['Fort Wayne',41.08,-85.14,40,'mw'],
+['Evansville',37.97,-87.57,30,'mw'],['Detroit',42.33,-83.05,95,'mw'],['Grand Rapids',42.96,-85.67,50,'mw'],['Lansing',42.73,-84.56,35,'mw'],['Toledo',41.65,-83.54,40,'mw'],['Columbus',39.96,-83,75,'mw'],
+['Cleveland',41.5,-81.69,70,'mw'],['Cincinnati',39.1,-84.51,65,'mw'],['Dayton',39.76,-84.19,40,'mw'],['Louisville',38.25,-85.76,55,'mw'],
+['Seattle',47.61,-122.33,40,'west'],['Portland',45.52,-122.68,30,'west'],['San Francisco',37.77,-122.42,40,'west'],['Sacramento',38.58,-121.49,25,'west'],['Los Angeles',34.05,-118.24,45,'west'],['San Diego',32.72,-117.16,25,'west'],
+['Boston',42.36,-71.06,35,'east'],['New York',40.71,-74.01,45,'east'],['Philadelphia',39.95,-75.17,35,'east'],['Baltimore',39.29,-76.61,25,'east'],['Washington DC',38.9,-77.04,35,'east'],['Charlotte',35.23,-80.84,25,'east']];
+const CHICAGO={name:'Chicago',lat:41.88,lon:-87.63,cap:2300};
+const SITES=[['Reno',39.53,-119.81],['Salt Lake City',40.76,-111.89],['Phoenix',33.45,-112.07],['Denver',39.74,-104.99],['Dallas',32.78,-96.8],['Atlanta',33.75,-84.39],['Allentown',40.6,-75.47],['Richmond',37.54,-77.44]].map(s=>({name:s[0],lat:s[1],lon:s[2],cap:400}));
+const NEW_DC={upfront:30e6,opex:4e6,capital:3.06e6}; // capital = $30M over 20 yrs at 8%
+const FAR=800;
+// Map coordinates (Albers USA, viewBox 1200x720), precomputed to match assets/us-base.svg
+const XY={"Chicago":[770.3,265.2],"Naperville":[760.8,269.4],"Rockford":[741.9,257.4],"Peoria":[735.3,298.9],"Springfield IL":[735.7,322.5],"Milwaukee":[762.5,235.8],"Madison":[734.7,237.2],"Green Bay":[757.4,198.2],"Duluth":[680.4,144.4],"Minneapolis":[661.1,191.5],"Rochester MN":[676.6,215.8],"Fargo":[597.7,143.4],"Sioux Falls":[598.1,229.3],"Des Moines":[657,279.2],"Cedar Rapids":[693.7,267.8],"Omaha":[612.9,288.3],"Lincoln":[598.1,299.9],"Kansas City":[639.6,344.1],"Wichita":[584.6,380.6],"St Louis":[726.8,352.9],"Springfield MO":[666.5,392.5],"Indianapolis":[803.7,316.9],"Fort Wayne":[819.7,281],"Evansville":[780.4,366.1],"Detroit":[855.1,244],"Grand Rapids":[804.3,233.8],"Lansing":[825.6,237.4],"Toledo":[848.3,262.7],"Columbus":[864.4,304.6],"Cleveland":[883.7,261.5],"Cincinnati":[837.9,330.6],"Dayton":[842.1,312.8],"Louisville":[815.8,355.3],"Seattle":[158.4,61.7],"Portland":[137.7,111.4],"San Francisco":[87.2,305.4],"Sacramento":[110.8,290.2],"Los Angeles":[146.2,420.5],"San Diego":[160.8,459.2],"Boston":[1076.5,198.5],"New York":[1032.3,253.6],"Philadelphia":[1014.8,277.9],"Baltimore":[990.8,300.5],"Washington DC":[984.5,312.1],"Charlotte":[925.6,419.5],"site:Reno":[149.2,274.9],"site:Salt Lake City":[306.5,275.7],"site:Phoenix":[271.2,461.8],"site:Denver":[435.9,319.4],"site:Dallas":[594.4,507.9],"site:Atlanta":[857.2,467.9],"site:Allentown":[1005.5,262.7],"site:Richmond":[983.6,348.3],"Chicago DC":[770.3,265.2]};
+const DC_COLORS=['#c8102e','#2f6fba','#d4860b','#6d4bb8'];
+
+// ---------- Helpers ----------
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const rad=Math.PI/180;
+function miles(a,b){const dl=(a.lat-b.lat)*rad,dn=(a.lon-b.lon)*rad;const q=Math.sin(dl/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dn/2)**2;return 3959*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q))}
+const STORE_OBJ=STORES.map(s=>({name:s[0],lat:s[1],lon:s[2],demand:s[3],region:s[4]}));
+const ALL_DCS=[CHICAGO,...SITES];
+const DIST=ALL_DCS.map(d=>STORE_OBJ.map(s=>miles(d,s)));
+const money=n=>(n<0?'−':'')+'$'+(Math.abs(n)/1e6).toFixed(2)+'M';
+const pct=n=>Math.round(n*100)+'%';
+const label=names=>names.length===1?'Chicago only (no new DC)':names.join(' + ');
+const fmtK=n=>Math.round(n).toLocaleString('en-US')+'k';
+
+// ---------- Saved state ----------
+const KEY='mmd-lab-v2';
+const DEFAULT={tab:'frame',c:25,gMW:0,gCoast:0,svc:0,maxDC:1,allowed:SITES.map(()=>true),runs:[],notes:{},mode:'detective',open:'insight'};
+let S;try{S=Object.assign({},DEFAULT,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=Object.assign({},DEFAULT)}
+if(!Array.isArray(S.allowed)||S.allowed.length!==SITES.length)S.allowed=DEFAULT.allowed.slice();
+if(!Array.isArray(S.runs))S.runs=[];
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+// ---------- Solver: exact min-cost flow (successive shortest paths, Bellman-Ford) ----------
+function assign(dcIdx,demand,ratePerKMile){
+  const nD=dcIdx.length,nS=STORE_OBJ.length,N=nD+nS+2,SRC=N-2,SNK=N-1;
+  const G=Array.from({length:N},()=>[]);
+  const add=(u,v,cap,cost)=>{G[u].push({v,cap,cost,r:G[v].length});G[v].push({v:u,cap:0,cost:-cost,r:G[u].length-1})};
+  dcIdx.forEach((k,i)=>add(SRC,i,ALL_DCS[k].cap,0));
+  dcIdx.forEach((k,i)=>STORE_OBJ.forEach((s,j)=>add(i,nD+j,1e9,DIST[k][j])));
+  demand.forEach((d,j)=>add(nD+j,SNK,d,0));
+  const total=demand.reduce((a,b)=>a+b,0);let sent=0;
+  while(sent<total-1e-6){
+    const D=new Array(N).fill(Infinity),inq=new Array(N).fill(false),pv=new Array(N).fill(null);D[SRC]=0;const q=[SRC];inq[SRC]=true;
+    while(q.length){const u=q.shift();inq[u]=false;G[u].forEach((e,i)=>{if(e.cap>1e-9&&D[u]+e.cost<D[e.v]-1e-9){D[e.v]=D[u]+e.cost;pv[e.v]=[u,i];if(!inq[e.v]){inq[e.v]=true;q.push(e.v)}}})}
+    if(!isFinite(D[SNK]))return null;
+    let f=total-sent;for(let v=SNK;v!==SRC;){const [u,i]=pv[v];f=Math.min(f,G[u][i].cap);v=u}
+    for(let v=SNK;v!==SRC;){const [u,i]=pv[v],e=G[u][i];e.cap-=f;G[v][e.r].cap+=f;v=u}
+    sent+=f;
+  }
+  const flows=dcIdx.map(()=>new Array(nS).fill(0)),loads=new Array(nD).fill(0);let unitMiles=0,near=0;
+  for(let i=0;i<nD;i++)for(const e of G[i]){if(e.v>=nD&&e.v<nD+nS){const j=e.v-nD,f=G[e.v][e.r].cap;if(f>1e-9){flows[i][j]=f;loads[i]+=f;unitMiles+=f*DIST[dcIdx[i]][j];if(DIST[dcIdx[i]][j]<=FAR)near+=f}}}
+  return {flows,loads,unitMiles,transport:unitMiles*ratePerKMile,avgMiles:unitMiles/total,within:near/total,total};
+}
+function demandNow(){return STORE_OBJ.map(s=>s.demand*(1+(s.region==='mw'?S.gMW:S.gCoast)/100))}
+function evaluate(siteIdx){
+  const dcIdx=[0,...siteIdx.map(i=>i+1)];
+  const r=assign(dcIdx,demandNow(),S.c);
+  if(!r)return null;
+  const n=siteIdx.length,fixed=n*(NEW_DC.opex+NEW_DC.capital);
+  return Object.assign(r,{siteIdx,dcIdx,n,fixed,annual:r.transport+fixed,names:dcIdx.map(k=>ALL_DCS[k].name)});
+}
+function combos(arr,max){let out=[[]];for(const x of arr){out=out.concat(out.filter(c=>c.length<max).map(c=>[...c,x]))}return out}
+
+// ---------- Maps ----------
+function arc(a,b,bend){const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,dx=b[0]-a[0],dy=b[1]-a[1];return `M${a[0]} ${a[1]}Q${(mx-dy*bend).toFixed(1)} ${(my+dx*bend).toFixed(1)} ${b[0]} ${b[1]}`}
+const storeR=d=>(5+d/14).toFixed(1);
+function baseLayer(){return '<image href="assets/us-base.svg" x="0" y="0" width="1200" height="720"/>'}
+function storeDots(){return STORE_OBJ.map(s=>{const p=XY[s.name];return `<circle cx="${p[0]}" cy="${p[1]}" r="${storeR(s.demand)}" fill="#2f6fba" fill-opacity=".9" stroke="#fff" stroke-width="1.5"><title>${s.name}: ${s.demand}k units/yr</title></circle>`}).join('')}
+function siteMarks(skip){return SITES.map((s,i)=>{if(skip&&skip.includes(i))return '';const p=XY['site:'+s.name];return `<g><title>Candidate site: ${s.name}</title><circle cx="${p[0]}" cy="${p[1]}" r="13" fill="#fff" stroke="#c98a00" stroke-width="2.5"/><text x="${p[0]}" y="${p[1]+6}" text-anchor="middle" font-family="Inter,Arial" font-size="18" font-weight="900" fill="#a36f00">?</text></g>`}).join('')}
+function dcMark(name,color,label){const p=XY[name==='Chicago'?'Chicago DC':'site:'+name];return `<g><title>${label}</title><circle cx="${p[0]}" cy="${p[1]}" r="15" fill="${color}" stroke="#fff" stroke-width="3.5"/><circle cx="${p[0]}" cy="${p[1]}" r="20" fill="none" stroke="${color}" stroke-opacity=".35" stroke-width="3"/></g>`}
+function drawFrame(){
+  const chi=XY['Chicago DC'];let flows='';
+  if($('#showFlows').checked)flows=STORE_OBJ.map(s=>{const p=XY[s.name];if(Math.hypot(p[0]-chi[0],p[1]-chi[1])<6)return '';return `<path d="${arc(chi,p,.16)}" fill="none" stroke="#c8102e" stroke-opacity=".55" stroke-width="${(0.8+s.demand/45).toFixed(2)}"/>`}).join('');
+  $('#frameMap').innerHTML=baseLayer()+flows+siteMarks()+storeDots()+dcMark('Chicago','#c8102e','Chicago DC: 2,300k units capacity');
+}
+function drawOpt(r){
+  let lines='',marks='';
+  if(r){
+    r.dcIdx.forEach((k,i)=>{const from=XY[k===0?'Chicago DC':'site:'+ALL_DCS[k].name];STORE_OBJ.forEach((s,j)=>{const f=r.flows[i][j];if(f>1e-6){const p=XY[s.name];lines+=`<path d="${arc(from,p,.12)}" fill="none" stroke="${DC_COLORS[i]}" stroke-opacity=".6" stroke-width="${(0.8+f/45).toFixed(2)}"/>`}})});
+    r.dcIdx.forEach((k,i)=>{marks+=dcMark(ALL_DCS[k].name,DC_COLORS[i],ALL_DCS[k].name+' DC')});
+  }else marks=dcMark('Chicago','#c8102e','Chicago DC');
+  $('#optMap').innerHTML=baseLayer()+lines+siteMarks(r?r.siteIdx:[])+storeDots()+marks;
+  $('#optLegend').innerHTML=r?r.dcIdx.map((k,i)=>`<span><i class="dot" style="background:${DC_COLORS[i]}"></i>${ALL_DCS[k].name}${k===0?' (existing)':' (new)'}</span>`).join('')+'<span><i class="q">?</i>Unused candidate</span>':'<span><i class="dot" style="background:#c8102e"></i>Chicago DC</span><span><i class="q">?</i>Candidate site</span>';
+}
+
+// ---------- Frame KPIs ----------
+function drawKPIs(){
+  const total=STORE_OBJ.reduce((a,s)=>a+s.demand,0),coast=STORE_OBJ.filter(s=>s.region!=='mw').reduce((a,s)=>a+s.demand,0);
+  const far=STORE_OBJ.reduce((a,s,j)=>a+(DIST[0][j]>FAR?s.demand:0),0);
+  const kp=[[STORE_OBJ.length,'stores: 33 Midwest, 12 new on the coasts'],[fmtK(total),'units of demand a year'],[pct(total/CHICAGO.cap),'of Chicago’s 2,300k capacity in use'],[pct(coast/total),'of demand now comes from coastal stores'],[pct(far/total),'of demand is over 800 miles from Chicago']];
+  $('#kpis').innerHTML=kp.map(k=>`<div class="kpi"><b>${k[0]}</b><span>${k[1]}</span></div>`).join('');
+}
+
+// ---------- Optimize UI ----------
+function assumptionsText(a){return `$${(a.c/1000).toFixed(3)}/unit-mi · MW +${a.gMW}% · coast +${a.gCoast}%${a.svc?` · ${a.svc}% ≤800mi`:''}`}
+function snapshot(){return {c:S.c,gMW:S.gMW,gCoast:S.gCoast,svc:S.svc,maxDC:S.maxDC}}
+function syncControls(){
+  $('#cost').value=S.c;$('#cOut').textContent=`$${(S.c/1000).toFixed(3)} per unit-mile`;
+  $('#gMW').value=S.gMW;$('#gmOut').textContent=`+${S.gMW}%`;
+  $('#gCoast').value=S.gCoast;$('#gcOut').textContent=`+${S.gCoast}%`;
+  $('#svcOut').textContent=S.svc?`${S.svc}% within 800 mi`:'Off';
+  $$('#svcSeg button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===S.svc)));
+  $$('#maxSeg button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===S.maxDC)));
+  $$('#siteBoxes input').forEach((b,i)=>b.checked=S.allowed[i]);
+}
+function buildControls(){
+  $('#siteBoxes').innerHTML=SITES.map((s,i)=>`<label><input type="checkbox" data-site="${i}">${s.name}</label>`).join('');
+  $('#forceSel').innerHTML='<option value="">Don’t build: Chicago only</option>'+SITES.map((s,i)=>`<option value="${i}">Chicago + ${s.name}</option>`).join('')+
+    '<option value="0,6">Chicago + Reno + Allentown</option><option value="1,5">Chicago + Salt Lake City + Atlanta</option><option value="2,7">Chicago + Phoenix + Richmond</option>';
+  $('#cost').addEventListener('input',e=>{S.c=+e.target.value;syncControls();save()});
+  $('#gMW').addEventListener('input',e=>{S.gMW=+e.target.value;syncControls();save()});
+  $('#gCoast').addEventListener('input',e=>{S.gCoast=+e.target.value;syncControls();save()});
+  $$('#svcSeg button').forEach(b=>b.addEventListener('click',()=>{S.svc=+b.dataset.v;syncControls();save()}));
+  $$('#maxSeg button').forEach(b=>b.addEventListener('click',()=>{S.maxDC=+b.dataset.v;syncControls();save()}));
+  $$('#siteBoxes input').forEach(b=>b.addEventListener('change',()=>{S.allowed[+b.dataset.site]=b.checked;save()}));
+  $('#solveBtn').addEventListener('click',runOptimize);
+  $('#forceBtn').addEventListener('click',runForce);
+  $('#clearRuns').addEventListener('click',()=>{S.runs=[];save();renderRuns();renderResult(null);drawOpt(null);refreshAll()});
+}
+function baseline(){return evaluate([])}
+function runOptimize(){
+  const allowed=SITES.map((_,i)=>i).filter(i=>S.allowed[i]);
+  const all=combos(allowed,S.maxDC).map(evaluate).filter(Boolean);
+  const ok=all.filter(r=>!S.svc||r.within*100>=S.svc-1e-9).sort((a,b)=>a.annual-b.annual);
+  if(!ok.length){recordRun(null,'optimized',all.length);return}
+  recordRun(ok[0],'optimized',all.length,ok[1]||null);
+}
+function runForce(){
+  const v=$('#forceSel').value;const idx=v===''?[]:v.split(',').map(Number);
+  recordRun(evaluate(idx),'forced',1,null,idx);
+}
+function recordRun(r,kind,count,runner,forcedIdx){
+  const base=baseline();
+  const run={id:(S.runs.length?S.runs[S.runs.length-1].id:0)+1,kind,count,a:snapshot()};
+  if(r){
+    Object.assign(run,{names:r.names,siteIdx:r.siteIdx,annual:r.annual,transport:r.transport,fixed:r.fixed,avgMiles:r.avgMiles,within:r.within,loads:r.loads.map(x=>Math.round(x)),caps:r.dcIdx.map(k=>ALL_DCS[k].cap)});
+    run.baseAnnual=base?base.annual:null;run.baseTransport=base?base.transport:null;
+    if(runner)run.runner={names:runner.names,annual:runner.annual};
+    if(S.svc&&r.within*100<S.svc-1e-9)run.missesService=true;
+  }else{run.infeasible=true;run.forcedNames=forcedIdx?['Chicago',...forcedIdx.map(i=>SITES[i].name)]:null}
+  S.runs.push(run);if(S.runs.length>30)S.runs.shift();save();
+  renderResult(run,r);renderRuns();drawOpt(r);refreshAll();
+}
+function payback(run){
+  if(!run||!run.siteIdx||!run.siteIdx.length||run.baseTransport==null)return null;
+  const n=run.siteIdx.length,opSavings=run.baseTransport-run.transport-n*NEW_DC.opex;
+  return opSavings>0?(n*NEW_DC.upfront)/opSavings:Infinity;
+}
+function renderResult(run,r){
+  const el=$('#resultCard');
+  if(!run){el.innerHTML='<div class="result-empty">Run the optimizer to see the best network.</div>';return}
+  if(run.infeasible){
+    el.innerHTML=`<div class="verdict">No feasible network</div><div class="network-name">${run.forcedNames?run.forcedNames.join(' + '):'Nothing fits'}</div><div class="callout bad">${run.forcedNames?'This network cannot serve all demand with its capacity.':'No allowed network meets demand and the service target.'} Try allowing more DCs, more sites, lower growth, or a looser service target.</div>`;return}
+  const delta=run.baseAnnual==null?null:run.baseAnnual-run.annual;
+  const pb=payback(run);
+  let verdict=run.kind==='forced'?'Your forced network':'Best network the solver found';
+  let note='';
+  if(run.baseAnnual==null)note=`<div class="callout bad"><b>Chicago alone can’t keep up.</b> At this growth, demand exceeds Chicago’s 2,300k capacity, so not building isn’t an option.</div>`;
+  else if(!run.siteIdx.length)note=`<div class="callout">Serving everything from Chicago is the cheapest option under these assumptions. What would have to change for a new DC to pay off?</div>`;
+  else if(Math.abs(delta)<1e6)note=`<div class="callout"><b>Close call.</b> This beats not building by only ${money(Math.abs(delta))} a year${delta<0?' (it actually costs more)':''}, on a $${run.siteIdx.length*30}M bet. Would you sign? What assumption is it most sensitive to?</div>`;
+  if(run.missesService)note+=`<div class="callout bad">This network misses your ${run.a.svc}% service target.</div>`;
+  const runner=run.runner?`<p class="fine" style="margin:10px 0 0">Runner-up: ${label(run.runner.names)}, ${money(run.runner.annual-run.annual)} a year more.</p>`:'';
+  el.innerHTML=`<div class="verdict">${verdict}</div><div class="network-name">${label(run.names)}</div>
+  <div class="stats">
+    <div class="stat"><span>Total annual cost</span><b>${money(run.annual)}</b></div>
+    <div class="stat"><span>vs. not building</span><b class="${delta==null||!run.siteIdx.length?'':delta>=0?'pos':'neg'}">${delta==null?'n/a':!run.siteIdx.length?'baseline':(delta>=0?'saves ':'costs ')+money(Math.abs(delta))}</b></div>
+    <div class="stat"><span>Avg. miles to stores</span><b>${Math.round(run.avgMiles)} mi</b></div>
+    <div class="stat"><span>Demand within 800 mi</span><b>${pct(run.within)}</b></div>
+    <div class="stat"><span>Freight</span><b>${money(run.transport)}</b></div>
+    <div class="stat"><span>Payback on $30M</span><b>${pb==null?'n/a':isFinite(pb)?pb.toFixed(1)+' yrs':'never'}</b></div>
+  </div>
+  <div class="util">${run.names.map((n,i)=>{const u=run.loads[i]/run.caps[i];return `<div class="util-row"><span>${n}</span><div class="bar"><i style="width:${Math.min(100,u*100).toFixed(0)}%;background:${DC_COLORS[i]}"></i></div><span>${pct(u)} full</span></div>`}).join('')}</div>
+  ${note}${runner}`;
+}
+function renderRuns(){
+  const body=$('#runsBody');
+  if(!S.runs.length){body.innerHTML='<tr><td colspan="6" class="fine">No scenarios yet.</td></tr>';return}
+  body.innerHTML=S.runs.slice().reverse().map(r=>{
+    if(r.infeasible)return `<tr><td>${r.id}</td><td>${r.forcedNames?r.forcedNames.join(' + '):'(none)'}<br><span class="fine">${r.kind}</span></td><td class="fine">${assumptionsText(r.a)}</td><td colspan="3" class="neg">Infeasible</td></tr>`;
+    const d=r.baseAnnual==null?null:r.baseAnnual-r.annual;
+    return `<tr><td>${r.id}</td><td>${label(r.names)}<br><span class="fine">${r.kind}</span></td><td class="fine">${assumptionsText(r.a)}</td><td class="num">${money(r.annual)}</td><td class="num ${d==null?'':d>=0?'pos':'neg'}">${d==null?'Chicago full':(d>=0?'+':'−')+money(Math.abs(d)).replace('−','')}</td><td class="num">${pct(r.within)}</td></tr>`}).join('');
+}
+function latestRun(){for(let i=S.runs.length-1;i>=0;i--)if(!S.runs[i].infeasible)return S.runs[i];return null}
+
+// ---------- AI prompts ----------
+function buildPrompt(){
+  const r=latestRun();
+  if(!r)return 'Run at least one scenario on the Optimize tab first. Your prompt will appear here.';
+  const hist=S.runs.slice(-8).map(x=>x.infeasible?`#${x.id} ${x.kind}: infeasible (${assumptionsText(x.a)})`:`#${x.id} ${x.kind}: ${label(x.names)} | annual ${money(x.annual)} | vs no-build ${x.baseAnnual==null?'n/a (Chicago over capacity)':money(x.baseAnnual-x.annual)} | ${pct(x.within)} within 800 mi | ${assumptionsText(x.a)}`).join('\n');
+  const pb=payback(r);
+  const facts=`SCENARIO (synthetic classroom data)
+- Midwest retailer, 45 stores: 33 Midwest (1,740k units/yr), 6 West Coast (205k), 6 East Coast (200k).
+- One existing DC in Chicago, capacity 2,300k units/yr.
+- Candidate new DCs: Reno, Salt Lake City, Phoenix, Denver, Dallas, Atlanta, Allentown, Richmond. Each: $30M upfront (annualized $3.06M/yr over 20 yrs at 8%), $4M/yr operating, 400k units capacity.
+- Freight = straight-line miles x units x rate. No inbound freight, inventory, labor, or lead-time modeling.
+
+LATEST RESULT (run #${r.id}, ${r.kind})
+- Network: ${label(r.names)}
+- Assumptions: ${assumptionsText(r.a)}
+- Total annual cost ${money(r.annual)} (freight ${money(r.transport)}, new-DC fixed ${money(r.fixed)})
+- Versus not building: ${!r.siteIdx.length?'this IS the not-building baseline':r.baseAnnual==null?'not building is infeasible at this growth':money(r.baseAnnual-r.annual)+' per year (positive = savings)'}
+- Payback on upfront investment: ${pb==null?'n/a':isFinite(pb)?pb.toFixed(1)+' years':'never'}
+- Avg miles to stores ${Math.round(r.avgMiles)}; ${pct(r.within)} of demand within 800 miles
+- DC utilization: ${r.names.map((n,i)=>`${n} ${pct(r.loads[i]/r.caps[i])}`).join(', ')}
+${r.runner?`- Runner-up: ${label(r.runner.names)}, ${money(r.runner.annual-r.annual)} more per year`:''}
+
+SCENARIO HISTORY
+${hist}`;
+  const task=S.mode==='detective'
+    ?`ROLE: You are a supply chain analyst acting as a detective.
+TASK: Explain why the model chose this network. Name the three biggest drivers of the result. Separate what the numbers above prove from what you are inferring. Point out anything in the scenario history that looks surprising.`
+    :`ROLE: You are a skeptical CFO who must approve a $30M request.
+TASK: Attack this recommendation. Name three assumptions that, if wrong, would reverse it, and say which one you'd test first. Translate that test into a specific change I can make in the model (freight rate, Midwest growth, coastal growth, service target, max DCs, or allowed sites). Point out anything the model leaves out that a real decision would need.`;
+  return `I'm in a supply chain workshop deciding whether a retailer should open a new distribution center. Use ONLY the facts below. If something isn't stated, say it's missing instead of inventing it.
+
+${facts}
+
+${task}
+
+Keep it under 250 words. End with ONE specific scenario for me to rerun.`;
+}
+function renderPrompt(){
+  $('#promptBox').textContent=buildPrompt();
+  $$('.mode').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===S.mode)));
+}
+
+// ---------- Story ----------
+function starterText(){
+  const r=latestRun();
+  if(S.open==='insight')return 'We thought our problem was ___. But when we modeled the network, the data revealed ___.';
+  if(S.open==='origin')return 'Last holiday season, our new coastal stores ran out of stock while inventory sat in Chicago, ___ miles away. That’s why we started rethinking our network.';
+  const count=S.runs.length;
+  if(!r)return 'Our model compared ___ scenarios. Opening ___ saves $___M a year and pays back in ___ years. Here’s the one assumption that would flip it: ___.';
+  if(!r.siteIdx.length)return `Our model compared ${count} scenario${count===1?'':'s'}. Under our assumptions, Chicago can still serve every store at the lowest cost, so we recommend we don’t spend $30M yet. Here’s the signal that would change our mind: ___.`;
+  const d=r.baseAnnual==null?null:r.baseAnnual-r.annual,pb=payback(r);
+  const where=r.names.slice(1).join(' and ');
+  if(d==null)return `Our model compared ${count} scenario${count===1?'':'s'}. At the growth we expect, Chicago runs out of capacity, so we have to build. ${where} is the lowest-cost answer, at ${money(r.annual)} a year. Here’s the one assumption that would change where: ___.`;
+  return `Our model compared ${count} scenario${count===1?'':'s'}. Opening ${where} ${d>=0?'saves':'costs'} ${money(Math.abs(d))} a year${pb!=null&&isFinite(pb)?` and pays back in ${pb.toFixed(1)} years`:''}. Here’s the one assumption that would flip it: ___.`;
+}
+function renderStory(){
+  $('#starter').textContent=starterText();
+  $$('.opening').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.open===S.open)));
+}
+let tLeft=60,tInt=null;
+function renderTimer(){$('#timer').textContent=`${Math.floor(tLeft/60)}:${String(tLeft%60).padStart(2,'0')}`;$('#timer').classList.toggle('low',tLeft<=10)}
+
+// ---------- Notes ----------
+function bindNotes(){
+  $$('[data-note]').forEach(t=>{const k=t.dataset.note;t.value=S.notes[k]||'';t.addEventListener('input',()=>{S.notes[k]=t.value;save();refreshDone()})});
+}
+function download(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function notesText(){
+  const n=S.notes,r=latestRun();
+  const runs=S.runs.map(x=>x.infeasible?`  #${x.id} ${x.kind}: infeasible | ${assumptionsText(x.a)}`:`  #${x.id} ${x.kind}: ${x.names.join(' + ')} | ${money(x.annual)}/yr | vs no-build ${x.baseAnnual==null?'n/a':money(x.baseAnnual-x.annual)} | ${pct(x.within)} within 800 mi | ${assumptionsText(x.a)}`).join('\n')||'  (none)';
+  return `MAKING MILLION-DOLLAR DECISIONS · WORKSHOP NOTES
+University of Hartford
+
+01 FRAME
+Decision: ${n.decision||''}
+Owner: ${n.owner||''}
+Success measure: ${n.metric||''}
+Key constraint: ${n.constraint||''}
+
+02 OPTIMIZE
+Final recommendation: ${r?r.names.join(' + ')+' ('+money(r.annual)+'/yr)':'(none)'}
+Scenarios:
+${runs}
+
+03 CHALLENGE
+AI's most useful challenge: ${n.challenge||''}
+What changed on rerun: ${n.changed||''}
+
+04 STORY (${S.open})
+${n.pitch||''}
+`;
+}
+
+// ---------- Tabs ----------
+const TABS=['frame','optimize','challenge','story'];
+function show(tab,focus){
+  if(!TABS.includes(tab))tab='frame';
+  S.tab=tab;save();
+  $$('.tab').forEach(b=>{const on=b.dataset.tab===tab;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on&&focus)b.focus()});
+  $$('.panel').forEach(p=>p.hidden=p.id!==tab);
+  if(location.hash!=='#'+tab)history.replaceState(null,'','#'+tab);
+  if(tab==='challenge')renderPrompt();
+  if(tab==='story')renderStory();
+}
+function refreshDone(){
+  const n=S.notes,done={frame:!!(n.decision&&n.decision.trim()),optimize:S.runs.length>0,challenge:!!(n.changed&&n.changed.trim()),story:!!(n.pitch&&n.pitch.trim())};
+  $$('.tab').forEach(b=>b.classList.toggle('is-done',done[b.dataset.tab]));
+}
+function refreshAll(){refreshDone();if(S.tab==='challenge')renderPrompt();if(S.tab==='story')renderStory()}
+
+// ---------- Wire up ----------
+function toPanelTop(){const y=$('.top').offsetHeight;if(window.scrollY>y)window.scrollTo({top:y,behavior:'auto'})}
+$$('.tab').forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);toPanelTop()}));
+$('.tabs-inner').addEventListener('keydown',e=>{const i=TABS.indexOf(S.tab);if(e.key==='ArrowRight'){e.preventDefault();show(TABS[(i+1)%4],true)}if(e.key==='ArrowLeft'){e.preventDefault();show(TABS[(i+3)%4],true)}});
+$$('[data-goto]').forEach(b=>b.addEventListener('click',()=>{show(b.dataset.goto);toPanelTop()}));
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+$('#showFlows').addEventListener('change',drawFrame);
+$('#csvBtn').addEventListener('click',()=>{
+  const rows=['type,name,latitude,longitude,region,annual_demand_k_units,capacity_k_units,miles_from_chicago'];
+  STORE_OBJ.forEach((s,j)=>rows.push(`store,${s.name},${s.lat},${s.lon},${s.region},${s.demand},,${Math.round(DIST[0][j])}`));
+  rows.push(`dc,Chicago,${CHICAGO.lat},${CHICAGO.lon},mw,,${CHICAGO.cap},0`);
+  SITES.forEach(s=>rows.push(`candidate,${s.name},${s.lat},${s.lon},,,${s.cap},${Math.round(miles(CHICAGO,s))}`));
+  download('retailer_network.csv',rows.join('\n'));
+});
+$$('.mode').forEach(b=>b.addEventListener('click',()=>{S.mode=b.dataset.mode;save();renderPrompt()}));
+$('#copyBtn').addEventListener('click',()=>{const t=$('#promptBox').textContent;const ok=()=>{$('#copyBtn').textContent='Copied ✓';setTimeout(()=>$('#copyBtn').textContent='Copy prompt',1600)};if(navigator.clipboard)navigator.clipboard.writeText(t).then(ok,()=>alert('Select the prompt text and copy it manually.'));else alert('Select the prompt text and copy it manually.')});
+$$('.opening').forEach(b=>b.addEventListener('click',()=>{S.open=b.dataset.open;save();renderStory()}));
+$('#useStarter').addEventListener('click',()=>{const p=$('#pitchBox');const s=starterText();p.value=p.value.trim()?p.value+'\n\n'+s:s;S.notes.pitch=p.value;save();refreshDone();p.focus()});
+$('#timerBtn').addEventListener('click',()=>{if(tInt){clearInterval(tInt);tInt=null;$('#timerBtn').textContent='Resume';return}if(tLeft<=0)tLeft=60;$('#timerBtn').textContent='Pause';tInt=setInterval(()=>{tLeft--;renderTimer();if(tLeft<=0){clearInterval(tInt);tInt=null;$('#timerBtn').textContent='Start';$('#timer').textContent='Time!'}},1000)});
+$('#timerReset').addEventListener('click',()=>{clearInterval(tInt);tInt=null;tLeft=60;$('#timerBtn').textContent='Start';renderTimer()});
+$('#notesBtn').addEventListener('click',()=>download('workshop_notes.txt',notesText()));
+
+buildControls();syncControls();bindNotes();drawKPIs();drawFrame();
+const last=latestRun();
+if(last){const r=evaluateRun(last);renderResult(last,r);drawOpt(r)}else drawOpt(null);
+renderRuns();renderTimer();refreshDone();
+show(location.hash?location.hash.slice(1):S.tab);
+function evaluateRun(run){const keep=snapshot();Object.assign(S,run.a);const r=evaluate(run.siteIdx);Object.assign(S,keep);return r}
+})();
+</script>
+</body>
+</html>
