@@ -68,6 +68,8 @@
 </style><style>
 .slide.light .thinkers>div,.slide:nth-child(even) .thinkers>div{background:#fff;border-color:#e2e0db}.slide:nth-child(even) .thinkers small{color:#55585f}
 .slide.light{background:#f5f3ef;color:#17181c}
+/* Cover: title owns the left, network graphic owns the right; they never overlap */
+@media(min-width:801px){.slide>.content.hero-copy{margin-left:0;margin-right:auto;max-width:46vw}.hero-copy h1{font-size:clamp(44px,5.4vw,104px);max-width:none}.hero-copy p{max-width:44vw}.hero-bg{right:-3vw;top:50%;width:min(44vw,82vh);transform:translateY(-50%)}}
 /* Fit every slide to the screen: content scales down when the viewport is shorter than the layout needs */
 @media(min-width:801px){.slide{height:100dvh;min-height:0;padding-top:clamp(32px,7vh,90px);padding-bottom:clamp(48px,8vh,96px)}.slide>.content{transform-origin:center center;flex-shrink:0}}
 </style></head><body><main id="deck">
