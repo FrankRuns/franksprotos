@@ -1,0 +1,60 @@
+{
+  "version": "0.1.0",
+  "node_types": [
+    "organization",
+    "facility",
+    "supplier",
+    "customer",
+    "market",
+    "product",
+    "product_family",
+    "transport_mode",
+    "carrier",
+    "capability",
+    "operating_rule"
+  ],
+  "edge_types": [
+    "owns",
+    "operates",
+    "located_in",
+    "produces",
+    "stores",
+    "handles",
+    "can_fulfill",
+    "replenishes",
+    "ships_to",
+    "serves",
+    "uses_mode",
+    "subject_to"
+  ],
+  "edge_semantics": {
+    "ships_to": "Observed or documented flow; never infer from proximity.",
+    "can_fulfill": "Capability, not proof of actual shipment.",
+    "replenishes": "Documented replenishment relationship.",
+    "serves": "Documented market or customer service scope."
+  },
+  "record_fields": [
+    "id",
+    "type",
+    "label",
+    "attributes",
+    "status",
+    "evidence_ids"
+  ],
+  "statuses": [
+    "verified",
+    "inferred",
+    "hypothetical",
+    "unknown"
+  ],
+  "evidence_fields": [
+    "id",
+    "url",
+    "title",
+    "publisher",
+    "published_at",
+    "retrieved_at",
+    "supporting_text"
+  ],
+  "notes": "Industry profiles and patterns must not become verified company facts without supporting evidence."
+}

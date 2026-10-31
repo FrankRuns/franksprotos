@@ -1,0 +1,49 @@
+{
+  "version": "0.1.0",
+  "capabilities": [
+    {
+      "id": "manufacture",
+      "description": "Convert inputs into finished or intermediate goods"
+    },
+    {
+      "id": "receive",
+      "description": "Accept inbound shipments"
+    },
+    {
+      "id": "store",
+      "description": "Hold inventory"
+    },
+    {
+      "id": "pick_pack",
+      "description": "Prepare customer orders"
+    },
+    {
+      "id": "cross_dock",
+      "description": "Transfer goods with minimal dwell"
+    },
+    {
+      "id": "sort",
+      "description": "Sort parcels or shipments by destination"
+    },
+    {
+      "id": "ship",
+      "description": "Dispatch outbound shipments"
+    },
+    {
+      "id": "temperature_control",
+      "description": "Maintain defined thermal conditions"
+    },
+    {
+      "id": "returns_processing",
+      "description": "Receive and process returns"
+    },
+    {
+      "id": "last_mile",
+      "description": "Deliver to final customer"
+    },
+    {
+      "id": "import_handling",
+      "description": "Process inbound international freight"
+    }
+  ]
+}

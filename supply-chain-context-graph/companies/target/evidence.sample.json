@@ -1,0 +1,11 @@
+[
+  {
+    "id": "demo1",
+    "url": "https://example.org/fictional-facility",
+    "title": "Fictional demonstration only",
+    "publisher": "Example",
+    "supporting_text": "Fictional Company operates Warehouse A.",
+    "published_at": null,
+    "retrieved_at": null
+  }
+]

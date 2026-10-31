@@ -1,0 +1,61 @@
+{
+  "version": "0.1.0",
+  "entities": [
+    {
+      "id": "organization",
+      "description": "Legal or operating business"
+    },
+    {
+      "id": "facility",
+      "description": "Physical location with capabilities"
+    },
+    {
+      "id": "location",
+      "description": "Geographic point or area"
+    },
+    {
+      "id": "product",
+      "description": "Stock-keeping item"
+    },
+    {
+      "id": "product_family",
+      "description": "Group of products with shared properties"
+    },
+    {
+      "id": "supplier",
+      "description": "Organization supplying goods or materials"
+    },
+    {
+      "id": "customer",
+      "description": "Receiving entity"
+    },
+    {
+      "id": "market",
+      "description": "Aggregated demand region"
+    },
+    {
+      "id": "carrier",
+      "description": "Transportation provider"
+    },
+    {
+      "id": "transport_service",
+      "description": "Mode or service available on a lane"
+    },
+    {
+      "id": "inventory_pool",
+      "description": "Stock held under shared planning rules"
+    },
+    {
+      "id": "process",
+      "description": "Operational activity"
+    },
+    {
+      "id": "policy",
+      "description": "Rule guiding decisions"
+    },
+    {
+      "id": "demand",
+      "description": "Requirement by product, place, and time"
+    }
+  ]
+}

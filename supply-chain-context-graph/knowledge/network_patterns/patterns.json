@@ -1,0 +1,36 @@
+{
+  "version": "0.1.0",
+  "patterns": [
+    {
+      "id": "multi_echelon",
+      "description": "Multiple stocking or handling stages between source and destination.",
+      "example_roles": [
+        "supplier",
+        "plant",
+        "distribution_center",
+        "customer"
+      ]
+    },
+    {
+      "id": "direct_ship",
+      "description": "Source ships directly to destination without intermediate stocking."
+    },
+    {
+      "id": "hub_and_spoke",
+      "description": "Flows consolidate at a hub and disperse to spokes."
+    },
+    {
+      "id": "cross_docking",
+      "description": "Facility transfers goods with limited or no storage."
+    },
+    {
+      "id": "distributed_inventory",
+      "description": "Inventory positioned at multiple fulfillment nodes."
+    },
+    {
+      "id": "store_fulfillment",
+      "description": "A retail store can also fulfill customer orders."
+    }
+  ],
+  "caution": "Patterns describe possibilities, not company-specific observed links."
+}

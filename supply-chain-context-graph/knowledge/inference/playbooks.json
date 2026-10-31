@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "playbooks": [
+    {
+      "id": "facility_discovery",
+      "method": "Extract named sites, addresses, operating role, and evidence; distinguish headquarters from logistics sites.",
+      "guardrail": "Do not infer a DC from a generic office address."
+    },
+    {
+      "id": "role_classification",
+      "method": "Map source descriptions to capabilities and preserve exact source wording.",
+      "guardrail": "Facility type alone does not establish capabilities."
+    },
+    {
+      "id": "relationship_extraction",
+      "method": "Create specific edges only when both endpoints and relationship are supported.",
+      "guardrail": "General descriptions become company-level policies, not fabricated lanes."
+    },
+    {
+      "id": "industry_context",
+      "method": "Retrieve applicable patterns and rules by observed company operations.",
+      "guardrail": "Do not assign a single industry as an exclusive template."
+    },
+    {
+      "id": "gap_analysis",
+      "method": "List missing facility roles, service regions, products, contracts and eligibility.",
+      "guardrail": "Unknowns are useful graph outputs."
+    },
+    {
+      "id": "conflict_resolution",
+      "method": "Retain each claim and its provenance; prefer dated primary sources when assessing current state.",
+      "guardrail": "Never silently overwrite contradictions."
+    }
+  ]
+}
