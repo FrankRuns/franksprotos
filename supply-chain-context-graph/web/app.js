@@ -3,7 +3,49 @@ const endpointKey = "scg-worker-url";
 $("endpoint").value = localStorage.getItem(endpointKey) || "";
 $("endpoint").addEventListener("change", () => localStorage.setItem(endpointKey, $("endpoint").value.trim()));
 let current = null;
+
+function drawGraph(graph) {
+ const host=$("graph-map"),detail=$("graph-detail");host.replaceChildren();
+ const nodes=(graph.nodes||[]).slice(0,45),ids=new Map(nodes.map((n,i)=>[n.id,i]));
+ const edges=(graph.edges||[]).filter(e=>ids.has(e.source)&&ids.has(e.target)).slice(0,75);
+ if(!nodes.length){detail.textContent="No entities to display.";return;}
+ const W=360,H=Math.max(340,Math.min(620,260+nodes.length*12)),cx=W/2,cy=H/2;
+ const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg");
+ svg.setAttribute("viewBox","0 0 "+W+" "+H);svg.setAttribute("role","img");svg.setAttribute("aria-label","Interactive supply chain relationship network");
+ const positions=nodes.map((n,i)=>{
+  if(i===0)return {x:cx,y:cy};
+  const angle=i*2.399963229728653;
+  const radius=65+Math.sqrt(i/Math.max(1,nodes.length-1))*Math.min(190,H*.36);
+  return {x:Math.max(42,Math.min(W-42,cx+Math.cos(angle)*radius)),y:Math.max(35,Math.min(H-35,cy+Math.sin(angle)*radius))};
+ });
+ const colors={verified:"#6edac8",inferred:"#f2c66d",hypothetical:"#bd9af7",unknown:"#8b9bad"};
+ const inspect=(item,kind)=>{
+  detail.replaceChildren();
+  const h=document.createElement("strong");h.textContent=kind==="node"?(item.label||item.id):((nodes[ids.get(item.source)]?.label||item.source)+" → "+(nodes[ids.get(item.target)]?.label||item.target));detail.append(h);
+  const info=document.createElement("p");info.textContent=(item.type||"relationship")+" · "+(item.status||"unknown");detail.append(info);
+  const refs=item.evidence_ids||[];
+  if(refs.length){const p=document.createElement("p");p.textContent="Evidence: "+refs.join(", ");detail.append(p);}
+  const sources=graph.sources||[];
+  for(const id of refs){const source=sources.find(s=>s.id===id);if(source){const a=document.createElement("a");a.href=source.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=source.title||source.url;detail.append(a,document.createElement("br"));}}
+ };
+ const make=(tag,attrs,parent)=>{const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));parent.append(el);return el;};
+ for(const e of edges){const a=positions[ids.get(e.source)],b=positions[ids.get(e.target)];
+  const line=make("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:colors[e.status]||colors.unknown,"stroke-width":2,"stroke-dasharray":e.status==="verified"?"none":"5 5",opacity:".68"},svg);
+  line.style.cursor="pointer";line.style.pointerEvents="stroke";line.addEventListener("click",()=>inspect(e,"edge"));
+  const hit=make("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:"transparent","stroke-width":14},svg);
+  hit.style.cursor="pointer";hit.addEventListener("click",()=>inspect(e,"edge"));
+ }
+ nodes.forEach((n,i)=>{const p=positions[i],g=make("g",{"class":"node",tabindex:0,role:"button","aria-label":n.label||n.id},svg);
+  make("circle",{cx:p.x,cy:p.y,r:i===0?17:12,fill:colors[n.status]||colors.unknown},g);
+  const t=make("text",{x:p.x,y:p.y+(i===0?31:24),"text-anchor":"middle"},g);
+  const name=n.label||n.id;t.textContent=name.length>19?name.slice(0,17)+"…":name;
+  g.addEventListener("click",()=>inspect(n,"node"));g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();inspect(n,"node");}});
+ });
+ host.append(svg);detail.textContent="Tap a circle or line to see its evidence.";
+}
+
 function showGraph(graph, source) {
+  drawGraph(graph);
   current = graph;
   $("results").hidden = false;
   $("heading").textContent = graph.company || "Context graph";
