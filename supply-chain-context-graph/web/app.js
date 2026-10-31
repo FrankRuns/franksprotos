@@ -6,7 +6,7 @@ let current = null;
 
 function drawGraph(graph) {
  const host=$("graph-map"),detail=$("graph-detail");host.replaceChildren();
- const all=graph.nodes||[], types=/supplier|vendor|manufacturer|port|warehouse|distribution|fulfillment|sortation|receive|flow.center|store|customer|market|facility|plant|factory|transport/i;
+ const all=graph.nodes||[], types=/supplier|vendor|manufacturer|port|inbound|warehouse|distribution|fulfillment|sortation|receive|flow.center|store|customer|market|facility|plant|factory|transport/i;
  const nodes=all.filter(n=>types.test((n.type||"")+" "+(n.label||""))).slice(0,35);
  if(!nodes.length){detail.textContent="No physical supply chain entities identified. Research more sources before drawing a network.";return;}
  const ids=new Map(nodes.map((n,i)=>[n.id,i]));
@@ -34,7 +34,8 @@ function drawGraph(graph) {
  const sources=graph.sources||[];
  function inspect(item,edge=false){detail.replaceChildren();const heading=document.createElement("strong");heading.textContent=edge?((all.find(n=>n.id===item.source)?.label||item.source)+" → "+(all.find(n=>n.id===item.target)?.label||item.target)):(item.label||item.id);detail.append(heading);
   const p=document.createElement("p");p.textContent=(item.type||"")+" · "+(item.status||"unknown");detail.append(p);
-  if(!edge){const connected=(graph.edges||[]).filter(e=>e.source===item.id||e.target===item.id);const info=document.createElement("p");info.textContent=connected.length+" recorded relationships. Physical flows require separate evidence.";detail.append(info);}
+  if(!edge){const context=(graph.operating_context||[]).filter(x=>x.subject_id===item.id);for(const rule of context){const block=document.createElement("p");block.textContent=(rule.kind||"Context")+": "+rule.statement+" ("+rule.status+")";detail.append(block);}
+  const connected=(graph.edges||[]).filter(e=>e.source===item.id||e.target===item.id);const info=document.createElement("p");info.textContent=connected.length+" recorded relationships. Physical flows require separate evidence.";detail.append(info);}
   for(const ref of item.evidence_ids||[]){const s=sources.find(x=>x.id===ref);if(s){const a=document.createElement("a");a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=s.title||s.url;detail.append(a,document.createElement("br"));}}
  }
  for(const e of edges){const a=positions.get(e.source),b=positions.get(e.target);if(!a||!b)continue;
@@ -75,6 +76,9 @@ function showGraph(graph, source) {
     $("unknowns").append(el);
   }
   $("raw").textContent = JSON.stringify(graph, null, 2);
+  $("context").replaceChildren();
+  for(const item of graph.operating_context||[]){const div=document.createElement("div");div.className="edge";const node=(graph.nodes||[]).find(n=>n.id===item.subject_id);div.textContent=(node?.label||item.subject_id)+" · "+item.kind+" · "+item.statement+" · "+item.status;$("context").append(div);}
+  if(!(graph.operating_context||[]).length)$("context").textContent="No documented operational rules or capabilities extracted yet.";
   if (graph.sources && graph.sources.length) {
     const heading=document.createElement("h3"); heading.textContent="Research sources"; $("unknowns").append(heading);
     for(const source of graph.sources){const link=document.createElement("a");link.href=source.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent=source.id+" · "+source.title;const div=document.createElement("div");div.className="edge";div.append(link);$("unknowns").append(div);}
