@@ -197,7 +197,7 @@ $("run-benchmark").addEventListener("click",async()=>{
  const button=$("run-benchmark"),status=$("benchmark-status"),output=$("benchmark-output");
  button.disabled=true;output.hidden=true;status.textContent="Running two matched OpenAI decisions…";
  try{
-  const endpoint=$("endpoint").value.trim().replace(/\\/$/,"");
+ const endpoint=$("endpoint").value.trim().replace(/\/$/,"");
   if(!endpoint)throw Error("Set the Cloudflare Worker URL in Connection settings first.");
   const response=await fetch(endpoint+"/benchmark",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scenario_id:$("benchmark-scenario").value})});
   const result=await response.json();if(!response.ok)throw Error(result.error||"Benchmark request failed");
