@@ -193,6 +193,56 @@ $("download").addEventListener("click", () => {
   const url = URL.createObjectURL(blob); const a = document.createElement("a");
   a.href=url; a.download="supply-chain-context-graph.json"; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+
+const benchmarkPlaces={
+ "PA-DC":[40.2732,-76.8867],"CT-STORE":[41.7658,-72.6734],"NJ-FC":[40.7357,-74.1724],
+ "CT-DC":[41.7658,-72.6734],"MA-DC":[42.3601,-71.0589],
+ "OH-DC":[39.9612,-82.9988],"IN-DC":[39.7684,-86.1581],
+ "GA-DC":[33.749,-84.388],"TN-DC":[36.1627,-86.7816],
+ "NY-FC":[40.7128,-74.006],"customer":null
+};
+const benchmarkDestinations={"direct-ship":[41.7658,-72.6734],"cold-chain":[42.3601,-71.0589],"carrier-contract":[41.8781,-87.6298],"capacity":[33.749,-84.388],"inventory-eligibility":[41.3083,-72.9279]};
+let benchmarkMap=null;
+function renderBenchmarkMap(result){
+ const host=$("benchmark-map");
+ if(!window.L){host.textContent="Map tiles unavailable. Decision comparison remains below.";return;}
+ if(benchmarkMap){benchmarkMap.remove();benchmarkMap=null;}
+ benchmarkMap=L.map(host,{scrollWheelZoom:false});
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap contributors",maxZoom:18}).addTo(benchmarkMap);
+ const bounds=[],scenario=result.scenario,location=benchmarkDestinations[scenario.id];
+ if(!location){host.textContent="No geographic reference for this scenario.";return;}
+ const customer=L.circleMarker(location,{radius:9,color:"#ffffff",fillColor:"#1e94c6",fillOpacity:1,weight:2}).addTo(benchmarkMap).bindPopup("Customer destination: "+scenario.demand.destination);
+ bounds.push(location);
+ const colors={baseline:"#fb8f88",context_graph:"#55d7b6"};
+ const selected=new Set(result.runs.map(r=>r.decision.option_id));
+ for(const option of scenario.options){
+  const from=benchmarkPlaces[option.from];if(!from)continue;
+  const run=result.runs.find(r=>r.decision.option_id===option.id);
+  const color=run?colors[run.condition]:"#93a7b9";
+  const offset=option.to==="CT-STORE"?benchmarkPlaces["CT-STORE"]:location;
+  L.polyline([from,offset],{color,weight:run?5:2,opacity:run?0.95:0.45,dashArray:run?.grade.feasible?null:"7 7"}).addTo(benchmarkMap).bindPopup(option.id+" · $"+option.cost+" · "+option.days+" day(s)"+(run?" · "+run.condition:""));
+  L.circleMarker(from,{radius:7,color:"#fff",weight:1,fillColor:color,fillOpacity:0.95}).addTo(benchmarkMap).bindPopup(option.from+" (approximate city center)");
+  bounds.push(from);
+ }
+ if(scenario.id==="direct-ship"){
+  const store=benchmarkPlaces["CT-STORE"];
+  L.circleMarker(store,{radius:5,color:"#fff",fillColor:"#55d7b6",fillOpacity:1}).addTo(benchmarkMap).bindPopup("CT store: pickup destination");
+ }
+ benchmarkMap.fitBounds(bounds,{padding:[35,35],maxZoom:8});
+ setTimeout(()=>benchmarkMap?.invalidateSize(),150);
+}
+function renderBenchmarkExplanation(result){
+ const base=result.runs.find(r=>r.condition==="baseline"),graph=result.runs.find(r=>r.condition==="context_graph");
+ const host=$("benchmark-explanation");host.replaceChildren();
+ const title=document.createElement("strong");title.textContent=base.grade.feasible===graph.grade.feasible?"What did we learn?":graph.grade.feasible?"Why the graph helped":"What changed?";host.append(title);
+ const p=document.createElement("p");
+ if(!base.grade.feasible&&graph.grade.feasible)p.textContent="Without operational context, ChatGPT chose "+base.decision.option_id+" ($"+base.grade.cost+"), which violates a real constraint in this synthetic scenario. With the graph, it chose "+graph.decision.option_id+" ($"+graph.grade.cost+"), a feasible option. The extra cost buys a valid decision, not an improvement in shipping price.";
+ else if(base.grade.feasible&&graph.grade.feasible)p.textContent="Both decisions were feasible. Compare their costs and explanations to see whether the graph improved efficiency.";
+ else p.textContent="The graph did not produce a clear feasibility win in this trial. Review both choices and the operational rules below.";
+ host.append(p);
+ const rules=document.createElement("p");rules.textContent="Relevant rule: "+result.context_graph.operational_rules.map(r=>r.statement).join(" · ");host.append(rules);
+}
+
 $("run-benchmark").addEventListener("click",async()=>{
  const button=$("run-benchmark"),status=$("benchmark-status"),output=$("benchmark-output");
  button.disabled=true;output.hidden=true;status.textContent="Running two matched OpenAI decisions…";
@@ -212,6 +262,7 @@ $("run-benchmark").addEventListener("click",async()=>{
    const reason=document.createElement("p");reason.textContent=run.decision.reason||"";card.append(reason);cards.append(card);
   }
   $("benchmark-raw").textContent=JSON.stringify(result,null,2);output.hidden=false;
+  renderBenchmarkExplanation(result);renderBenchmarkMap(result);
   status.textContent="Paired experiment complete using "+result.model+". These results are one trial, not proof of a performance difference.";
  }catch(e){status.textContent="Benchmark failed: "+e.message;status.className="error";}
  finally{button.disabled=false;}
