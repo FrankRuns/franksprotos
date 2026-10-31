@@ -67,7 +67,9 @@ function validateGraph(g,evidence){
   if(!Array.isArray(refs)||refs.some(ref=>!sources.has(ref)))throw Error("Unknown evidence reference");
   if(item.status==="verified"&&!refs.length)throw Error("Verified claim requires evidence");
  }
- for(const edge of g.edges)if(!ids.has(edge.source)||!ids.has(edge.target))throw Error("Edge endpoint missing");
+ const originalCount=g.edges.length;
+ g.edges=g.edges.filter(edge=>ids.has(edge.source)&&ids.has(edge.target));
+ g.validation={dropped_edges_missing_endpoints:originalCount-g.edges.length};
 }
 export default {async fetch(request,env){
  const origin=request.headers.get("Origin"),allowed=env.ALLOWED_ORIGIN||"https://franksprotos.com";
@@ -93,6 +95,6 @@ export default {async fetch(request,env){
   const result=await response.json();
   const graph=JSON.parse(result.choices[0].message.content);
   validateGraph(graph,evidence);
-  return json({graph,evidence_url:body.website,sources:evidence.map(({id,url,title})=>({id,url,title})),usage:result.usage||null},200,cors);
+  return json({graph,validation:graph.validation,evidence_url:body.website,sources:evidence.map(({id,url,title})=>({id,url,title})),usage:result.usage||null},200,cors);
  }catch(error){return json({error:String(error.message||error).slice(0,450)},400,cors);}
 }};
