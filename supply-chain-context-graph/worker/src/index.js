@@ -3,6 +3,7 @@
 const RESEARCH_TTL=7*24*60*60*1000;
 const SEARCH_MONTHLY_LIMIT=2000; // 2000 Brave queries at $5/1000 = $10 gross
 const GENERATION_MONTHLY_LIMIT=200;
+const BENCHMARK_MONTHLY_LIMIT=60; // 60 paired experiments, 120 OpenAI calls
 export class ResearchBudget {
  constructor(state){this.state=state;}
  async fetch(request){
@@ -20,12 +21,12 @@ export class ResearchBudget {
     return json({ok:true});
    }
    if(data.action==="stats"){
-    return json({searches:await storage.get("searches:"+month)||0,search_limit:SEARCH_MONTHLY_LIMIT,generations:await storage.get("generations:"+month)||0,generation_limit:GENERATION_MONTHLY_LIMIT});
+    return json({searches:await storage.get("searches:"+month)||0,search_limit:SEARCH_MONTHLY_LIMIT,generations:await storage.get("generations:"+month)||0,generation_limit:GENERATION_MONTHLY_LIMIT,benchmarks:await storage.get("benchmarks:"+month)||0,benchmark_limit:BENCHMARK_MONTHLY_LIMIT});
    }
    if(data.action==="reserve"){
     const ipKey="ip:"+day+":"+ip,visits=await storage.get(ipKey)||0;
     if(visits>=20)return json({allowed:false,reason:"Daily request limit reached for this visitor"},429);
-    const kind=data.kind==="generation"?"generations":"searches",limit=kind==="generations"?GENERATION_MONTHLY_LIMIT:SEARCH_MONTHLY_LIMIT;
+    const kind=data.kind==="benchmark"?"benchmarks":data.kind==="generation"?"generations":"searches",limit=kind==="benchmarks"?BENCHMARK_MONTHLY_LIMIT:kind==="generations"?GENERATION_MONTHLY_LIMIT:SEARCH_MONTHLY_LIMIT;
     const counter=kind+":"+month,used=await storage.get(counter)||0;
     const units=kind==="searches"?4:1;
     if(used+units>limit)return json({allowed:false,reason:kind+" monthly budget exhausted; cached research remains available"},429);
@@ -42,6 +43,24 @@ async function budget(env,data){
  const id=env.BUDGET.idFromName("global-v1");
  const response=await env.BUDGET.get(id).fetch("https://budget.internal/",{method:"POST",body:JSON.stringify(data)});
  return {status:response.status,...await response.json()};
+}
+
+
+const BENCHMARK_SCENARIOS=[
+ {id:"direct-ship",title:"DC inventory is not parcel eligible",demand:{sku:"TV-55",quantity:1,deadline_days:2,destination:"Hartford"},options:[{id:"pa-direct",from:"PA-DC",to:"customer",cost:8,days:1},{id:"pa-store",from:"PA-DC",to:"CT-STORE",cost:14,days:2},{id:"nj-fulfillment",from:"NJ-FC",to:"customer",cost:19,days:2}],inventory:{"PA-DC":40,"NJ-FC":5},rules:[{id:"r1",text:"PA-DC cannot ship parcels directly to customers",blocks:["pa-direct"]},{id:"r2",text:"CT-STORE can receive PA-DC replenishment and release pickup orders",allows:["pa-store"]}]},
+ {id:"cold-chain",title:"Temperature-controlled shipment",demand:{sku:"FROZEN-01",quantity:10,deadline_days:2,destination:"Boston"},options:[{id:"ambient",from:"CT-DC",to:"customer",cost:35,days:1},{id:"reefer",from:"CT-DC",to:"customer",cost:65,days:2},{id:"remote-reefer",from:"MA-DC",to:"customer",cost:90,days:1}],inventory:{"CT-DC":100,"MA-DC":100},rules:[{id:"r1",text:"FROZEN-01 requires refrigerated transportation; ambient is prohibited",blocks:["ambient"]}]},
+ {id:"carrier-contract",title:"Cheapest carrier is not contracted",demand:{sku:"PART-9",quantity:2,deadline_days:3,destination:"Chicago"},options:[{id:"spot",from:"OH-DC",to:"customer",cost:12,days:1},{id:"contract",from:"OH-DC",to:"customer",cost:20,days:2},{id:"backup",from:"IN-DC",to:"customer",cost:26,days:2}],inventory:{"OH-DC":10,"IN-DC":10},rules:[{id:"r1",text:"Spot carrier is not authorized for this account; use contracted or backup carrier",blocks:["spot"]}]},
+ {id:"capacity",title:"Fast lane exceeds daily capacity",demand:{sku:"KIT-2",quantity:50,deadline_days:3,destination:"Atlanta"},options:[{id:"fast",from:"GA-DC",to:"customer",cost:100,days:1},{id:"standard",from:"GA-DC",to:"customer",cost:130,days:2},{id:"overflow",from:"TN-DC",to:"customer",cost:155,days:2}],inventory:{"GA-DC":80,"TN-DC":80},rules:[{id:"r1",text:"Fast lane capacity is 20 units per day; order requires 50 units on one shipment",blocks:["fast"]}]},
+ {id:"inventory-eligibility",title:"Inventory exists but is reserved",demand:{sku:"MED-4",quantity:12,deadline_days:2,destination:"New Haven"},options:[{id:"reserved",from:"CT-DC",to:"customer",cost:18,days:1},{id:"available",from:"NY-FC",to:"customer",cost:29,days:2},{id:"slow",from:"PA-DC",to:"customer",cost:15,days:4}],inventory:{"CT-DC":40,"NY-FC":20,"PA-DC":20},rules:[{id:"r1",text:"All CT-DC stock is allocated to a different customer; unavailable for this order",blocks:["reserved"]}]}
+];
+function benchmarkPublic(s){return {id:s.id,title:s.title,demand:s.demand,options:s.options,inventory:s.inventory};}
+function benchmarkContext(s){return {company:"Synthetic Benchmark Company",operational_rules:s.rules.map(r=>({id:r.id,statement:r.text,status:"verified",source:"synthetic ground truth"}))};}
+function gradeBenchmark(s,decision){const option=s.options.find(o=>o.id===decision.option_id);const blocked=new Set(s.rules.flatMap(r=>r.blocks||[]));const feasible=!!option&&!blocked.has(option.id)&&option.days<=s.demand.deadline_days&&(s.inventory[option.from]||0)>=s.demand.quantity;const valid=s.options.filter(o=>!blocked.has(o.id)&&o.days<=s.demand.deadline_days&&(s.inventory[o.from]||0)>=s.demand.quantity);const optimum=Math.min(...valid.map(o=>o.cost));return {feasible,cost:option?.cost??null,optimal_cost:optimum,regret:feasible?option.cost-optimum:null,violations:!option?["Invalid option"]:blocked.has(option.id)?["Violates hidden operational constraint"]:option.days>s.demand.deadline_days?["Misses deadline"]:[]};}
+async function callBenchmarkModel(env,scenario,context){
+ const messages=[{role:"system",content:"You are a supply chain order promising agent. Choose exactly one option_id from the provided options to fulfill the order. Minimize cost while meeting deadline, inventory and any known operational rules. Never invent options. Return JSON with option_id and reason."},{role:"user",content:JSON.stringify({scenario:benchmarkPublic(scenario),...(context?{context_graph:benchmarkContext(scenario)}:{})})}];
+ const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+env.OPENAI_API_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(45000),body:JSON.stringify({model:env.BENCHMARK_MODEL||"gpt-4.1-mini",messages,temperature:0,response_format:{type:"json_object"},max_tokens:220})});
+ if(!response.ok)throw Error("OpenAI API error "+response.status+": "+(await response.text()).slice(0,180));
+ const data=await response.json();return {decision:JSON.parse(data.choices[0].message.content),usage:data.usage};
 }
 
 const RULES = [
@@ -157,8 +176,23 @@ export default {async fetch(request,env){
  if(request.method==="OPTIONS")return origin===allowed?new Response(null,{status:204,headers:{...cors,"Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Max-Age":"600"}}):json({error:"Origin not allowed"},403);
  const pathname=new URL(request.url).pathname;
  if(pathname==="/health")return json({status:"ok",model:env.MODEL_ID,research:"budgeted-public-search-v8",web_search_configured:!!env.BRAVE_API_KEY});
- if(!["/generate","/research","/plan"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
+ if(!["/generate","/research","/plan","/benchmark"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
  if(origin!==allowed)return json({error:"Origin not allowed"},403,cors);
+ if(pathname==="/benchmark"){
+  if(!env.OPENAI_API_KEY)return json({error:"OPENAI_API_KEY secret missing in Cloudflare Worker"},503,cors);
+  try{
+   const body=await request.json(),scenario=BENCHMARK_SCENARIOS.find(s=>s.id===body.scenario_id)||BENCHMARK_SCENARIOS[0];
+   const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+   const permit=await budget(env,{action:"reserve",kind:"benchmark",ip,company:"synthetic"});
+   if(!permit.allowed)return json({error:permit.reason},429,cors);
+   const runs=[];
+   for(const withGraph of [false,true]){
+    const result=await callBenchmarkModel(env,scenario,withGraph);
+    runs.push({condition:withGraph?"context_graph":"baseline",...result,grade:gradeBenchmark(scenario,result.decision)});
+   }
+   return json({scenario:benchmarkPublic(scenario),context_graph:benchmarkContext(scenario),runs,model:env.BENCHMARK_MODEL||"gpt-4.1-mini",note:"Synthetic graph is intentionally separate from your public company graph. Ground truth is withheld from baseline."},200,cors);
+  }catch(e){return json({error:String(e.message||e).slice(0,400)},400,cors);}
+ }
  if(!env.HF_TOKEN)return json({error:"HF_TOKEN secret missing"},503,cors);
  try{
   if(Number(request.headers.get("content-length")||0)>90000)throw Error("Request too large");
