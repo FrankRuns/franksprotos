@@ -1,0 +1,89 @@
+{
+  "version": "0.1.0",
+  "relationships": [
+    {
+      "id": "owns",
+      "source": "organization",
+      "target": "facility",
+      "description": "Ownership, not operation"
+    },
+    {
+      "id": "operates",
+      "source": "organization",
+      "target": "facility",
+      "description": "Operating responsibility"
+    },
+    {
+      "id": "located_in",
+      "source": "facility",
+      "target": "location",
+      "description": "Physical geography"
+    },
+    {
+      "id": "supplies",
+      "source": "supplier",
+      "target": "facility",
+      "description": "Supply capability, not confirmed shipments"
+    },
+    {
+      "id": "produces",
+      "source": "facility",
+      "target": "product",
+      "description": "Production capability"
+    },
+    {
+      "id": "stocks",
+      "source": "facility",
+      "target": "product",
+      "description": "Inventory presence"
+    },
+    {
+      "id": "handles",
+      "source": "facility",
+      "target": "product_family",
+      "description": "Handling capability"
+    },
+    {
+      "id": "serves",
+      "source": "facility",
+      "target": "market",
+      "description": "Market coverage"
+    },
+    {
+      "id": "ships_to",
+      "source": "facility",
+      "target": "facility",
+      "description": "Actual flow, requires specific evidence"
+    },
+    {
+      "id": "can_ship_to",
+      "source": "facility",
+      "target": "facility",
+      "description": "Potential feasible flow, not actual flow"
+    },
+    {
+      "id": "fulfills",
+      "source": "facility",
+      "target": "customer",
+      "description": "Fulfillment relationship"
+    },
+    {
+      "id": "uses_carrier",
+      "source": "facility",
+      "target": "carrier",
+      "description": "Carrier usage"
+    },
+    {
+      "id": "subject_to",
+      "source": "facility",
+      "target": "policy",
+      "description": "Constraint or business rule"
+    },
+    {
+      "id": "transforms",
+      "source": "process",
+      "target": "product",
+      "description": "Transformation of goods"
+    }
+  ]
+}
