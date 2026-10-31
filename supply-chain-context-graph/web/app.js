@@ -56,6 +56,8 @@ function renderResearch(research){
  lastResearch=research;
  $("research-review").hidden=false;
  const host=$("research-sources");host.replaceChildren();
+ const planHost=$("research-plan");planHost.replaceChildren();
+ for(const item of research.research_plan||[]){const d=document.createElement("details"),s=document.createElement("summary");s.textContent=item.label+" · "+(item.trigger==="source-signal"?"Source signal":"Industry hypothesis");d.append(s);const q=document.createElement("p");q.textContent=item.question;d.append(q);for(const query of item.queries||[]){const p=document.createElement("p");p.textContent="Proposed search (not yet run): "+query;d.append(p);}planHost.append(d);}
  const header=document.createElement("p");header.textContent=(research.sources||[]).length+" pages retrieved. Expand each to inspect the exact text sent to Qwen.";host.append(header);
  for(const s of research.sources||[]){
   const d=document.createElement("details"),summary=document.createElement("summary");summary.textContent=(s.title||s.url)+" · "+s.id;
@@ -103,6 +105,9 @@ $("research").addEventListener("click",async()=>{
 function showGraph(graph, source) {
   drawGraph(graph);
   renderClaims(graph);
+  const hypothesisHost=$("hypotheses");hypothesisHost.replaceChildren();
+  for(const h of graph.hypotheses||[]){const d=document.createElement("div");d.className="edge";const title=document.createElement("strong");title.textContent="["+(h.status||"hypothetical")+"] "+(h.statement||"");const p=document.createElement("p");p.textContent=(h.rationale||"")+(h.research_question?" Research next: "+h.research_question:"");d.append(title,p);hypothesisHost.append(d);}
+  if(!(graph.hypotheses||[]).length)hypothesisHost.textContent="No explicit hypotheses returned by the model.";
   current = graph;
   $("results").hidden = false;
   $("heading").textContent = graph.company || "Context graph";
