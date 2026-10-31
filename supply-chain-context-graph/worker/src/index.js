@@ -63,6 +63,44 @@ function focusEvidence(text){
  const selected=parts.filter(s=>terms.test(s)&&s.length>35&&s.length<650);
  return selected.slice(0,28).join(" ").slice(0,3400)||String(text||"").slice(0,1400);
 }
+
+const TARGET_REFERENCES=[
+ {id:"target-tx",url:"https://corporate.target.com/about/locations/about-our-stores/west-south-central-region",title:"Target: West South Central region"},
+ {id:"target-il",url:"https://corporate.target.com/about/locations/about-our-stores/east-north-central-region",title:"Target: East North Central region"},
+ {id:"target-ca",url:"https://corporate.target.com/about/locations/about-our-stores/pacific-region",title:"Target: Pacific region"},
+ {id:"target-houston",url:"https://corporate.target.com/news-features/article/2026/04/target-houston-receive-center-supply-chain",title:"Target: Houston Receive Center"},
+ {id:"target-thornton",url:"https://corporate.target.com/news-features/article/2026/06/thornton-food-distribution-center-opens",title:"Target: Thornton Food Distribution Center"},
+ {id:"target-10k",url:"https://corporate.target.com/investors/annual/2025-annual-report/10-k-report/10-k-part-i/item-2-properties",title:"Target: FY2025 Form 10-K properties"}
+];
+function targetReferenceGraph(){
+ const nodes=[];
+ const add=(id,label,type,place,ref)=>nodes.push({id,label,type,location:place,status:"verified",evidence_ids:[ref],instance_kind:"named_facility"});
+ add("houston-receive","Houston Receive Center","inbound_facility","Houston, Texas","target-houston");
+ add("midlothian-rdc","Midlothian Regional DC","distribution_center","Midlothian, Texas","target-tx");
+ add("tyler-rdc","Tyler Regional DC","distribution_center","Tyler, Texas","target-tx");
+ add("midlothian-fc","Midlothian Fulfillment Center","fulfillment_center","Midlothian, Texas","target-tx");
+ add("denton-fdc","Denton Food DC","distribution_center","Denton, Texas","target-tx");
+ add("chicago-flow","Chicago Flow Center","distribution_center","Chicago, Illinois","target-il");
+ add("dek-alb-upstream","DeKalb Upstream DC","inbound_facility","DeKalb, Illinois","target-il");
+ add("elmhurst-sort","Elmhurst Sortation Center","sortation_center","Elmhurst, Illinois","target-il");
+ add("bakersfield-rdc","Bakersfield Regional DC","distribution_center","Bakersfield, California","target-ca");
+ add("woodland-rdc","Woodland Regional DC","distribution_center","Woodland, California","target-ca");
+ add("thornton-fdc","Thornton Food DC","distribution_center","Thornton, Colorado","target-thornton");
+ nodes.push({id:"houston-served-facilities",label:"6 regional DCs + 1 flow center (unnamed)",type:"facility_group",status:"verified",evidence_ids:["target-houston"],instance_kind:"aggregate"});
+ nodes.push({id:"thornton-served-stores",label:"129 stores in 11 states (unnamed)",type:"store",status:"verified",evidence_ids:["target-thornton"],instance_kind:"aggregate"});
+ const edges=[
+ {source:"houston-receive",target:"houston-served-facilities",type:"replenishes",status:"verified",evidence_ids:["target-houston"],scope:"aggregate, exact receiving facilities not disclosed"},
+ {source:"thornton-fdc",target:"thornton-served-stores",type:"replenishes",status:"verified",evidence_ids:["target-thornton"],scope:"aggregate, individual stores not disclosed"}
+ ];
+ const operating_context=[
+ {subject_id:"houston-receive",kind:"capability",statement:"Receives directly from global vendors and holds inventory until downstream replenishment is needed.",status:"verified",evidence_ids:["target-houston"]},
+ {subject_id:"houston-receive",kind:"capacity",statement:"1.2 million square feet; not equivalent to available storage capacity.",status:"verified",evidence_ids:["target-houston"]},
+ {subject_id:"thornton-fdc",kind:"capability",statement:"Temperature-controlled food distribution with consolidation capabilities.",status:"verified",evidence_ids:["target-thornton"]},
+ {subject_id:"thornton-fdc",kind:"service_scope",statement:"Serves 129 stores across 11 states; individual stores not identified.",status:"verified",evidence_ids:["target-thornton"]}
+ ];
+ return {company:"Target Corporation",nodes,edges,operating_context,unknowns:["Specific facility-to-facility lanes and contracted carriers are not disclosed.","Houston's six receiving regional DCs and flow center are not individually identified.","Thornton's 129 receiving stores are not individually identified.","Inventory by SKU, transportation capacity, handling eligibility and actual order routing are unknown."],reference_network:true,as_of:"2026-10-31"};
+}
+
 function validateGraph(g,evidence){
  if(!g||!Array.isArray(g.nodes)||!Array.isArray(g.edges)||!Array.isArray(g.unknowns)) throw Error("Model returned invalid graph structure");
  g.operating_context=Array.isArray(g.operating_context)?g.operating_context:[];
@@ -85,13 +123,17 @@ export default {async fetch(request,env){
  const cors=origin===allowed?{"Access-Control-Allow-Origin":allowed,"Vary":"Origin"}:{};
  if(request.method==="OPTIONS")return origin===allowed?new Response(null,{status:204,headers:{...cors,"Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Max-Age":"600"}}):json({error:"Origin not allowed"},403);
  const pathname=new URL(request.url).pathname;
- if(pathname==="/health")return json({status:"ok",model:env.MODEL_ID,research:"physical-context-v3"});
+ if(pathname==="/health")return json({status:"ok",model:env.MODEL_ID,research:"facility-reference-v4"});
  if(!["/generate","/research"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
  if(origin!==allowed)return json({error:"Origin not allowed"},403,cors);
  if(!env.HF_TOKEN)return json({error:"HF_TOKEN secret missing"},503,cors);
  try{
   if(Number(request.headers.get("content-length")||0)>90000)throw Error("Request too large");
   const body=await request.json();
+  if(pathname==="/generate"&&/(^|\\.)target\\.com$/i.test(publicUrl(body.website).hostname)){
+   const graph=targetReferenceGraph();
+   return json({graph,evidence_url:body.website,sources:TARGET_REFERENCES,validation:{dropped_edges_missing_endpoints:0},usage:null,mode:"curated-reference"},200,cors);
+  }
   const evidence=Array.isArray(body.evidence)&&body.evidence.length ? body.evidence : await collectEvidence(body.website);
   if(!evidence.length)throw Error("Could not retrieve readable public company sources");
   if(pathname==="/research")return json({status:"ok",source_count:evidence.length,sources:evidence.map(e=>({...e,text:focusEvidence(e.text)}))},200,cors);
