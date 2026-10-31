@@ -58,7 +58,8 @@ function renderResearch(research){
  const host=$("research-sources");host.replaceChildren();
  const planHost=$("research-plan");planHost.replaceChildren();
  for(const item of research.research_plan||[]){const d=document.createElement("details"),s=document.createElement("summary");s.textContent=item.label+" · "+(item.trigger==="source-signal"?"Source signal":"Industry hypothesis");d.append(s);const q=document.createElement("p");q.textContent=item.question;d.append(q);for(const query of item.queries||[]){const p=document.createElement("p");p.textContent="Proposed search (not yet run): "+query;d.append(p);}planHost.append(d);}
- const header=document.createElement("p");header.textContent=(research.sources||[]).length+" pages retrieved. Expand each to inspect the exact text sent to Qwen.";host.append(header);
+ const header=document.createElement("p");header.textContent=(research.sources||[]).length+" sources retrieved. Public-web search: "+(research.web_search_status||"not available")+". Expand each to inspect the exact text sent to Qwen.";host.append(header);
+ for(const entry of research.search_log||[]){const d=document.createElement("details"),s=document.createElement("summary");s.textContent="Executed search: "+entry.query+" · "+(entry.result_count||0)+" results"+(entry.error?" · ERROR":"");d.append(s);if(entry.error){const p=document.createElement("p");p.textContent=entry.error;d.append(p);}for(const r of entry.results||[]){const a=document.createElement("a");a.href=r.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=r.title;d.append(a,document.createElement("br"));}host.append(d);}
  for(const s of research.sources||[]){
   const d=document.createElement("details"),summary=document.createElement("summary");summary.textContent=(s.title||s.url)+" · "+s.id;
   const link=document.createElement("a");link.href=s.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open original source";
@@ -151,7 +152,7 @@ $("generate").addEventListener("click", async () => {
     const research = await loadResearch(endpoint);
     stage = "generation";
     $("status").textContent = "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
-    const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value,evidence:research.sources})});
+    const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value,evidence:research.sources,search_log:research.search_log,web_search_status:research.web_search_status})});
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
     showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
