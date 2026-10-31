@@ -6,7 +6,7 @@ let current = null;
 
 function drawGraph(graph) {
  const host=$("graph-map"),detail=$("graph-detail");host.replaceChildren();
- const all=graph.nodes||[], types=/supplier|vendor|manufacturer|port|inbound|warehouse|distribution|fulfillment|sortation|receive|flow.center|store|customer|market|facility|plant|factory|transport/i;
+ const all=graph.nodes||[], types=/supplier|vendor|manufacturer|port|inbound|facility_group|warehouse|distribution|fulfillment|sortation|receive|flow.center|store|customer|market|facility|plant|factory|transport/i;
  const nodes=all.filter(n=>types.test((n.type||"")+" "+(n.label||""))).slice(0,35);
  if(!nodes.length){detail.textContent="No physical supply chain entities identified. Research more sources before drawing a network.";return;}
  const ids=new Map(nodes.map((n,i)=>[n.id,i]));
@@ -92,17 +92,18 @@ $("generate").addEventListener("click", async () => {
   const started = Date.now();
   let stage = "research";
   try {
-    const researchResponse = await fetch(endpoint + "/research", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
-    const research = await researchResponse.json();
-    if (!researchResponse.ok) throw new Error(research.error || "Research failed");
+    const isTarget = /^https:\/\/(?:www\.)?target\.com(?:\/|$)/i.test($("company").value.trim());
+    const researchResponse = isTarget ? null : await fetch(endpoint + "/research", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
+    const research = researchResponse ? await researchResponse.json() : {source_count:0,sources:[]};
+    if (researchResponse && !researchResponse.ok) throw new Error(research.error || "Research failed");
     stage = "generation";
-    $("status").textContent = "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
+    $("status").textContent = isTarget ? "Loading sourced Target facility reference network…" : "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
     const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value,evidence:research.sources})});
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
     showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
     const dropped = body.validation?.dropped_edges_missing_endpoints || 0;
-    $("status").textContent = "Graph generated from " + (body.sources || []).length + " public sources." + (dropped ? " Removed " + dropped + " invalid relationships with missing entities." : "") + " Review before using.";
+    $("status").textContent = (body.mode === "curated-reference" ? "Sourced facility reference network loaded from " : "Graph generated from ") + (body.sources || []).length + " public sources." + (dropped ? " Removed " + dropped + " invalid relationships with missing entities." : "") + " Review before using.";
     $("status").className = "good";
   } catch(e) { $("status").textContent = "Failed during " + stage + " after " + Math.round((Date.now()-started)/1000) + "s: " + e.message; $("status").className = "error"; }
   finally { $("generate").disabled = false; }
