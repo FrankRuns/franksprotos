@@ -1,0 +1,9 @@
+name = "supply-chain-context-graph"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+MODEL_ID = "Qwen/Qwen3-4B-Instruct-2507"
+# Set ALLOWED_ORIGIN to your exact GitHub Pages origin in Cloudflare dashboard.
+# Example: https://frankruns.github.io
+ALLOWED_ORIGIN = "https://frankruns.github.io"
