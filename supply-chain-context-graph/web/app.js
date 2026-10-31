@@ -192,3 +192,26 @@ $("download").addEventListener("click", () => {
   const url = URL.createObjectURL(blob); const a = document.createElement("a");
   a.href=url; a.download="supply-chain-context-graph.json"; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+$("run-benchmark").addEventListener("click",async()=>{
+ const button=$("run-benchmark"),status=$("benchmark-status"),output=$("benchmark-output");
+ button.disabled=true;output.hidden=true;status.textContent="Running two matched OpenAI decisions…";
+ try{
+  const endpoint=$("endpoint").value.trim().replace(/\\/$/,"");
+  if(!endpoint)throw Error("Set the Cloudflare Worker URL in Connection settings first.");
+  const response=await fetch(endpoint+"/benchmark",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scenario_id:$("benchmark-scenario").value})});
+  const result=await response.json();if(!response.ok)throw Error(result.error||"Benchmark request failed");
+  const cards=$("benchmark-cards");cards.replaceChildren();
+  for(const run of result.runs){
+   const card=document.createElement("div");card.className="benchmark-result";
+   const h=document.createElement("h4");h.textContent=run.condition==="baseline"?"ChatGPT alone":"ChatGPT + context graph";card.append(h);
+   const score=document.createElement("div");score.className="score "+(run.grade.feasible?"pass":"fail");score.textContent=run.grade.feasible?"Feasible":"Infeasible";card.append(score);
+   for(const line of ["Selected: "+(run.decision.option_id||"none"),"Cost: "+(run.grade.cost==null?"N/A":"$"+run.grade.cost),"Optimal feasible cost: $"+run.grade.optimal_cost,"Regret: "+(run.grade.regret==null?"N/A":"$"+run.grade.regret)]){
+    const p=document.createElement("p");p.textContent=line;card.append(p);
+   }
+   const reason=document.createElement("p");reason.textContent=run.decision.reason||"";card.append(reason);cards.append(card);
+  }
+  $("benchmark-raw").textContent=JSON.stringify(result,null,2);output.hidden=false;
+  status.textContent="Paired experiment complete using "+result.model+". These results are one trial, not proof of a performance difference.";
+ }catch(e){status.textContent="Benchmark failed: "+e.message;status.className="error";}
+ finally{button.disabled=false;}
+});
