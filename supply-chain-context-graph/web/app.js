@@ -37,15 +37,22 @@ $("generate").addEventListener("click", async () => {
   const endpoint = $("endpoint").value.trim().replace(/\/$/, "");
   if (!/^https:\/\//.test(endpoint)) { $("status").textContent = "Set your HTTPS Cloudflare Worker URL under Connection settings."; return; }
   $("generate").disabled = true; $("results").hidden = true; $("status").className = "";
-  $("status").textContent = "Fetching public evidence and generating graph…";
+  $("status").textContent = "Checking public research sources…";
+  const started = Date.now();
+  let stage = "research";
   try {
+    const researchResponse = await fetch(endpoint + "/research", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
+    const research = await researchResponse.json();
+    if (!researchResponse.ok) throw new Error(research.error || "Research failed");
+    stage = "generation";
+    $("status").textContent = "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
     const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
     showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
     $("status").textContent = "Graph generated from " + (body.sources || []).length + " public sources. Review before using.";
     $("status").className = "good";
-  } catch(e) { $("status").textContent = e.message; $("status").className = "error"; }
+  } catch(e) { $("status").textContent = "Failed during " + stage + " after " + Math.round((Date.now()-started)/1000) + "s: " + e.message; $("status").className = "error"; }
   finally { $("generate").disabled = false; }
 });
 $("sample").addEventListener("click", () => {
