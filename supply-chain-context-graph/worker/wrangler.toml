@@ -5,3 +5,11 @@ compatibility_date = "2026-10-01"
 [vars]
 MODEL_ID = "Qwen/Qwen3-4B-Instruct-2507"
 ALLOWED_ORIGIN = "https://franksprotos.com"
+
+[[durable_objects.bindings]]
+name = "BUDGET"
+class_name = "ResearchBudget"
+
+[[migrations]]
+tag = "v1-research-budget"
+new_sqlite_classes = ["ResearchBudget"]
