@@ -1,0 +1,150 @@
+{
+  "version": "0.1.0",
+  "review_status": "expert_draft_unverified",
+  "rules": [
+    {
+      "id": "R001",
+      "domain": "transportation",
+      "principle": "A physical lane is not established by geographic proximity.",
+      "implication": "Never assert ships_to from distance alone."
+    },
+    {
+      "id": "R002",
+      "domain": "transportation",
+      "principle": "Carrier coverage and service compatibility are separate from physical accessibility.",
+      "implication": "Treat carrier and mode as unknown absent evidence."
+    },
+    {
+      "id": "R003",
+      "domain": "transportation",
+      "principle": "Transit time and freight cost depend on mode, route, capacity and service.",
+      "implication": "Do not infer contractual rates from road distance."
+    },
+    {
+      "id": "R004",
+      "domain": "inventory",
+      "principle": "Inventory can be positioned at different echelons with distinct availability and ownership.",
+      "implication": "Do not assume inventory is freely transferable."
+    },
+    {
+      "id": "R005",
+      "domain": "inventory",
+      "principle": "Stock availability depends on product, facility, time and allocation.",
+      "implication": "A facility capability does not prove on-hand quantity."
+    },
+    {
+      "id": "R006",
+      "domain": "inventory",
+      "principle": "Replenishment policies can differ by item, facility and channel.",
+      "implication": "Do not assume a uniform reorder rule."
+    },
+    {
+      "id": "R007",
+      "domain": "fulfillment",
+      "principle": "A facility may serve multiple channels with distinct eligibility rules.",
+      "implication": "Store fulfillment capability does not prove every SKU can ship."
+    },
+    {
+      "id": "R008",
+      "domain": "fulfillment",
+      "principle": "A market may be served by multiple facilities.",
+      "implication": "Avoid forcing single-source relationships."
+    },
+    {
+      "id": "R009",
+      "domain": "production",
+      "principle": "Production capability is product- and resource-specific.",
+      "implication": "Do not assume every plant makes every product."
+    },
+    {
+      "id": "R010",
+      "domain": "production",
+      "principle": "Capacity can be constrained by labor, equipment, material and time.",
+      "implication": "Do not infer production capacity from building area alone."
+    },
+    {
+      "id": "R011",
+      "domain": "sourcing",
+      "principle": "Approved suppliers and contracts may restrict otherwise feasible sourcing.",
+      "implication": "Do not treat possible supplier as approved."
+    },
+    {
+      "id": "R012",
+      "domain": "sourcing",
+      "principle": "Lead times vary by supplier, product and order conditions.",
+      "implication": "Do not fabricate supplier lead times."
+    },
+    {
+      "id": "R013",
+      "domain": "facility",
+      "principle": "Facility labels are imperfect proxies for operating capabilities.",
+      "implication": "Prefer disclosed capabilities over name-based assumptions."
+    },
+    {
+      "id": "R014",
+      "domain": "facility",
+      "principle": "A cross-dock may transfer goods without stocking inventory.",
+      "implication": "Do not assume inventory storage at cross-docks."
+    },
+    {
+      "id": "R015",
+      "domain": "facility",
+      "principle": "Temperature-sensitive goods require compatible handling across the path.",
+      "implication": "Do not assume compatibility without evidence."
+    },
+    {
+      "id": "R016",
+      "domain": "network",
+      "principle": "An organization can use multiple network patterns simultaneously.",
+      "implication": "Compose patterns rather than assign one exclusive archetype."
+    },
+    {
+      "id": "R017",
+      "domain": "network",
+      "principle": "Ownership, operation and physical flow are different relationships.",
+      "implication": "Represent separately."
+    },
+    {
+      "id": "R018",
+      "domain": "network",
+      "principle": "A source can describe a general operating model without naming exact endpoints.",
+      "implication": "Store general policy separately from specific edges."
+    },
+    {
+      "id": "R019",
+      "domain": "evidence",
+      "principle": "Public statements can become stale after network changes.",
+      "implication": "Record publication and retrieval dates."
+    },
+    {
+      "id": "R020",
+      "domain": "evidence",
+      "principle": "An absence of public evidence is not proof that a relationship does not exist.",
+      "implication": "Represent unknown, not false."
+    },
+    {
+      "id": "R021",
+      "domain": "evidence",
+      "principle": "Industry patterns generate hypotheses, not verified company facts.",
+      "implication": "Mark hypothetical edges explicitly."
+    },
+    {
+      "id": "R022",
+      "domain": "evidence",
+      "principle": "Different sources can disagree about facility roles or counts.",
+      "implication": "Preserve conflicting claims for review."
+    },
+    {
+      "id": "R023",
+      "domain": "demand",
+      "principle": "Population and sales geography can proxy demand but do not establish actual orders.",
+      "implication": "Label estimates and document method."
+    },
+    {
+      "id": "R024",
+      "domain": "demand",
+      "principle": "Demand granularity varies by product, channel, market and time.",
+      "implication": "Do not invent SKU-level demand from aggregate revenue."
+    }
+  ]
+}
