@@ -50,8 +50,59 @@ function drawGraph(graph) {
  detail.textContent=edges.length?"Tap a facility or flow to inspect evidence. Scroll sideways for all stages.":"No documented product-flow relationships yet. Facilities are shown by stage, without inventing lanes. Tap a facility to inspect evidence.";
 }
 
+
+let lastResearch=null;
+function renderResearch(research){
+ lastResearch=research;
+ $("research-review").hidden=false;
+ const host=$("research-sources");host.replaceChildren();
+ const header=document.createElement("p");header.textContent=(research.sources||[]).length+" pages retrieved. Expand each to inspect the exact text sent to Qwen.";host.append(header);
+ for(const s of research.sources||[]){
+  const d=document.createElement("details"),summary=document.createElement("summary");summary.textContent=(s.title||s.url)+" · "+s.id;
+  const link=document.createElement("a");link.href=s.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open original source";
+  const excerpt=document.createElement("p");excerpt.textContent=s.text||"No extract returned.";
+  d.append(summary,link,excerpt);host.append(d);
+ }
+}
+function renderClaims(graph){
+ const host=$("claim-review");host.replaceChildren();
+ const claims=[
+  ...(graph.nodes||[]).map(x=>({label:"Facility / entity: "+(x.label||x.id),...x})),
+  ...(graph.edges||[]).map(x=>({label:"Flow: "+x.source+" → "+x.target+" ("+(x.type||"relationship")+")",...x})),
+  ...(graph.operating_context||[]).map(x=>({label:(x.kind||"Context")+": "+x.statement,...x})),
+  ...((graph.network_summary?.facility_counts)||[]).map(x=>({label:"Reported "+x.type+": "+x.count,...x}))
+ ];
+ for(const claim of claims){
+  const d=document.createElement("details"),s=document.createElement("summary");
+  s.textContent="["+String(claim.status||"model claim").toUpperCase()+"] "+claim.label;
+  const refs=document.createElement("p");refs.textContent="Evidence IDs: "+((claim.evidence_ids||[]).join(", ")||"None. This claim is not sourced.");
+  d.append(s,refs);
+  for(const id of claim.evidence_ids||[]){const source=(graph.sources||[]).find(x=>x.id===id);if(!source)continue;
+   const a=document.createElement("a");a.href=source.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=source.title||source.url;d.append(a,document.createElement("br"));
+   const excerpt=lastResearch?.sources?.find(x=>x.id===id)?.text;
+   if(excerpt){const p=document.createElement("p");p.textContent="Retrieved passage: "+excerpt.slice(0,1600);d.append(p);}
+  }
+  host.append(d);
+ }
+ if(!claims.length)host.textContent="No claims extracted.";
+}
+async function loadResearch(endpoint){
+ const response=await fetch(endpoint+"/research",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({website:$("company").value})});
+ const data=await response.json();if(!response.ok)throw Error(data.error||"Research failed");
+ renderResearch(data);return data;
+}
+$("research").addEventListener("click",async()=>{
+ const endpoint=$("endpoint").value.trim().replace(/\/$/,"");
+ if(!/^https:\/\//.test(endpoint)){$("status").textContent="Set your Worker URL in Connection settings.";return;}
+ $("research").disabled=true;$("status").textContent="Collecting public pages for inspection…";
+ try{const data=await loadResearch(endpoint);$("status").textContent="Research audit ready: "+data.source_count+" pages. No Qwen credits used.";}
+ catch(e){$("status").textContent="Research failed: "+e.message;}
+ finally{$("research").disabled=false;}
+});
+
 function showGraph(graph, source) {
   drawGraph(graph);
+  renderClaims(graph);
   current = graph;
   $("results").hidden = false;
   $("heading").textContent = graph.company || "Context graph";
@@ -92,12 +143,9 @@ $("generate").addEventListener("click", async () => {
   const started = Date.now();
   let stage = "research";
   try {
-    const isTarget = false;
-    const researchResponse = isTarget ? null : await fetch(endpoint + "/research", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
-    const research = researchResponse ? await researchResponse.json() : {source_count:0,sources:[]};
-    if (researchResponse && !researchResponse.ok) throw new Error(research.error || "Research failed");
+    const research = await loadResearch(endpoint);
     stage = "generation";
-    $("status").textContent = isTarget ? "Loading sourced Target facility reference network…" : "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
+    $("status").textContent = "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
     const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value,evidence:research.sources})});
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
