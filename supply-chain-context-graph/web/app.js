@@ -28,6 +28,10 @@ function showGraph(graph, source) {
     $("unknowns").append(el);
   }
   $("raw").textContent = JSON.stringify(graph, null, 2);
+  if (graph.sources && graph.sources.length) {
+    const heading=document.createElement("h3"); heading.textContent="Research sources"; $("unknowns").append(heading);
+    for(const source of graph.sources){const link=document.createElement("a");link.href=source.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent=source.id+" · "+source.title;const div=document.createElement("div");div.className="edge";div.append(link);$("unknowns").append(div);}
+  }
 }
 $("generate").addEventListener("click", async () => {
   const endpoint = $("endpoint").value.trim().replace(/\/$/, "");
@@ -38,8 +42,8 @@ $("generate").addEventListener("click", async () => {
     const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
-    showGraph(body.graph, body.evidence_url || $("company").value);
-    $("status").textContent = "Graph generated. Review before using.";
+    showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
+    $("status").textContent = "Graph generated from " + (body.sources || []).length + " public sources. Review before using.";
     $("status").className = "good";
   } catch(e) { $("status").textContent = e.message; $("status").className = "error"; }
   finally { $("generate").disabled = false; }
