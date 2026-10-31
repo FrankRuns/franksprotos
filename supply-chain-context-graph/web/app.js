@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 const endpointKey = "scg-worker-url";
-$("endpoint").value = localStorage.getItem(endpointKey) || "";
+$("endpoint").value = localStorage.getItem(endpointKey) || "https://supply-chain-context-graph.ticketwitness.workers.dev";
 $("endpoint").addEventListener("change", () => localStorage.setItem(endpointKey, $("endpoint").value.trim()));
 let current = null;
 
@@ -164,7 +164,7 @@ function showGraph(graph, source) {
 $("generate").addEventListener("click", async () => {
   const endpoint = $("endpoint").value.trim().replace(/\/$/, "");
   if (!/^https:\/\//.test(endpoint)) { $("status").textContent = "Set your HTTPS Cloudflare Worker URL under Connection settings."; return; }
-  $("generate").disabled = true; $("results").hidden = true; $("status").className = "";
+  $("generate").disabled = true; $("generate").textContent = "Generating…"; $("results").hidden = true; $("status").className = "";
   $("status").textContent = "Checking public research sources…";
   const started = Date.now();
   let stage = "research";
@@ -176,11 +176,12 @@ $("generate").addEventListener("click", async () => {
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
     showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
+    $("results").scrollIntoView({behavior:"smooth",block:"start"});
     const dropped = body.validation?.dropped_edges_missing_endpoints || 0;
     $("status").textContent = (body.mode === "curated-reference" ? "Sourced facility reference network loaded from " : "Graph generated from ") + (body.sources || []).length + " public sources." + (dropped ? " Removed " + dropped + " invalid relationships with missing entities." : "") + " Review before using.";
     $("status").className = "good";
   } catch(e) { $("status").textContent = "Failed during " + stage + " after " + Math.round((Date.now()-started)/1000) + "s: " + e.message; $("status").className = "error"; }
-  finally { $("generate").disabled = false; }
+  finally { $("generate").disabled = false; $("generate").textContent = "Generate context graph"; }
 });
 $("sample").addEventListener("click", () => {
   showGraph({company:"Fictional Demo Company",nodes:[{id:"plant",label:"Plant A",type:"facility",status:"hypothetical"},{id:"dc",label:"Distribution Center B",type:"facility",status:"hypothetical"}],edges:[{source:"plant",target:"dc",type:"can_ship_to",status:"hypothetical"}],unknowns:["Actual lanes, carriers, capacity and inventory are unknown"]},"Synthetic demonstration. No real company claims.");
