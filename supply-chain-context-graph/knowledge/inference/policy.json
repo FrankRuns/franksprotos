@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "rules": [
+    {
+      "id": "no_invented_lanes",
+      "rule": "Never create a verified facility-to-facility lane solely from network patterns or geographic proximity."
+    },
+    {
+      "id": "source_required",
+      "rule": "Every verified claim must cite at least one source evidence ID."
+    },
+    {
+      "id": "distinguish_capability_flow",
+      "rule": "A capability does not establish an actual movement of goods."
+    },
+    {
+      "id": "explicit_unknown",
+      "rule": "When destination, volume, contract or eligibility is unspecified, preserve unknown rather than fabricate."
+    },
+    {
+      "id": "company_independence",
+      "rule": "Company evidence must not be embedded in reusable ontology."
+    },
+    {
+      "id": "human_review",
+      "rule": "Inferred and hypothetical edges remain labeled until reviewed against evidence."
+    }
+  ]
+}
