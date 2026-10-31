@@ -115,7 +115,7 @@ async function loadResearch(endpoint){
  renderResearch(data);return data;
 }
 $("research").addEventListener("click",async()=>{
- const endpoint=$("endpoint").value.trim().replace(/\/$/,"");
+  const endpoint=$("endpoint").value.trim().replace(/\/$/,"");
  if(!/^https:\/\//.test(endpoint)){$("status").textContent="Set your Worker URL in Connection settings.";return;}
  $("research").disabled=true;$("status").textContent="Collecting public pages for inspection…";
  try{const data=await loadResearch(endpoint);$("status").textContent="Research audit ready: "+data.source_count+" pages. No Qwen credits used.";}
