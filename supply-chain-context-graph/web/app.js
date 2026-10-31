@@ -55,7 +55,7 @@ function showGraph(graph, source) {
   current = graph;
   $("results").hidden = false;
   $("heading").textContent = graph.company || "Context graph";
-  $("counts").textContent = (graph.nodes || []).length + " entities · " + (graph.edges || []).length + " relationships";
+  $("counts").textContent = (graph.nodes || []).length + " discovered entities · " + (graph.edges || []).length + " relationships" + (graph.network_summary?.facility_counts?.length ? " · Reported facility counts: " + graph.network_summary.facility_counts.map(x=>x.type+": "+x.count+(x.qualifier?" ("+x.qualifier+")":"")).join("; ") : " · Total network size not established");
   $("source").textContent = source;
   $("nodes").replaceChildren();
   $("edges").replaceChildren();
@@ -92,7 +92,7 @@ $("generate").addEventListener("click", async () => {
   const started = Date.now();
   let stage = "research";
   try {
-    const isTarget = /^https:\/\/(?:www\.)?target\.com(?:\/|$)/i.test($("company").value.trim());
+    const isTarget = false;
     const researchResponse = isTarget ? null : await fetch(endpoint + "/research", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
     const research = researchResponse ? await researchResponse.json() : {source_count:0,sources:[]};
     if (researchResponse && !researchResponse.ok) throw new Error(research.error || "Research failed");
