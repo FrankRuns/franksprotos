@@ -92,7 +92,8 @@ $("generate").addEventListener("click", async () => {
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
     showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
-    $("status").textContent = "Graph generated from " + (body.sources || []).length + " public sources. Review before using.";
+    const dropped = body.validation?.dropped_edges_missing_endpoints || 0;
+    $("status").textContent = "Graph generated from " + (body.sources || []).length + " public sources." + (dropped ? " Removed " + dropped + " invalid relationships with missing entities." : "") + " Review before using.";
     $("status").className = "good";
   } catch(e) { $("status").textContent = "Failed during " + stage + " after " + Math.round((Date.now()-started)/1000) + "s: " + e.message; $("status").className = "error"; }
   finally { $("generate").disabled = false; }
