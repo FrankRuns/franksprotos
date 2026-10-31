@@ -88,7 +88,7 @@ $("generate").addEventListener("click", async () => {
     if (!researchResponse.ok) throw new Error(research.error || "Research failed");
     stage = "generation";
     $("status").textContent = "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
-    const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value})});
+    const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value,evidence:research.sources})});
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
     showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
