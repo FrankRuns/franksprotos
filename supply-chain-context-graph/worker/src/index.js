@@ -163,7 +163,7 @@ export default {async fetch(request,env){
  try{
   if(Number(request.headers.get("content-length")||0)>90000)throw Error("Request too large");
   const body=await request.json();
-  const company=publicUrl(body.website).hostname.toLowerCase().replace(/^www\\./,"");
+  const company=publicUrl(body.website).hostname.toLowerCase().replace(/^www\./,"");
   const ip=request.headers.get("CF-Connecting-IP")||"unknown";
   if(pathname==="/research"||pathname==="/plan"){
    const cached=await budget(env,{action:"cache",company});
