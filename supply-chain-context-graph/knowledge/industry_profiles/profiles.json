@@ -1,0 +1,55 @@
+{
+  "version": "0.1.0",
+  "profiles": [
+    {
+      "id": "manufacturing",
+      "possible_patterns": [
+        "production",
+        "inbound_materials",
+        "finished_goods_distribution"
+      ]
+    },
+    {
+      "id": "cpg",
+      "possible_patterns": [
+        "manufacturing",
+        "co_manufacturing",
+        "wholesale_distribution",
+        "retail_distribution"
+      ]
+    },
+    {
+      "id": "wholesale_distribution",
+      "possible_patterns": [
+        "supplier_inbound",
+        "multi_echelon_distribution",
+        "customer_delivery"
+      ]
+    },
+    {
+      "id": "retail",
+      "possible_patterns": [
+        "store_replenishment",
+        "import_distribution",
+        "store_fulfillment"
+      ]
+    },
+    {
+      "id": "ecommerce",
+      "possible_patterns": [
+        "parcel_fulfillment",
+        "returns",
+        "last_mile"
+      ]
+    },
+    {
+      "id": "food_distribution",
+      "possible_patterns": [
+        "temperature_control",
+        "frequent_replenishment",
+        "shelf_life"
+      ]
+    }
+  ],
+  "note": "Profiles are nonexclusive; patterns are hypotheses."
+}
