@@ -6,42 +6,47 @@ let current = null;
 
 function drawGraph(graph) {
  const host=$("graph-map"),detail=$("graph-detail");host.replaceChildren();
- const nodes=(graph.nodes||[]).slice(0,45),ids=new Map(nodes.map((n,i)=>[n.id,i]));
- const edges=(graph.edges||[]).filter(e=>ids.has(e.source)&&ids.has(e.target)).slice(0,75);
- if(!nodes.length){detail.textContent="No entities to display.";return;}
- const W=360,H=Math.max(340,Math.min(620,260+nodes.length*12)),cx=W/2,cy=H/2;
- const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg");
- svg.setAttribute("viewBox","0 0 "+W+" "+H);svg.setAttribute("role","img");svg.setAttribute("aria-label","Interactive supply chain relationship network");
- const positions=nodes.map((n,i)=>{
-  if(i===0)return {x:cx,y:cy};
-  const angle=i*2.399963229728653;
-  const radius=65+Math.sqrt(i/Math.max(1,nodes.length-1))*Math.min(190,H*.36);
-  return {x:Math.max(42,Math.min(W-42,cx+Math.cos(angle)*radius)),y:Math.max(35,Math.min(H-35,cy+Math.sin(angle)*radius))};
- });
- const colors={verified:"#6edac8",inferred:"#f2c66d",hypothetical:"#bd9af7",unknown:"#8b9bad"};
- const inspect=(item,kind)=>{
-  detail.replaceChildren();
-  const h=document.createElement("strong");h.textContent=kind==="node"?(item.label||item.id):((nodes[ids.get(item.source)]?.label||item.source)+" → "+(nodes[ids.get(item.target)]?.label||item.target));detail.append(h);
-  const info=document.createElement("p");info.textContent=(item.type||"relationship")+" · "+(item.status||"unknown");detail.append(info);
-  const refs=item.evidence_ids||[];
-  if(refs.length){const p=document.createElement("p");p.textContent="Evidence: "+refs.join(", ");detail.append(p);}
-  const sources=graph.sources||[];
-  for(const id of refs){const source=sources.find(s=>s.id===id);if(source){const a=document.createElement("a");a.href=source.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=source.title||source.url;detail.append(a,document.createElement("br"));}}
+ const all=graph.nodes||[], types=/supplier|vendor|manufacturer|port|warehouse|distribution|fulfillment|sortation|receive|flow.center|store|customer|market|facility|plant|factory|transport/i;
+ const nodes=all.filter(n=>types.test((n.type||"")+" "+(n.label||""))).slice(0,35);
+ if(!nodes.length){detail.textContent="No physical supply chain entities identified. Research more sources before drawing a network.";return;}
+ const ids=new Map(nodes.map((n,i)=>[n.id,i]));
+ const flowTypes=/ships_to|can_ship_to|supplies|replenishes|delivers_to|transports_to|fulfills|flows_to|distributes_to/i;
+ const edges=(graph.edges||[]).filter(e=>ids.has(e.source)&&ids.has(e.target)&&flowTypes.test(e.type||e.relationship||""));
+ const stage=n=>{const s=((n.label||"")+" "+(n.type||"")).toLowerCase();
+  if(/supplier|vendor|manufacturer|factory|plant|port|import/.test(s))return 0;
+  if(/receive|upstream|inbound/.test(s))return 1;
+  if(/distribution|warehouse|flow.center|dc\b/.test(s))return 2;
+  if(/sortation|fulfill|store|retail/.test(s))return 3;
+  if(/customer|guest|market|region/.test(s))return 4;
+  return 2;
  };
+ const columns=[[],[],[],[],[]];nodes.forEach((n,i)=>columns[stage(n)].push(i));
+ const maxRows=Math.max(...columns.map(x=>x.length),1),W=780,H=Math.max(280,105+maxRows*76),ns="http://www.w3.org/2000/svg";
+ const svg=document.createElementNS(ns,"svg");svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("role","img");svg.setAttribute("aria-label","Supply chain stages from suppliers to customers");
+ svg.style.minWidth="650px";svg.style.height=H+"px";
+ host.style.overflowX="auto";
  const make=(tag,attrs,parent)=>{const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));parent.append(el);return el;};
- for(const e of edges){const a=positions[ids.get(e.source)],b=positions[ids.get(e.target)];
-  const line=make("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:colors[e.status]||colors.unknown,"stroke-width":2,"stroke-dasharray":e.status==="verified"?"none":"5 5",opacity:".68"},svg);
-  line.style.cursor="pointer";line.style.pointerEvents="stroke";line.addEventListener("click",()=>inspect(e,"edge"));
-  const hit=make("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:"transparent","stroke-width":14},svg);
-  hit.style.cursor="pointer";hit.addEventListener("click",()=>inspect(e,"edge"));
- }
- nodes.forEach((n,i)=>{const p=positions[i],g=make("g",{"class":"node",tabindex:0,role:"button","aria-label":n.label||n.id},svg);
-  make("circle",{cx:p.x,cy:p.y,r:i===0?17:12,fill:colors[n.status]||colors.unknown},g);
-  const t=make("text",{x:p.x,y:p.y+(i===0?31:24),"text-anchor":"middle"},g);
-  const name=n.label||n.id;t.textContent=name.length>19?name.slice(0,17)+"…":name;
-  g.addEventListener("click",()=>inspect(n,"node"));g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();inspect(n,"node");}});
+ const stages=["Suppliers","Inbound","Distribution","Fulfillment","Customers"];
+ const positions=new Map();
+ stages.forEach((name,i)=>{const x=82+i*154;const title=make("text",{x,y:25,"text-anchor":"middle",fill:"#8ce3c2","font-size":13,"font-weight":700},svg);title.textContent=name;
+  columns[i].forEach((index,j)=>{positions.set(nodes[index].id,{x,y:75+j*76});});
  });
- host.append(svg);detail.textContent="Tap a circle or line to see its evidence.";
+ const sources=graph.sources||[];
+ function inspect(item,edge=false){detail.replaceChildren();const heading=document.createElement("strong");heading.textContent=edge?((all.find(n=>n.id===item.source)?.label||item.source)+" → "+(all.find(n=>n.id===item.target)?.label||item.target)):(item.label||item.id);detail.append(heading);
+  const p=document.createElement("p");p.textContent=(item.type||"")+" · "+(item.status||"unknown");detail.append(p);
+  if(!edge){const connected=(graph.edges||[]).filter(e=>e.source===item.id||e.target===item.id);const info=document.createElement("p");info.textContent=connected.length+" recorded relationships. Physical flows require separate evidence.";detail.append(info);}
+  for(const ref of item.evidence_ids||[]){const s=sources.find(x=>x.id===ref);if(s){const a=document.createElement("a");a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=s.title||s.url;detail.append(a,document.createElement("br"));}}
+ }
+ for(const e of edges){const a=positions.get(e.source),b=positions.get(e.target);if(!a||!b)continue;
+  const line=make("path",{d:`M ${a.x+48} ${a.y} C ${(a.x+b.x)/2} ${a.y}, ${(a.x+b.x)/2} ${b.y}, ${b.x-48} ${b.y}`,fill:"none",stroke:e.status==="verified"?"#6edac8":"#f2c66d","stroke-width":2,"stroke-dasharray":e.status==="verified"?"none":"5 5"},svg);line.style.cursor="pointer";line.addEventListener("click",()=>inspect(e,true));
+ }
+ for(const n of nodes){const p=positions.get(n.id);const g=make("g",{role:"button",tabindex:0,"aria-label":n.label||n.id},svg);g.style.cursor="pointer";
+  make("rect",{x:p.x-52,y:p.y-21,width:104,height:42,rx:8,fill:"#253e51",stroke:n.status==="verified"?"#6edac8":n.status==="inferred"?"#f2c66d":"#a2aabb","stroke-width":2},g);
+  const t=make("text",{x:p.x,y:p.y+4,"text-anchor":"middle",fill:"#edf5fa","font-size":11},g);const label=n.label||n.id;t.textContent=label.length>17?label.slice(0,15)+"…":label;
+  g.addEventListener("click",()=>inspect(n));g.addEventListener("keydown",ev=>{if(ev.key==="Enter"){inspect(n);}});
+ }
+ host.append(svg);
+ detail.textContent=edges.length?"Tap a facility or flow to inspect evidence. Scroll sideways for all stages.":"No documented product-flow relationships yet. Facilities are shown by stage, without inventing lanes. Tap a facility to inspect evidence.";
 }
 
 function showGraph(graph, source) {
