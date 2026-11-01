@@ -161,8 +161,10 @@ function validateGraph(g,evidence){
  for(const item of [...g.nodes,...g.edges,...g.operating_context]){
   if(!["verified","inferred","hypothetical","unknown"].includes(item.status))throw Error("Invalid status");
   const refs=item.evidence_ids||[];
-  if(!Array.isArray(refs)||refs.some(ref=>!sources.has(ref)))throw Error("Unknown evidence reference");
-  if(item.status==="verified"&&!refs.length)throw Error("Verified claim requires evidence");
+  if(!Array.isArray(refs))throw Error("Invalid evidence references");
+  const validRefs=[...new Set(refs.filter(ref=>sources.has(ref)))];
+  item.evidence_ids=validRefs;
+  if(item.status==="verified"&&!validRefs.length)item.status="inferred";
  }
  const originalCount=g.edges.length;
  g.edges=g.edges.filter(edge=>ids.has(edge.source)&&ids.has(edge.target));
