@@ -189,9 +189,9 @@ export default {async fetch(request,env){
   if(!env.HF_TOKEN||!env.BRAVE_API_KEY)return json({error:"HF_TOKEN or BRAVE_API_KEY missing"},503,cors);
   try{
    const body=await request.json(),website=publicUrl(body.website||"https://www.target.com").href;
-   const host=new URL(website).hostname.replace(/^www\\./,"");
+   const host=new URL(website).hostname.replace(/^www\./,"");
    const ip=request.headers.get("CF-Connecting-IP")||"unknown";
-   const cacheKey=host+"-network-research-v1";
+   const cacheKey=host+"-network-research-v2";
    const cached=await budget(env,{action:"cache",company:cacheKey,ip});
    if(cached.hit)return json({...cached.data,cached:true},200,cors);
    const permit=await budget(env,{action:"reserve",kind:"search",company:cacheKey,ip});
@@ -213,16 +213,17 @@ export default {async fetch(request,env){
     if(!res.ok)throw Error("Search HTTP "+res.status);
     return (await res.json()).web?.results||[];
    }));
-   const sources=[...new Map(found.filter(x=>x.status==="fulfilled").flatMap(x=>x.value).map(x=>[x.url,x])).values()].slice(0,12).map((x,i)=>({id:"network-"+(i+1),url:x.url,title:x.title||"",text:clean(x.description||"").slice(0,650),retrieval:"search_snippet"})).filter(x=>x.text.length>35);
+   const sources=[...new Map(found.filter(x=>x.status==="fulfilled").flatMap(x=>x.value).map(x=>[x.url,x])).values()].filter(x=>{try{const d=new URL(x.url).hostname.toLowerCase();return d===host||d.endsWith("."+host)||/corporate\.target\.com|investors\.target\.com|sec\.gov/.test(d)}catch{return false}}).slice(0,12).map((x,i)=>({id:"network-"+(i+1),url:x.url,title:x.title||"",text:clean(x.description||"").slice(0,650),retrieval:"search_snippet"})).filter(x=>x.text.length>35);
    if(!sources.length)throw Error("No public network evidence returned");
-   const instructions="Extract ONLY supply chain operating relationships explicitly supported by supplied public search snippets. Return a JSON object with relationships array and unknowns array. Each relationship has from_role, to_role, product_scope, process, evidence_ids array, evidence_quote short verbatim snippet, confidence (low or medium), status (inferred). Roles are generic operating echelons, not invented specific facilities. Do NOT assert a specific pair of buildings ships between each other unless source explicitly states it. No unsupported lanes, quantities, lead times or costs. A relationship requires a verbatim supporting phrase and evidence ID. If evidence is insufficient, use unknowns instead. Max 12 relationships. Output valid JSON.";
+   const instructions="Extract ONLY Target-specific supply chain operating relationships explicitly supported by supplied public search snippets. Generic retail value-chain descriptions are NOT evidence of Target operations. Prefer primary company filings and company operational statements. Return a JSON object with relationships array and unknowns array. Each relationship has from_role, to_role, product_scope, process, evidence_ids array, evidence_quote short verbatim snippet, confidence (low or medium), status (inferred). Roles are generic operating echelons, not invented specific facilities. Do NOT assert a specific pair of buildings ships between each other unless source explicitly states it. No unsupported lanes, quantities, lead times or costs. A relationship requires a verbatim supporting phrase and evidence ID. If evidence is insufficient, use unknowns instead. Max 8 distinct relationships. Do not split one generic chain into multiple assertions. Output valid JSON.";
    const start=Date.now();
    const response=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",signal:AbortSignal.timeout(45000),headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({model:env.MODEL_ID,messages:[{role:"system",content:instructions},{role:"user",content:JSON.stringify({company:host,sources})}],temperature:0,response_format:{type:"json_object"},max_tokens:1600})});
    if(!response.ok)throw Error("Inference "+response.status+": "+(await response.text()).slice(0,120));
    const raw=await response.json(),parsed=JSON.parse(raw.choices?.[0]?.message?.content||"{}");
    const byId=new Map(sources.map(x=>[x.id,x]));
    const relationships=(Array.isArray(parsed.relationships)?parsed.relationships:[]).filter(x=>x&&x.from_role&&x.to_role&&x.process&&Array.isArray(x.evidence_ids)&&x.evidence_ids.some(id=>byId.has(id))&&typeof x.evidence_quote==="string"&&x.evidence_quote.trim()).map((x,i)=>({id:"operating-"+(i+1),from_role:String(x.from_role),to_role:String(x.to_role),process:String(x.process),product_scope:String(x.product_scope||"unspecified"),status:"inferred",confidence:x.confidence==="medium"?"medium":"low",evidence_ids:x.evidence_ids.filter(id=>byId.has(id)),evidence_quote:x.evidence_quote}));
-   const result={status:"ok",company:host,relationships,unknowns:Array.isArray(parsed.unknowns)?parsed.unknowns:[],sources:sources.map(({id,url,title,retrieval,text})=>({id,url,title,retrieval,excerpt:text})),usage:raw.usage||{},elapsed_ms:Date.now()-start,note:"Echelon-level relationships, not verified facility-to-facility lanes. Search snippets only; verify source documents before promoting to verified."};
+   const uniqueRelationships=[...new Map(relationships.map(x=>[[x.from_role,x.to_role,x.process].map(y=>y.toLowerCase().trim()).join("|"),x])).values()];
+   const result={status:"ok",company:host,relationships:uniqueRelationships,unknowns:Array.isArray(parsed.unknowns)?parsed.unknowns:[],sources:sources.map(({id,url,title,retrieval,text})=>({id,url,title,retrieval,excerpt:text})),usage:raw.usage||{},elapsed_ms:Date.now()-start,note:"Echelon-level relationships, not verified facility-to-facility lanes. Only first-party and SEC search snippets admitted; still verify source documents before promoting to verified."};
    await budget(env,{action:"save",company:cacheKey,data:result,ip});
    return json(result,200,cors);
   }catch(e){return json({error:String(e.message||e).slice(0,400)},400,cors)}
