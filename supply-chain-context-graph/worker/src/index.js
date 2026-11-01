@@ -238,6 +238,16 @@ export default {async fetch(request,env){
    const cacheKey=host+"-facilities-ontology-v1";
    const prior=await budget(env,{action:"cache",company:cacheKey,ip});
    if(prior.hit)return json({...prior.data,cached:true},200,cors);
+   // Check provider routing before spending four Brave searches. A successful cached result skips this.
+   const modelCheck=await fetch("https://router.huggingface.co/v1/chat/completions",{
+    method:"POST",signal:AbortSignal.timeout(12000),
+    headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},
+    body:JSON.stringify({model:env.MODEL_ID,messages:[{role:"user",content:"Reply OK"}],max_tokens:8,temperature:0})
+   });
+   if(!modelCheck.ok){
+    const detail=(await modelCheck.text()).slice(0,450);
+    return json({error:"Model preflight failed before research searches. Check Hugging Face enabled inference providers or MODEL_ID.",model:env.MODEL_ID,provider_status:modelCheck.status,detail},503,cors);
+   }
    const reserve=await budget(env,{action:"reserve",kind:"search",company:host+"-facilities-v1",ip});
    if(!reserve.allowed)return json({error:reserve.reason},429,cors);
    const plan=researchPlan(host);
