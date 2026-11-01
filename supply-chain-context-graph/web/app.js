@@ -142,8 +142,9 @@ function renderClaims(graph){
  }
  if(!claims.length)host.textContent="No claims extracted.";
 }
+function companyWebsite(){const value=$("company").value.trim();if(!value)throw Error("Enter a company domain, for example target.com");const url=new URL(/^https?:\/\//i.test(value)?value:"https://"+value);if(!/^https?:$/.test(url.protocol)||!url.hostname.includes("."))throw Error("Enter a valid company domain");return url.href;}
 async function loadResearch(endpoint){
- const response=await fetch(endpoint+"/research",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({website:$("company").value})});
+ const response=await fetch(endpoint+"/research",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({website:companyWebsite()})});
  const data=await response.json();if(!response.ok)throw Error(data.error||"Research failed");
  renderResearch(data);return data;
 }
@@ -207,10 +208,10 @@ $("generate").addEventListener("click", async () => {
     const research = await loadResearch(endpoint);
     stage = "generation";
     $("status").textContent = "Found " + research.source_count + " sources. Asking Qwen to build the graph…";
-    const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:$("company").value,evidence:research.sources,search_log:research.search_log,web_search_status:research.web_search_status})});
+    const response = await fetch(endpoint + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({website:companyWebsite(),evidence:research.sources,search_log:research.search_log,web_search_status:research.web_search_status})});
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Request failed");
-    showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || $("company").value);
+    showGraph({...body.graph, sources: body.sources || []}, body.evidence_url || companyWebsite());
     $("results").scrollIntoView({behavior:"smooth",block:"start"});
     const dropped = body.validation?.dropped_edges_missing_endpoints || 0;
     $("status").textContent = (body.mode === "curated-reference" ? "Sourced facility reference network loaded from " : "Graph generated from ") + (body.sources || []).length + " public sources." + (dropped ? " Removed " + dropped + " invalid relationships with missing entities." : "") + " Review before using.";
