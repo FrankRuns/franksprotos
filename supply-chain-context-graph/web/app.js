@@ -233,5 +233,16 @@ $("download").addEventListener("click", () => {
 });
 
 
+$("graph-file").addEventListener("change",async event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ try{
+  const parsed=JSON.parse(await file.text());
+  const graph=parsed.graph&&Array.isArray(parsed.graph.nodes)?parsed.graph:parsed;
+  if(!Array.isArray(graph.nodes)||!Array.isArray(graph.edges))throw Error("JSON must contain nodes and edges arrays");
+  showGraph(graph,"Loaded locally from "+file.name+". No inference calls.");
+  $("status").className="good";$("status").textContent="Saved graph loaded without AI.";
+  $("results").scrollIntoView({behavior:"smooth",block:"start"});
+ }catch(error){$("status").className="error";$("status").textContent="Could not load graph: "+error.message;}
+});
 // Load the local illustrative map without calling a model.
 $("sample").click();
