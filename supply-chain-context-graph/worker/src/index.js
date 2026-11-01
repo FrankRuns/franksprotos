@@ -230,7 +230,19 @@ export default {async fetch(request,env){
      f.lat=matched.latitude;f.lng=matched.longitude;f.coordinate_status="city_centroid_approximate";f.geocoded_city=matched.name;f.geocoded_region=matched.admin1||"";f.geocoding_source="Open-Meteo Geocoding API (GeoNames)";
     }catch{}
    }));
-   return json({status:"ok",company:host,facilities,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"City centroids geocoded independently where possible; these are NOT exact facility addresses. No reference fixture supplied."},200,cors);
+   // Bounded first-pass scenario, NOT claims about actual shipment lanes.
+   // Propose at most one nearest known distribution center per geocoded plant.
+   const dist=facilities.filter(f=>f.type==="distribution_center"&&f.lat!=null&&f.lng!=null);
+   const rad=Math.PI/180;
+   const km=(a,b)=>{const dlat=(b.lat-a.lat)*rad,dlon=(b.lng-a.lng)*rad,z=Math.sin(dlat/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dlon/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(z)))};
+   const scenario_edges=[];
+   for(const plant of facilities.filter(f=>f.type==="manufacturing"&&f.lat!=null&&f.lng!=null)){
+    if(!dist.length)break;
+    const target=[...dist].sort((a,b)=>km(plant,a)-km(plant,b))[0];
+    scenario_edges.push({id:"candidate-"+(scenario_edges.length+1),source:plant.id,target:target.id,type:"potential_plant_to_distribution_flow",status:"hypothetical",evidence_ids:[],distance_km_approx:Math.round(km(plant,target)),notes:"SCENARIO ONLY: closest discovered distribution center by straight-line distance. Not evidence of a shipment lane, product compatibility, routing, or actual service territory."});
+   }
+   const research_policy={search_queries_attempted:searches.length,maximum_source_pages:16,additional_searches:0,stopping_reason:"Fixed discovery budget exhausted; unknowns and hypothetical links retained instead of researching indefinitely.",modeling_rule:"No hypothetical link may be represented as a verified or inferred physical flow without direct supporting evidence."};
+   return json({status:"ok",company:host,facilities,scenario_edges,research_policy,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"City centroids geocoded independently where possible; these are NOT exact facility addresses. No reference fixture supplied."},200,cors);
   }catch(e){return json({error:String(e.message||e).slice(0,400)},400,cors)}
  }
  if(pathname==="/smoke-test"){
