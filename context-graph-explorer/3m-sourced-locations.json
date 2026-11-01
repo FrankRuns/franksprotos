@@ -1,0 +1,186 @@
+{
+  "company": "3M | sourced US facility sample",
+  "description": "Evidence-backed locations, approximate city centers; no invented shipping lanes.",
+  "nodes": [
+    {
+      "id": "aberdeen",
+      "label": "Aberdeen, SD",
+      "type": "manufacturing",
+      "lat": 45.4647,
+      "lng": -98.4865,
+      "status": "inferred",
+      "notes": "Aerospace tapes and protective products. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "aberdeen-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "hutchinson",
+      "label": "Hutchinson, MN",
+      "type": "manufacturing",
+      "lat": 44.8877,
+      "lng": -94.3697,
+      "status": "inferred",
+      "notes": "Coated adhesive films and tapes. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "hutchinson-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "menomonie",
+      "label": "Menomonie, WI",
+      "type": "manufacturing",
+      "lat": 44.8755,
+      "lng": -91.9193,
+      "status": "inferred",
+      "notes": "Ceramic fiber and film products. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "menomonie-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "springfield",
+      "label": "Springfield, MO",
+      "type": "manufacturing",
+      "lat": 37.209,
+      "lng": -93.2923,
+      "status": "inferred",
+      "notes": "Adhesives and sealants. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "springfield-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "dekalb",
+      "label": "DeKalb, IL",
+      "type": "distribution_center",
+      "lat": 41.9295,
+      "lng": -88.7504,
+      "status": "inferred",
+      "notes": "Receiving, storing and distributing 3M materials. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "dekalb-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "clinton",
+      "label": "Clinton, TN",
+      "type": "manufacturing",
+      "lat": 36.1034,
+      "lng": -84.1319,
+      "status": "inferred",
+      "notes": "Automotive, consumer and industrial products. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "clinton-source"
+      ],
+      "evidence_url": "https://news.3m.com/3M-Clinton-strengthens-U-S-manufacturing-and-future-workforce-pathways",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "knoxville",
+      "label": "Knoxville, IA",
+      "type": "manufacturing",
+      "lat": 41.3208,
+      "lng": -93.1094,
+      "status": "inferred",
+      "notes": "Adhesive tapes. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "knoxville-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/oem-tier-us/resources/",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "fairmont",
+      "label": "Fairmont, MN",
+      "type": "manufacturing",
+      "lat": 43.6522,
+      "lng": -94.4611,
+      "status": "inferred",
+      "notes": "Reclosable fasteners. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "fairmont-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/oem-tier-us/resources/",
+      "coordinate_precision": "city_center"
+    },
+    {
+      "id": "prairie",
+      "label": "Prairie du Chien, WI",
+      "type": "manufacturing",
+      "lat": 43.0517,
+      "lng": -91.1412,
+      "status": "inferred",
+      "notes": "Insulation products. Facility and activity identified in 3M sources; point is approximate city center, not a verified street address. Current operating status requires confirmation.",
+      "evidence_ids": [
+        "prairie-source"
+      ],
+      "evidence_url": "https://www.3m.com/3M/en_US/oem-tier-us/resources/",
+      "coordinate_precision": "city_center"
+    }
+  ],
+  "edges": [],
+  "sources": [
+    {
+      "id": "aberdeen-source",
+      "url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "hutchinson-source",
+      "url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "menomonie-source",
+      "url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "springfield-source",
+      "url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "dekalb-source",
+      "url": "https://www.3m.com/3M/en_US/aerospace-us/resources/",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "clinton-source",
+      "url": "https://news.3m.com/3M-Clinton-strengthens-U-S-manufacturing-and-future-workforce-pathways",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "knoxville-source",
+      "url": "https://www.3m.com/3M/en_US/oem-tier-us/resources/",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "fairmont-source",
+      "url": "https://www.3m.com/3M/en_US/oem-tier-us/resources/",
+      "title": "3M official facility listing or announcement"
+    },
+    {
+      "id": "prairie-source",
+      "url": "https://www.3m.com/3M/en_US/oem-tier-us/resources/",
+      "title": "3M official facility listing or announcement"
+    }
+  ],
+  "unknowns": [
+    "Exact facility coordinates",
+    "Current facility operating status",
+    "Facility-to-facility material flows",
+    "Distribution coverage and service levels"
+  ]
+}
