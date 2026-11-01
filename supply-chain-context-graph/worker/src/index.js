@@ -101,6 +101,9 @@ async function readPage(url,id){
  if(text.length<120) return null;
  return {id,url,title:(html.match(/<title[^>]*>([^<]+)<\/title>/i)||[])[1]||url,text,links:discoverLinks(html,new URL(url))};
 }
+async function readPageWithTimeout(url,id,ms){
+ try{return await Promise.race([readPage(url,id),new Promise(resolve=>setTimeout(()=>resolve(null),ms))]);}catch{return null;}
+}
 async function collectEvidence(website){
  const home=publicUrl(website);
  const base=home.origin;
@@ -210,14 +213,14 @@ export default {async fetch(request,env){
     return {query:q,results:(data.web?.results||[]).slice(0,8).map(x=>({url:x.url,title:x.title||"",snippet:clean(x.description||"")}))};
    }));
    const search_log=searchesDone.map((x,i)=>x.status==="fulfilled"?{query:searches[i],count:x.value.results.length}:{query:searches[i],error:String(x.reason)});
-   const candidates=[...new Map(searchesDone.filter(x=>x.status==="fulfilled").flatMap(x=>x.value.results).filter(x=>{try{publicUrl(x.url);return true}catch{return false}}).map(x=>[x.url,x])).values()].slice(0,16);
-   const fetched=await Promise.allSettled(candidates.map((x,i)=>readPage(x.url,"facility-"+(i+1))));
-   const evidence=candidates.map((x,i)=>{const page=fetched[i].status==="fulfilled"?fetched[i].value:null;return {id:"facility-"+(i+1),url:x.url,title:x.title,text:page?(page.text.slice(0,8000)):x.snippet,retrieval:page?"full_page":"search_snippet"}}).filter(x=>x.text.length>25);
+   const candidates=[...new Map(searchesDone.filter(x=>x.status==="fulfilled").flatMap(x=>x.value.results).filter(x=>{try{publicUrl(x.url);return true}catch{return false}}).map(x=>[x.url,x])).values()].slice(0,10);
+   const fetched=await Promise.allSettled(candidates.map((x,i)=>readPageWithTimeout(x.url,"facility-"+(i+1),5500)));
+   const evidence=candidates.map((x,i)=>{const page=fetched[i].status==="fulfilled"?fetched[i].value:null;return {id:"facility-"+(i+1),url:x.url,title:x.title,text:page?(page.text.slice(0,3000)):x.snippet,retrieval:page?"full_page":"search_snippet"}}).filter(x=>x.text.length>25);
    if(!evidence.length)throw Error("No facility evidence retrieved");
    const instructions="You are an evidence extraction engine, not a supply chain storyteller. Extract ONLY explicitly named physical manufacturing plants or distribution/warehouse facilities in the provided evidence. Do not invent places, coordinates, routes, or operational relationships. Reject generic regions (e.g. Middle Atlantic, Global), Unknown or empty cities, corporate offices and aggregate facility counts. Never invent a facility from an SEC geographic segment. Use real city and state names, not census region labels. A source saying 48 plants is not 48 named locations. Return JSON object with facilities array; each facility must have name, city, region, country, type (manufacturing or distribution_center or warehouse), status (inferred), evidence_ids array, evidence_quote (short verbatim phrase), coordinate_status (unresolved), lat null, lng null. Include unknowns array. If source is only a snippet, retain its citation but mark evidence_quality search_snippet. Do not claim currently operational solely from old documents. Max 24 facilities.";
-   const messages=[{role:"system",content:instructions},{role:"user",content:JSON.stringify({company:host,evidence:evidence.map(x=>({...x,text:x.text.slice(0,5200)}))})}];
+   const messages=[{role:"system",content:instructions},{role:"user",content:JSON.stringify({company:host,evidence:evidence.map(x=>({...x,text:x.text.slice(0,2200)}))})}];
    const start=Date.now();
-   const inference=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",signal:AbortSignal.timeout(75000),headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:2600})});
+   const inference=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",signal:AbortSignal.timeout(45000),headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:1800})});
    if(!inference.ok)throw Error("Inference "+inference.status+": "+(await inference.text()).slice(0,180));
    const raw=await inference.json(),parsed=JSON.parse(raw.choices[0].message.content);
    const valid=new Set(evidence.map(x=>x.id));
@@ -251,7 +254,7 @@ export default {async fetch(request,env){
     const target=[...dist].sort((a,b)=>km(plant,a)-km(plant,b))[0];
     scenario_edges.push({id:"candidate-"+(scenario_edges.length+1),source:plant.id,target:target.id,type:"potential_plant_to_distribution_flow",status:"hypothetical",evidence_ids:[],distance_km_approx:Math.round(km(plant,target)),notes:"SCENARIO ONLY: closest discovered distribution center by straight-line distance. Not evidence of a shipment lane, product compatibility, routing, or actual service territory."});
    }
-   const research_policy={search_queries_attempted:searches.length,maximum_source_pages:16,additional_searches:0,stopping_reason:"Fixed discovery budget exhausted; unknowns and hypothetical links retained instead of researching indefinitely.",modeling_rule:"No hypothetical link may be represented as a verified or inferred physical flow without direct supporting evidence."};
+   const research_policy={search_queries_attempted:searches.length,maximum_source_pages:10,additional_searches:0,stopping_reason:"Fixed discovery budget exhausted; unknowns and hypothetical links retained instead of researching indefinitely.",modeling_rule:"No hypothetical link may be represented as a verified or inferred physical flow without direct supporting evidence."};
    return json({status:"ok",company:host,facilities,scenario_edges,research_policy,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"City centroids geocoded independently where possible; these are NOT exact facility addresses. No reference fixture supplied."},200,cors);
   }catch(e){return json({error:String(e.message||e).slice(0,400)},400,cors)}
  }
