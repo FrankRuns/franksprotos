@@ -178,8 +178,25 @@ export default {async fetch(request,env){
  if(request.method==="OPTIONS")return origin===allowed?new Response(null,{status:204,headers:{...cors,"Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Max-Age":"600"}}):json({error:"Origin not allowed"},403);
  const pathname=new URL(request.url).pathname;
  if(pathname==="/health")return json({status:"ok",model:env.MODEL_ID,research:"budgeted-public-search-v8",web_search_configured:!!env.BRAVE_API_KEY});
- if(!["/generate","/research","/plan","/benchmark"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
+ if(!["/generate","/research","/plan","/benchmark","/smoke-test"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
  if(origin!==allowed)return json({error:"Origin not allowed"},403,cors);
+ if(pathname==="/smoke-test"){
+  if(!env.HF_TOKEN)return json({error:"HF_TOKEN secret missing"},503,cors);
+  try{
+   const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+   const permit=await budget(env,{action:"reserve",kind:"generation",ip,company:"smoke-test"});
+   if(!permit.allowed)return json({error:permit.reason},429,cors);
+   const start=Date.now();
+   const response=await fetch("https://router.huggingface.co/v1/chat/completions",{
+    method:"POST",signal:AbortSignal.timeout(20000),
+    headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},
+    body:JSON.stringify({model:env.MODEL_ID,messages:[{role:"user",content:"Reply with exactly: OK"}],max_tokens:12,temperature:0})
+   });
+   if(!response.ok)return json({status:"failed",provider_status:response.status,detail:(await response.text()).slice(0,250)},502,cors);
+   const result=await response.json();
+   return json({status:"ok",model:env.MODEL_ID,reply:String(result.choices?.[0]?.message?.content||"").slice(0,80),elapsed_ms:Date.now()-start,usage:result.usage||null},200,cors);
+  }catch(e){return json({status:"failed",error:String(e.message||e).slice(0,250)},502,cors);}
+ }
  if(pathname==="/benchmark"){
   if(!env.OPENAI_API_KEY)return json({error:"OPENAI_API_KEY secret missing in Cloudflare Worker"},503,cors);
   try{
