@@ -202,7 +202,21 @@ const benchmarkPlaces={
  "NY-FC":[40.7128,-74.006],"customer":null
 };
 const benchmarkDestinations={"direct-ship":[41.7658,-72.6734],"cold-chain":[42.3601,-71.0589],"carrier-contract":[41.8781,-87.6298],"capacity":[33.749,-84.388],"inventory-eligibility":[41.3083,-72.9279]};
-let benchmarkMap=null;
+
+const benchmarkPreview={
+ "direct-ship":{id:"direct-ship",demand:{destination:"Hartford"},options:[{id:"pa-direct",from:"PA-DC",to:"customer",cost:8,days:1},{id:"pa-store",from:"PA-DC",to:"CT-STORE",cost:14,days:2},{id:"nj-fulfillment",from:"NJ-FC",to:"customer",cost:19,days:2}]},
+ "cold-chain":{id:"cold-chain",demand:{destination:"Boston"},options:[{id:"ambient",from:"CT-DC",to:"customer",cost:35,days:1},{id:"reefer",from:"CT-DC",to:"customer",cost:65,days:2},{id:"remote-reefer",from:"MA-DC",to:"customer",cost:90,days:1}]},
+ "carrier-contract":{id:"carrier-contract",demand:{destination:"Chicago"},options:[{id:"spot",from:"OH-DC",to:"customer",cost:12,days:1},{id:"contract",from:"OH-DC",to:"customer",cost:20,days:2},{id:"backup",from:"IN-DC",to:"customer",cost:26,days:2}]},
+ "capacity":{id:"capacity",demand:{destination:"Atlanta"},options:[{id:"fast",from:"GA-DC",to:"customer",cost:100,days:1},{id:"standard",from:"GA-DC",to:"customer",cost:130,days:2},{id:"overflow",from:"TN-DC",to:"customer",cost:155,days:2}]},
+ "inventory-eligibility":{id:"inventory-eligibility",demand:{destination:"New Haven"},options:[{id:"reserved",from:"CT-DC",to:"customer",cost:18,days:1},{id:"available",from:"NY-FC",to:"customer",cost:29,days:2},{id:"slow",from:"PA-DC",to:"customer",cost:15,days:4}]}
+};
+function showBenchmarkPreview(){
+ try{renderBenchmarkMap({scenario:benchmarkPreview[$("benchmark-scenario").value],runs:[]});}
+ catch(e){$("benchmark-map").textContent="Map preview error: "+e.message;}
+}
+$("benchmark-scenario").addEventListener("change",showBenchmarkPreview);
+showBenchmarkPreview();
+
 function renderBenchmarkMap(result){
  const host=$("benchmark-map");host.replaceChildren();
  const scenario=result.scenario,destination=benchmarkDestinations[scenario.id];
