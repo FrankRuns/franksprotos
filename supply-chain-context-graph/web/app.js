@@ -158,6 +158,7 @@ $("research").addEventListener("click",async()=>{
 });
 
 function showGraph(graph, source) {
+  $("results").hidden = false;
   drawGraph(graph);
   renderMainGeography(graph);
   showLocalChecks(graph);
@@ -200,7 +201,7 @@ function showGraph(graph, source) {
 $("generate").addEventListener("click", async () => {
   const endpoint = $("endpoint").value.trim().replace(/\/$/, "");
   if (!/^https:\/\//.test(endpoint)) { $("status").textContent = "Set your HTTPS Cloudflare Worker URL under Connection settings."; return; }
-  $("generate").disabled = true; $("generate").textContent = "Generating…"; $("results").hidden = true; $("status").className = "";
+  $("generate").disabled = true; $("generate").textContent = "Generating…"; $("status").className = "";
   $("status").textContent = "Checking public research sources…";
   const started = Date.now();
   let stage = "research";
@@ -221,7 +222,7 @@ $("generate").addEventListener("click", async () => {
 });
 $("sample").addEventListener("click", () => {
   showGraph({company:"Illustrative Northeast Supply Chain",nodes:[{id:"plant",label:"Pennsylvania Plant",type:"manufacturer",status:"hypothetical",lat:40.2732,lng:-76.8867},{id:"dc",label:"New Jersey DC",type:"distribution_center",status:"hypothetical",lat:40.7357,lng:-74.1724},{id:"fc",label:"Connecticut Fulfillment Center",type:"fulfillment_center",status:"hypothetical",lat:41.7658,lng:-72.6734},{id:"store",label:"Boston Store",type:"store",status:"hypothetical",lat:42.3601,lng:-71.0589}],edges:[{source:"plant",target:"dc",type:"ships_to",status:"hypothetical"},{source:"dc",target:"fc",type:"ships_to",status:"hypothetical"},{source:"dc",target:"store",type:"ships_to",status:"hypothetical"}],unknowns:["All locations are illustrative city centers, not verified facilities. All lanes are hypothetical."]},"Illustrative network. No real company claims or API calls.");
-  $("status").textContent = "Fictional demo loaded; no model call made.";
+  $("status").textContent = "";
 });
 $("download").addEventListener("click", () => {
   if (!current) return;
