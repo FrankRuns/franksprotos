@@ -76,12 +76,13 @@ function renderMainGeography(graph){
  const host=$("main-geo-map"),note=$("main-geo-note");if(!host)return;
  if(host._leafletMap){host._leafletMap.remove();host._leafletMap=null;}
  host.replaceChildren();
- const nodes=(graph.nodes||[]).filter(n=>{const c=n.coordinates||n.location?.coordinates||{};return Number.isFinite(Number(n.lat??n.latitude??c.lat))&&Number.isFinite(Number(n.lng??n.lon??n.longitude??c.lng??c.lon));});
+ const coords=n=>{const c=n.coordinates||n.location?.coordinates||n.location||{};const geo=n.geometry?.coordinates;const lat=n.lat??n.latitude??c.lat??c.latitude??(Array.isArray(geo)?geo[1]:undefined);const lng=n.lng??n.lon??n.longitude??c.lng??c.lon??c.longitude??(Array.isArray(geo)?geo[0]:undefined);return lat==null||lng==null||lat===""||lng===""?null:[Number(lat),Number(lng)];};
+ const nodes=(graph.nodes||[]).filter(n=>{const p=coords(n);return p&&p.every(Number.isFinite)&&Math.abs(p[0])<=90&&Math.abs(p[1])<=180;});
  if(!nodes.length){host.textContent="No verified coordinates in this graph. Add latitude/longitude to facility nodes to see a geographic map. We won't invent locations.";note.textContent="Geographic coverage: 0 located facilities.";return;}
  if(typeof L==="undefined"){host.textContent="Map library unavailable.";return;}
  const map=L.map(host).setView([30,0],3);host._leafletMap=map;
  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap contributors"}).addTo(map);
- const coords=n=>{const c=n.coordinates||n.location?.coordinates||{};return [Number(n.lat??n.latitude??c.lat),Number(n.lng??n.lon??n.longitude??c.lng??c.lon)];};
+ 
  const byId=new Map(nodes.map(n=>[n.id,n])),bounds=[];
  for(const n of nodes){const p=coords(n);bounds.push(p);L.circleMarker(p,{radius:7,color:n.status==="verified"?"#6edac8":"#f2c66d",fillOpacity:.85}).addTo(map).bindPopup(document.createTextNode((n.label||n.id)+" · "+(n.status||"unverified")).textContent);}
  let links=0;
