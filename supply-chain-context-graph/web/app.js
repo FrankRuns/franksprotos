@@ -71,6 +71,39 @@ function drawGraph(graph) {
 }
 
 
+
+function renderMainGeography(graph){
+ const host=$("main-geo-map"),note=$("main-geo-note");if(!host)return;
+ if(host._leafletMap){host._leafletMap.remove();host._leafletMap=null;}
+ host.replaceChildren();
+ const nodes=(graph.nodes||[]).filter(n=>{const c=n.coordinates||n.location?.coordinates||{};return Number.isFinite(Number(n.lat??n.latitude??c.lat))&&Number.isFinite(Number(n.lng??n.lon??n.longitude??c.lng??c.lon));});
+ if(!nodes.length){host.textContent="No verified coordinates in this graph. Add latitude/longitude to facility nodes to see a geographic map. We won't invent locations.";note.textContent="Geographic coverage: 0 located facilities.";return;}
+ if(typeof L==="undefined"){host.textContent="Map library unavailable.";return;}
+ const map=L.map(host).setView([30,0],3);host._leafletMap=map;
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap contributors"}).addTo(map);
+ const coords=n=>{const c=n.coordinates||n.location?.coordinates||{};return [Number(n.lat??n.latitude??c.lat),Number(n.lng??n.lon??n.longitude??c.lng??c.lon)];};
+ const byId=new Map(nodes.map(n=>[n.id,n])),bounds=[];
+ for(const n of nodes){const p=coords(n);bounds.push(p);L.circleMarker(p,{radius:7,color:n.status==="verified"?"#6edac8":"#f2c66d",fillOpacity:.85}).addTo(map).bindPopup(document.createTextNode((n.label||n.id)+" · "+(n.status||"unverified")).textContent);}
+ let links=0;
+ for(const e of graph.edges||[]){if(!byId.has(e.source)||!byId.has(e.target)||!/ship|flow|transport|deliver|supply|replenish|distribut/i.test(e.type||e.relationship||""))continue;L.polyline([coords(byId.get(e.source)),coords(byId.get(e.target))],{color:e.status==="verified"?"#6edac8":"#f2c66d",weight:3,dashArray:e.status==="verified"?null:"6 6"}).addTo(map);links++;}
+ map.fitBounds(bounds,{padding:[30,30],maxZoom:8});setTimeout(()=>map.invalidateSize(),100);
+ note.textContent=nodes.length+" located facilities · "+links+" mapped flows. Straight lines are relationships, not road routes. Unverified claims are yellow.";
+}
+function localGraphChecks(graph){
+ const nodes=graph.nodes||[],edges=graph.edges||[],ids=new Set(nodes.map(n=>n.id));
+ const problems=[];
+ for(const e of edges)if(!ids.has(e.source)||!ids.has(e.target))problems.push("Broken edge: "+(e.source||"?")+" → "+(e.target||"?"));
+ for(const n of nodes)if(n.status==="verified"&&!(n.evidence_ids||[]).length)problems.push("Missing evidence: "+(n.label||n.id));
+ for(const e of edges)if(e.status==="verified"&&!(e.evidence_ids||[]).length)problems.push("Missing edge evidence: "+e.source+" → "+e.target);
+ return {nodes:nodes.length,edges:edges.length,problems};
+}
+function showLocalChecks(graph){
+ const el=$("local-checks");if(!el)return;const r=localGraphChecks(graph);
+ el.replaceChildren();const summary=document.createElement("p");summary.textContent=r.nodes+" nodes · "+r.edges+" edges · "+r.problems.length+" validation warnings. No API calls.";el.append(summary);
+ for(const issue of r.problems.slice(0,25)){const p=document.createElement("p");p.textContent="⚠ "+issue;el.append(p);}
+ if(!r.problems.length){const p=document.createElement("p");p.textContent="No broken references or missing evidence on verified claims.";el.append(p);}
+}
+
 let lastResearch=null;
 function renderResearch(research){
  lastResearch=research;
@@ -125,6 +158,8 @@ $("research").addEventListener("click",async()=>{
 
 function showGraph(graph, source) {
   drawGraph(graph);
+  renderMainGeography(graph);
+  showLocalChecks(graph);
   renderClaims(graph);
   const hypothesisHost=$("hypotheses");hypothesisHost.replaceChildren();
   for(const h of graph.hypotheses||[]){const d=document.createElement("div");d.className="edge";const title=document.createElement("strong");title.textContent="["+(h.status||"hypothetical")+"] "+(h.statement||"");const p=document.createElement("p");p.textContent=(h.rationale||"")+(h.research_question?" Research next: "+h.research_question:"");d.append(title,p);hypothesisHost.append(d);}
