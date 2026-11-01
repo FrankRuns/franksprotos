@@ -25,13 +25,15 @@ export class ResearchBudget {
    }
    if(data.action==="reserve"){
     const ipKey="ip:"+day+":"+ip,visits=await storage.get(ipKey)||0;
-    if(visits>=20)return json({allowed:false,reason:"Daily request limit reached for this visitor"},429);
+    const companyKey="ip-company:"+day+":"+ip+":"+key,companyVisits=await storage.get(companyKey)||0;
+    if(visits>=40||companyVisits>=6)return json({allowed:false,reason:"Daily request limit reached for this visitor or company; try again tomorrow"},429);
     const kind=data.kind==="benchmark"?"benchmarks":data.kind==="generation"?"generations":"searches",limit=kind==="benchmarks"?BENCHMARK_MONTHLY_LIMIT:kind==="generations"?GENERATION_MONTHLY_LIMIT:SEARCH_MONTHLY_LIMIT;
     const counter=kind+":"+month,used=await storage.get(counter)||0;
     const units=kind==="searches"?4:1;
     if(used+units>limit)return json({allowed:false,reason:kind+" monthly budget exhausted; cached research remains available"},429);
     await storage.put(counter,used+units);
     await storage.put(ipKey,visits+1);
+    await storage.put(companyKey,companyVisits+1);
     return json({allowed:true,remaining:limit-used-units});
    }
    return json({error:"Invalid budget action"},400);
