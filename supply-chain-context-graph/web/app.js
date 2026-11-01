@@ -214,23 +214,51 @@ function renderBenchmarkMap(result){
  const customer=L.circleMarker(location,{radius:9,color:"#ffffff",fillColor:"#1e94c6",fillOpacity:1,weight:2}).addTo(benchmarkMap).bindPopup("Customer destination: "+scenario.demand.destination);
  bounds.push(location);
  const colors={baseline:"#fb8f88",context_graph:"#55d7b6"};
- const selected=new Set(result.runs.map(r=>r.decision.option_id));
+
  for(const option of scenario.options){
   const from=benchmarkPlaces[option.from];if(!from)continue;
-  const run=result.runs.find(r=>r.decision.option_id===option.id);
+  const run=result.runs.find(r=>r.condition==="context_graph"&&r.decision.option_id===option.id)||result.runs.find(r=>r.condition==="baseline"&&r.decision.option_id===option.id);
   const color=run?colors[run.condition]:"#93a7b9";
   const offset=option.to==="CT-STORE"?benchmarkPlaces["CT-STORE"]:location;
-  L.polyline([from,offset],{color,weight:run?5:2,opacity:run?0.95:0.45,dashArray:run?.grade.feasible?null:"7 7"}).addTo(benchmarkMap).bindPopup(option.id+" · $"+option.cost+" · "+option.days+" day(s)"+(run?" · "+run.condition:""));
+  L.polyline([from,offset],{color,weight:run?5:2,opacity:run?0.95:0.45,dashArray:run&&!run.grade.feasible?"7 7":null}).addTo(benchmarkMap).bindPopup(option.from+" → "+option.to+" · $"+option.cost+" · "+option.days+" day(s)"+(run?" · "+run.condition:""));
   L.circleMarker(from,{radius:7,color:"#fff",weight:1,fillColor:color,fillOpacity:0.95}).addTo(benchmarkMap).bindPopup(option.from+" (approximate city center)");
   bounds.push(from);
  }
  if(scenario.id==="direct-ship"){
   const store=benchmarkPlaces["CT-STORE"];
-  L.circleMarker(store,{radius:5,color:"#fff",fillColor:"#55d7b6",fillOpacity:1}).addTo(benchmarkMap).bindPopup("CT store: pickup destination");
+  L.circleMarker([store[0]+0.055,store[1]+0.065],{radius:7,color:"#fff",fillColor:"#55d7b6",fillOpacity:1}).addTo(benchmarkMap).bindPopup("Illustrative CT store pickup location (offset for visibility)");
  }
  benchmarkMap.fitBounds(bounds,{padding:[35,35],maxZoom:8});
  setTimeout(()=>benchmarkMap?.invalidateSize(),150);
 }
+
+function renderFulfillmentFlow(result){
+ const scenario=result.scenario,base=result.runs.find(r=>r.condition==="baseline"),graph=result.runs.find(r=>r.condition==="context_graph");
+ const selected=scenario.options.find(o=>o.id===graph.decision.option_id);
+ const host=$("benchmark-flow");host.replaceChildren();
+ if(!selected){host.textContent="No valid fulfillment option was selected.";return;}
+ const label=id=>({"PA-DC":"Pennsylvania distribution center","CT-STORE":"Connecticut store","NJ-FC":"New Jersey fulfillment center","CT-DC":"Connecticut distribution center","MA-DC":"Massachusetts distribution center","OH-DC":"Ohio distribution center","IN-DC":"Indiana distribution center","GA-DC":"Georgia distribution center","TN-DC":"Tennessee distribution center","NY-FC":"New York fulfillment center"}[id]||id);
+ const steps=[{title:label(selected.from),detail:scenario.inventory[selected.from]+" units available · release "+scenario.demand.quantity+" unit(s) of "+scenario.demand.sku}];
+ if(selected.to!=="customer")steps.push({title:label(selected.to),detail:"Receive inventory and prepare customer pickup or handoff"});
+ steps.push({title:selected.to==="customer"?"Customer in "+scenario.demand.destination:"Customer pickup in "+scenario.demand.destination,detail:selected.to==="customer"?"Shipment reaches the customer":"Customer collects the order at the receiving store"});
+ steps.forEach((step,i)=>{
+  if(i){const arrow=document.createElement("div");arrow.className="flow-arrow";arrow.textContent=i===1?("Selected movement · "+selected.days+" day(s) · $"+selected.cost):"Store pickup / final handoff";host.append(arrow);}
+  const el=document.createElement("div");el.className="flow-step";
+  const number=document.createElement("span");number.className="step-num";number.textContent=String(i+1);
+  const body=document.createElement("div"),name=document.createElement("strong"),description=document.createElement("p");
+  name.textContent=step.title;description.textContent=step.detail;body.append(name,description);el.append(number,body);host.append(el);
+ });
+ const headline=$("benchmark-headline"),takeaway=$("benchmark-takeaway");
+ headline.textContent="How the "+scenario.demand.sku+" order gets fulfilled";
+ takeaway.textContent="Graph-enabled ChatGPT selected "+label(selected.from)+(selected.to==="customer"?" → customer":" → "+label(selected.to)+" → customer pickup")+". The plan costs $"+selected.cost+" and takes "+selected.days+" day(s). "+(graph.grade.feasible?"It satisfies the modeled operational constraints.":"It violates at least one modeled constraint.");
+ if(base&&!base.grade.feasible&&graph.grade.feasible){
+  const rejected=scenario.options.find(o=>o.id===base.decision.option_id);
+  const warning=document.createElement("div");warning.className="flow-warning";
+  warning.textContent="Why not the cheaper route? ChatGPT alone selected "+(rejected?label(rejected.from)+" → "+(rejected.to==="customer"?"customer":label(rejected.to)):"an invalid option")+" ($"+base.grade.cost+"). "+result.context_graph.operational_rules.filter(r=>(r.blocks||[]).includes(base.decision.option_id)).map(r=>r.statement).join(" ")+" The graph-enabled agent avoided that violation.";
+  host.append(warning);
+ }
+}
+
 function renderBenchmarkExplanation(result){
  const base=result.runs.find(r=>r.condition==="baseline"),graph=result.runs.find(r=>r.condition==="context_graph");
  const host=$("benchmark-explanation");host.replaceChildren();
@@ -262,7 +290,7 @@ $("run-benchmark").addEventListener("click",async()=>{
    const reason=document.createElement("p");reason.textContent=run.decision.reason||"";card.append(reason);cards.append(card);
   }
   $("benchmark-raw").textContent=JSON.stringify(result,null,2);output.hidden=false;
-  renderBenchmarkExplanation(result);renderBenchmarkMap(result);
+  renderFulfillmentFlow(result);renderBenchmarkExplanation(result);renderBenchmarkMap(result);
   status.textContent="Paired experiment complete using "+result.model+". These results are one trial, not proof of a performance difference.";
  }catch(e){status.textContent="Benchmark failed: "+e.message;status.className="error";}
  finally{button.disabled=false;}
