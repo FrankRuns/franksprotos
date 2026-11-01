@@ -86,9 +86,10 @@ async function runTargetDecision(env,scenario,withContext){
   {role:"system",content:"You are a supply chain decision agent advising Target. Give an operationally useful recommendation, not a generic explanation. Distinguish facts from assumptions, do not fabricate capacities, eligible lanes, inventory, or costs. Respond as JSON with keys: recommendation (string), actions (array of up to 5 short strings), constraints (array of up to 5 strings), unknowns (array of up to 5 strings), assumptions (array of up to 4 strings), confidence (string)."},
   {role:"user",content:JSON.stringify({company:"Target",scenario:scenario.prompt,...(withContext?{research_context:TARGET_DECISION_CONTEXT}:{})})}
  ];
- const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+env.OPENAI_API_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(45000),body:JSON.stringify({model:env.BENCHMARK_MODEL||"gpt-4.1-mini",messages,temperature:0,response_format:{type:"json_object"},max_tokens:850})});
+ const response=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},signal:AbortSignal.timeout(90000),body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:1100})});
  if(!response.ok)throw Error("Decision model HTTP "+response.status+": "+(await response.text()).slice(0,180));
  const result=await response.json();
+ if(!result.choices?.[0]?.message?.content)throw Error("Qwen returned an empty decision response");
  return {condition:withContext?"with_claude_report":"without_report",answer:JSON.parse(result.choices[0].message.content),usage:result.usage};
 }
 
@@ -366,7 +367,7 @@ export default {async fetch(request,env){
   }catch(e){return json({status:"failed",error:String(e.message||e).slice(0,250)},502,cors);}
  }
  if(pathname==="/target-decision-test"){
-  if(!env.OPENAI_API_KEY)return json({error:"OPENAI_API_KEY secret missing in Cloudflare Worker"},503,cors);
+  if(!env.HF_TOKEN)return json({error:"HF_TOKEN secret missing in Cloudflare Worker"},503,cors);
   try{
    const body=await request.json();
    const scenario=TARGET_DECISION_SCENARIOS.find(x=>x.id===body.scenario_id)||TARGET_DECISION_SCENARIOS[0];
@@ -375,7 +376,7 @@ export default {async fetch(request,env){
    if(!permit.allowed)return json({error:permit.reason},429,cors);
    const runs=[];
    for(const withContext of [false,true])runs.push(await runTargetDecision(env,scenario,withContext));
-   return json({scenario,model:env.BENCHMARK_MODEL||"gpt-4.1-mini",context_source:"Curated extract from Claude Target report, not full document",runs},200,cors);
+   return json({scenario,model:env.MODEL_ID,context_source:"Curated extract from Claude Target report, not full document",runs},200,cors);
   }catch(e){return json({error:String(e.message||e).slice(0,350)},400,cors)}
  }
  if(pathname==="/benchmark"){
