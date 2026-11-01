@@ -214,7 +214,23 @@ export default {async fetch(request,env){
    const raw=await inference.json(),parsed=JSON.parse(raw.choices[0].message.content);
    const valid=new Set(evidence.map(x=>x.id));
    const facilities=(Array.isArray(parsed.facilities)?parsed.facilities:[]).filter(x=>x&&x.city&&x.country&&Array.isArray(x.evidence_ids)&&x.evidence_ids.some(id=>valid.has(id))).map((x,i)=>({id:"facility-"+(i+1),label:x.name||x.city,type:["manufacturing","distribution_center","warehouse"].includes(x.type)?x.type:"unknown",city:x.city,region:x.region||"",country:x.country,status:"inferred",lat:null,lng:null,coordinate_status:"unresolved",evidence_ids:x.evidence_ids.filter(id=>valid.has(id)),notes:x.evidence_quote||"",evidence_quality:x.evidence_quality||"unreviewed"}));
-   return json({status:"ok",company:host,facilities,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"Coordinates deliberately unresolved; extracted city names require geocoding and verification. No reference fixture supplied."},200,cors);
+   // Independent geocoding: city centroid only, never presented as facility rooftop.
+   await Promise.allSettled(facilities.map(async f=>{
+    try{
+     const q=encodeURIComponent(f.city.trim());
+     const response=await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+q+"&count=10&language=en&format=json",{signal:AbortSignal.timeout(6000)});
+     if(!response.ok)return;
+     const candidates=(await response.json()).results||[];
+     const normalized=x=>String(x||"").toLowerCase().replace(/[^a-z]/g,"");
+     const country=normalized(f.country);
+     const cc=country==="unitedstates"?"US":country==="canada"?"CA":null;
+     const region=normalized(f.region);
+     const matched=candidates.find(x=>(!cc||x.country_code===cc)&&(!region||normalized(x.admin1)===region||normalized(x.admin1).includes(region)||region.includes(normalized(x.admin1))))||candidates.find(x=>(!cc||x.country_code===cc)&&!region);
+     if(!matched||!Number.isFinite(matched.latitude)||!Number.isFinite(matched.longitude))return;
+     f.lat=matched.latitude;f.lng=matched.longitude;f.coordinate_status="city_centroid_approximate";f.geocoded_city=matched.name;f.geocoded_region=matched.admin1||"";f.geocoding_source="Open-Meteo Geocoding API (GeoNames)";
+    }catch{}
+   }));
+   return json({status:"ok",company:host,facilities,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"City centroids geocoded independently where possible; these are NOT exact facility addresses. No reference fixture supplied."},200,cors);
   }catch(e){return json({error:String(e.message||e).slice(0,400)},400,cors)}
  }
  if(pathname==="/smoke-test"){
