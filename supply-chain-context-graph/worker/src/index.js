@@ -178,8 +178,45 @@ export default {async fetch(request,env){
  if(request.method==="OPTIONS")return origin===allowed?new Response(null,{status:204,headers:{...cors,"Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Max-Age":"600"}}):json({error:"Origin not allowed"},403);
  const pathname=new URL(request.url).pathname;
  if(pathname==="/health")return json({status:"ok",model:env.MODEL_ID,research:"budgeted-public-search-v8",web_search_configured:!!env.BRAVE_API_KEY});
- if(!["/generate","/research","/plan","/benchmark","/smoke-test"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
+ if(!["/generate","/research","/plan","/benchmark","/smoke-test","/facility-research"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
  if(origin!==allowed)return json({error:"Origin not allowed"},403,cors);
+ if(pathname==="/facility-research"){
+  if(!env.HF_TOKEN||!env.BRAVE_API_KEY)return json({error:"HF_TOKEN or BRAVE_API_KEY missing"},503,cors);
+  try{
+   const body=await request.json(),website=publicUrl(body.website||"https://www.3m.com").href;
+   const host=new URL(website).hostname.replace(/^www\./,"");
+   const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+   const reserve=await budget(env,{action:"reserve",kind:"search",company:host+"-facilities-v1",ip});
+   if(!reserve.allowed)return json({error:reserve.reason},429,cors);
+   const searches=[
+    "site:"+host+" manufacturing plants locations facilities cities",
+    "site:"+host+" distribution centers warehouse locations",
+    host+" factory plant facility manufacturing locations addresses",
+    host+" distribution center logistics facility location"
+   ];
+   const searchesDone=await Promise.allSettled(searches.map(async q=>{
+    const url="https://api.search.brave.com/res/v1/web/search?q="+encodeURIComponent(q)+"&count=8";
+    const res=await fetch(url,{headers:{"Accept":"application/json","X-Subscription-Token":env.BRAVE_API_KEY},signal:AbortSignal.timeout(12000)});
+    if(!res.ok)throw Error("Search HTTP "+res.status);
+    const data=await res.json();
+    return {query:q,results:(data.web?.results||[]).slice(0,8).map(x=>({url:x.url,title:x.title||"",snippet:clean(x.description||"")}))};
+   }));
+   const search_log=searchesDone.map((x,i)=>x.status==="fulfilled"?{query:searches[i],count:x.value.results.length}:{query:searches[i],error:String(x.reason)});
+   const candidates=[...new Map(searchesDone.filter(x=>x.status==="fulfilled").flatMap(x=>x.value.results).filter(x=>{try{publicUrl(x.url);return true}catch{return false}}).map(x=>[x.url,x])).values()].slice(0,16);
+   const fetched=await Promise.allSettled(candidates.map((x,i)=>readPage(x.url,"facility-"+(i+1))));
+   const evidence=candidates.map((x,i)=>{const page=fetched[i].status==="fulfilled"?fetched[i].value:null;return {id:"facility-"+(i+1),url:x.url,title:x.title,text:page?(page.text.slice(0,8000)):x.snippet,retrieval:page?"full_page":"search_snippet"}}).filter(x=>x.text.length>25);
+   if(!evidence.length)throw Error("No facility evidence retrieved");
+   const instructions="You are an evidence extraction engine, not a supply chain storyteller. Extract ONLY explicitly named physical manufacturing plants or distribution/warehouse facilities in the provided evidence. Do not invent places, coordinates, routes, or operational relationships. A source saying 48 plants is not 48 named locations. Return JSON object with facilities array; each facility must have name, city, region, country, type (manufacturing or distribution_center or warehouse), status (inferred), evidence_ids array, evidence_quote (short verbatim phrase), coordinate_status (unresolved), lat null, lng null. Include unknowns array. If source is only a snippet, retain its citation but mark evidence_quality search_snippet. Do not claim currently operational solely from old documents. Max 24 facilities.";
+   const messages=[{role:"system",content:instructions},{role:"user",content:JSON.stringify({company:host,evidence:evidence.map(x=>({...x,text:x.text.slice(0,5200)}))})}];
+   const start=Date.now();
+   const inference=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",signal:AbortSignal.timeout(75000),headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:2600})});
+   if(!inference.ok)throw Error("Inference "+inference.status+": "+(await inference.text()).slice(0,180));
+   const raw=await inference.json(),parsed=JSON.parse(raw.choices[0].message.content);
+   const valid=new Set(evidence.map(x=>x.id));
+   const facilities=(Array.isArray(parsed.facilities)?parsed.facilities:[]).filter(x=>x&&x.city&&x.country&&Array.isArray(x.evidence_ids)&&x.evidence_ids.some(id=>valid.has(id))).map((x,i)=>({id:"facility-"+(i+1),label:x.name||x.city,type:["manufacturing","distribution_center","warehouse"].includes(x.type)?x.type:"unknown",city:x.city,region:x.region||"",country:x.country,status:"inferred",lat:null,lng:null,coordinate_status:"unresolved",evidence_ids:x.evidence_ids.filter(id=>valid.has(id)),notes:x.evidence_quote||"",evidence_quality:x.evidence_quality||"unreviewed"}));
+   return json({status:"ok",company:host,facilities,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"Coordinates deliberately unresolved; extracted city names require geocoding and verification. No reference fixture supplied."},200,cors);
+  }catch(e){return json({error:String(e.message||e).slice(0,400)},400,cors)}
+ }
  if(pathname==="/smoke-test"){
   if(!env.HF_TOKEN)return json({error:"HF_TOKEN secret missing"},503,cors);
   try{
