@@ -1,0 +1,129 @@
+{
+  "company": "Target | Northeast supply chain facilities",
+  "description": "Publicly named Target facilities. Coordinates are approximate city centers, not verified site addresses. No facility-to-facility relationships are asserted.",
+  "nodes": [
+    {
+      "id": "perth-amboy",
+      "label": "Perth Amboy flow center",
+      "type": "flow_center",
+      "lat": 40.5068,
+      "lng": -74.2654,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "logan-flow",
+      "label": "Logan flow center",
+      "type": "flow_center",
+      "lat": 39.785,
+      "lng": -75.355,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "logan-fulfillment",
+      "label": "Logan fulfillment center",
+      "type": "fulfillment_center",
+      "lat": 39.785,
+      "lng": -75.355,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "burlington",
+      "label": "Burlington fulfillment center",
+      "type": "fulfillment_center",
+      "lat": 40.0712,
+      "lng": -74.8649,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "wilton",
+      "label": "Wilton regional distribution center",
+      "type": "regional_distribution_center",
+      "lat": 43.1712,
+      "lng": -73.7304,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "amsterdam",
+      "label": "Amsterdam regional distribution center",
+      "type": "regional_distribution_center",
+      "lat": 42.9387,
+      "lng": -74.1882,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "chambersburg",
+      "label": "Chambersburg regional distribution center",
+      "type": "regional_distribution_center",
+      "lat": 39.9376,
+      "lng": -77.6611,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "philadelphia",
+      "label": "Philadelphia sortation center",
+      "type": "sortation_center",
+      "lat": 39.9526,
+      "lng": -75.1636,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    },
+    {
+      "id": "york",
+      "label": "York fulfillment center",
+      "type": "fulfillment_center",
+      "lat": 39.9626,
+      "lng": -76.7277,
+      "status": "verified",
+      "evidence_ids": [
+        "target-middle-atlantic"
+      ],
+      "notes": "Facility existence/type verified by Target. Coordinates are approximate city centers only."
+    }
+  ],
+  "edges": [],
+  "operating_context": [],
+  "sources": [
+    {
+      "id": "target-middle-atlantic",
+      "title": "Target: Middle Atlantic Region",
+      "url": "https://corporate.target.com/about/locations/about-our-stores/middle-atlantic-region"
+    }
+  ],
+  "unknowns": [
+    "Actual site coordinates",
+    "Transportation lanes between facilities",
+    "Carrier contracts and service areas",
+    "Inventory, capacity and eligibility constraints"
+  ]
+}
