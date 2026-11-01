@@ -77,20 +77,27 @@ SERVICE: Store in-stock estimates 93–96% essentials and 88–93% discretionary
 UNCERTAINTIES: No verified node-level inventory, SKU eligibility, facility capacities, actual routes, lane costs, transportation carrier eligibility, store allocations, exact replenishment lead times, or RDC-to-RDC transfer rights. Do not invent them. Public facility directories can be stale. Different facilities in one city can have different roles.
 `;
 const TARGET_DECISION_SCENARIOS=[
- {id:"rdc-outage",title:"Seven-day RDC outage",prompt:"A Target regional distribution center serving approximately 75 stores closes for seven days. You are the planning agent. Recommend the first 24-hour response, alternative supply paths, constraints to verify, and decision tradeoffs. Do not assume a specific city or RDC has capacity."},
- {id:"digital-order",title:"Digital fulfillment shortage",prompt:"A Target store has an online order for a high-demand item but cannot confirm pickable on-hand stock. The customer wants delivery within two days. Recommend how to decide whether to source from another store, a flow center, or another node. Identify required eligibility and cost data. Do not assume inventory or shipping capabilities."},
- {id:"import-delay",title:"Import arrival delayed",prompt:"A shipment of imported discretionary merchandise destined for Target's inland replenishment network is delayed 12 days. Recommend inventory allocation, replenishment, and service mitigation decisions, considering upstream buffers and store-centric fulfillment. Explain what data you would request before executing."}
+ {id:"rdc-outage",title:"Houston replenishment decision",question:"A Target store needs 2,000 units tomorrow. Houston Receive Center has 10,000 units available. Choose the cheapest operationally supported action. All costs, inventory and timing in this scenario are SYNTHETIC.",options:[{id:"direct",label:"Houston Receive Center → store",cost:1200,days:1},{id:"via-rdc",label:"Houston → assigned RDC → store",cost:2100,days:2},{id:"store-transfer",label:"Transfer from another store",cost:2600,days:1},{id:"verify",label:"Hold and verify eligible paths and capacity",cost:0,days:null}],hidden:{direct:"No direct-to-store capability is established in Claude's report",viaRdc:"Two days misses the one-day deadline",storeTransfer:"Store transfer is hypothetical; inventory and lane eligibility not established"},key:"verify"},
+ {id:"digital-order",title:"Digital order sourcing",question:"An online order must arrive within two days. The ordering store has no confirmed pickable inventory. Select a defensible next action. Costs, times and stock claims below are SYNTHETIC.",options:[{id:"rdc-parcel",label:"Parcel directly from an RDC",cost:7,days:1},{id:"store",label:"Fulfill from another store after verifying inventory",cost:12,days:2},{id:"sortation-stock",label:"Pick product directly at sortation center",cost:5,days:1},{id:"cancel",label:"Cancel immediately",cost:0,days:0}],hidden:{rdc:"Direct parcel eligibility at RDC not established",store:"Store fulfillment is described in report; availability still must be checked",sortation:"Sortation centers consolidate store-picked parcels; inventory-pick capability not established"},key:"store"},
+ {id:"import-delay",title:"Import delay mitigation",question:"Imported discretionary inventory will arrive 12 days late. The receiving RDC is short. Choose the first decision to make. Costs, inventory and availability below are SYNTHETIC.",options:[{id:"direct-port",label:"Send delayed inventory directly from port to stores",cost:1800,days:3},{id:"upstream",label:"Check existing upstream stock and eligible RDC replenishment before allocating",cost:300,days:1},{id:"lateral",label:"Transfer 5,000 units from any neighboring RDC immediately",cost:600,days:1},{id:"wait",label:"Wait 12 days without intervention",cost:0,days:12}],hidden:{port:"No such direct-to-store lane established",upstream:"Report describes upstream buffers, but inventory and lanes require verification",lateral:"Lateral transfer eligibility and inventory not established"},key:"upstream"}
 ];
+function gradeTargetDecision(scenario,answer){
+ const selected=String(answer.option_id||"").trim();
+ const valid=scenario.options.some(o=>o.id===selected);
+ return {selected_option:selected,valid_option:valid,reference_choice:scenario.key,aligned_with_reference:valid&&selected===scenario.key,reason:scenario.hidden,warning:"Synthetic decision diagnostic. The reference choice is an expert-designed policy, not verified Target ground truth. Do not interpret this as actual cost optimization."};
+}
 async function runTargetDecision(env,scenario,withContext){
  const messages=[
-  {role:"system",content:"You are a supply chain decision agent advising Target. Give an operationally useful recommendation, not a generic explanation. Distinguish facts from assumptions, do not fabricate capacities, eligible lanes, inventory, or costs. Respond as JSON with keys: recommendation (string), actions (array of up to 5 short strings), constraints (array of up to 5 strings), unknowns (array of up to 5 strings), assumptions (array of up to 4 strings), confidence (string)."},
-  {role:"user",content:JSON.stringify({company:"Target",scenario:scenario.prompt,...(withContext?{research_context:TARGET_DECISION_CONTEXT}:{})})}
+  {role:"system",content:"You are a supply chain decision agent. Select exactly ONE option_id from options. A low cost does not establish a physically possible route. Prefer a verifiable action over inventing operational permissions. If information needed to execute a physical movement is missing, say so. Respond with JSON object {option_id:string,reason:string,missing_checks:string[]} with no other keys."},
+  {role:"user",content:JSON.stringify({company:"Target",decision:scenario.question,options:scenario.options,...(withContext?{research_context:TARGET_DECISION_CONTEXT}:{})})}
  ];
- const response=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},signal:AbortSignal.timeout(90000),body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:1100})});
+ const response=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},signal:AbortSignal.timeout(90000),body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:450})});
  if(!response.ok)throw Error("Decision model HTTP "+response.status+": "+(await response.text()).slice(0,180));
  const result=await response.json();
- if(!result.choices?.[0]?.message?.content)throw Error("Qwen returned an empty decision response");
- return {condition:withContext?"with_claude_report":"without_report",answer:JSON.parse(result.choices[0].message.content),usage:result.usage};
+ const raw=result.choices?.[0]?.message?.content;
+ if(!raw)throw Error("Qwen returned an empty decision response");
+ let answer;try{answer=JSON.parse(raw)}catch{throw Error("Qwen returned incomplete decision JSON")}
+ return {condition:withContext?"with_claude_report":"without_report",answer,grade:gradeTargetDecision(scenario,answer),usage:result.usage};
 }
 
 const RULES = [
@@ -376,7 +383,7 @@ export default {async fetch(request,env){
    if(!permit.allowed)return json({error:permit.reason},429,cors);
    const runs=[];
    for(const withContext of [false,true])runs.push(await runTargetDecision(env,scenario,withContext));
-   return json({scenario,model:env.MODEL_ID,context_source:"Curated extract from Claude Target report, not full document",runs},200,cors);
+   return json({scenario:{id:scenario.id,title:scenario.title,question:scenario.question,options:scenario.options},model:env.MODEL_ID,context_source:"Curated extract from Claude Target report, not full document",runs},200,cors);
   }catch(e){return json({error:String(e.message||e).slice(0,350)},400,cors)}
  }
  if(pathname==="/benchmark"){
