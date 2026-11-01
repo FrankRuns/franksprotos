@@ -66,6 +66,32 @@ async function callBenchmarkModel(env,scenario,context){
  const data=await response.json();return {decision:JSON.parse(data.choices[0].message.content),usage:data.usage};
 }
 
+
+const TARGET_DECISION_CONTEXT = `SOURCE: Target Corp. — Representative Supply Chain Network Model, November 1, 2026. Curated extract of Claude's research report, not the full document. These are research claims and estimates, not verified live operating data.
+NETWORK: Target is store-centric with imported and domestic vendors, coastal import warehouses, upstream distribution, Houston Receive Center, regional distribution centers, food distribution centers, flow centers, stores, and sortation centers. Around 70 supply chain facilities and 72.9 million square feet at Jan 31 2026, from Target's FY2025 annual report. Approximately 28–32 general merchandise RDCs and 10 food DCs are estimates, not confirmed counts.
+FLOWS: Imported goods can pass through coastal import warehouse, upstream DC, or Houston Receive Center before RDC. Domestic vendors can ship directly to RDC and food DC. Stores serve retail guests and are primary e-commerce pick nodes; sortation centers consolidate store-picked parcels for carrier and Shipt delivery.
+HOUSTON: Houston Receive Center opened April 2026; reported to supply six RDCs and one Chicago flow center. This is an upstream buffering capability, NOT evidence of direct store delivery or a specific lane to an arbitrary RDC.
+RDC RISK: Roughly 75 stores per RDC is an estimate. RDC outages can disrupt a region. Lateral RDC-to-RDC buffers are believed limited, but specific eligible transfers, transportation contracts, inventories and receiving capacities are unknown.
+INVENTORY: Modeled shares: upstream 12–18% of network units, RDC/food DC 20–28%, flow centers 3–6%, stores 50–60%. These are LOW confidence modeled estimates, not observed inventory.
+SERVICE: Store in-stock estimates 93–96% essentials and 88–93% discretionary, LOW confidence. Store inventory record accuracy affects both shelf replenishment and digital order fulfillment.
+UNCERTAINTIES: No verified node-level inventory, SKU eligibility, facility capacities, actual routes, lane costs, transportation carrier eligibility, store allocations, exact replenishment lead times, or RDC-to-RDC transfer rights. Do not invent them. Public facility directories can be stale. Different facilities in one city can have different roles.
+`;
+const TARGET_DECISION_SCENARIOS=[
+ {id:"rdc-outage",title:"Seven-day RDC outage",prompt:"A Target regional distribution center serving approximately 75 stores closes for seven days. You are the planning agent. Recommend the first 24-hour response, alternative supply paths, constraints to verify, and decision tradeoffs. Do not assume a specific city or RDC has capacity."},
+ {id:"digital-order",title:"Digital fulfillment shortage",prompt:"A Target store has an online order for a high-demand item but cannot confirm pickable on-hand stock. The customer wants delivery within two days. Recommend how to decide whether to source from another store, a flow center, or another node. Identify required eligibility and cost data. Do not assume inventory or shipping capabilities."},
+ {id:"import-delay",title:"Import arrival delayed",prompt:"A shipment of imported discretionary merchandise destined for Target's inland replenishment network is delayed 12 days. Recommend inventory allocation, replenishment, and service mitigation decisions, considering upstream buffers and store-centric fulfillment. Explain what data you would request before executing."}
+];
+async function runTargetDecision(env,scenario,withContext){
+ const messages=[
+  {role:"system",content:"You are a supply chain decision agent advising Target. Give an operationally useful recommendation, not a generic explanation. Distinguish facts from assumptions, do not fabricate capacities, eligible lanes, inventory, or costs. Respond as JSON with keys: recommendation (string), actions (array of up to 5 short strings), constraints (array of up to 5 strings), unknowns (array of up to 5 strings), assumptions (array of up to 4 strings), confidence (string)."},
+  {role:"user",content:JSON.stringify({company:"Target",scenario:scenario.prompt,...(withContext?{research_context:TARGET_DECISION_CONTEXT}:{})})}
+ ];
+ const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+env.OPENAI_API_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(45000),body:JSON.stringify({model:env.BENCHMARK_MODEL||"gpt-4.1-mini",messages,temperature:0,response_format:{type:"json_object"},max_tokens:850})});
+ if(!response.ok)throw Error("Decision model HTTP "+response.status+": "+(await response.text()).slice(0,180));
+ const result=await response.json();
+ return {condition:withContext?"with_claude_report":"without_report",answer:JSON.parse(result.choices[0].message.content),usage:result.usage};
+}
+
 const RULES = [
  "A physical lane requires specific evidence; geography is not evidence of flow.",
  "Separate owns, operates, serves, ships_to and can_ship_to.",
@@ -184,7 +210,7 @@ export default {async fetch(request,env){
  if(request.method==="OPTIONS")return origin===allowed?new Response(null,{status:204,headers:{...cors,"Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Max-Age":"600"}}):json({error:"Origin not allowed"},403);
  const pathname=new URL(request.url).pathname;
  if(pathname==="/health")return json({status:"ok",model:env.MODEL_ID,research:"budgeted-public-search-v8",web_search_configured:!!env.BRAVE_API_KEY});
- if(!["/generate","/research","/plan","/benchmark","/smoke-test","/facility-research","/network-research"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
+ if(!["/generate","/research","/plan","/benchmark","/smoke-test","/facility-research","/network-research","/target-decision-test"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
  if(origin!==allowed)return json({error:"Origin not allowed"},403,cors);
  if(pathname==="/network-research"){
   if(!env.HF_TOKEN||!env.BRAVE_API_KEY)return json({error:"HF_TOKEN or BRAVE_API_KEY missing"},503,cors);
@@ -338,6 +364,19 @@ export default {async fetch(request,env){
    const result=await response.json();
    return json({status:"ok",model:env.MODEL_ID,reply:String(result.choices?.[0]?.message?.content||"").slice(0,80),elapsed_ms:Date.now()-start,usage:result.usage||null},200,cors);
   }catch(e){return json({status:"failed",error:String(e.message||e).slice(0,250)},502,cors);}
+ }
+ if(pathname==="/target-decision-test"){
+  if(!env.OPENAI_API_KEY)return json({error:"OPENAI_API_KEY secret missing in Cloudflare Worker"},503,cors);
+  try{
+   const body=await request.json();
+   const scenario=TARGET_DECISION_SCENARIOS.find(x=>x.id===body.scenario_id)||TARGET_DECISION_SCENARIOS[0];
+   const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+   const permit=await budget(env,{action:"reserve",kind:"benchmark",ip,company:"target-decision-test"});
+   if(!permit.allowed)return json({error:permit.reason},429,cors);
+   const runs=[];
+   for(const withContext of [false,true])runs.push(await runTargetDecision(env,scenario,withContext));
+   return json({scenario,model:env.BENCHMARK_MODEL||"gpt-4.1-mini",context_source:"Curated extract from Claude Target report, not full document",runs},200,cors);
+  }catch(e){return json({error:String(e.message||e).slice(0,350)},400,cors)}
  }
  if(pathname==="/benchmark"){
   if(!env.OPENAI_API_KEY)return json({error:"OPENAI_API_KEY secret missing in Cloudflare Worker"},503,cors);
