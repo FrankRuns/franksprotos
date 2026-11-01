@@ -190,7 +190,13 @@ export default {async fetch(request,env){
    const ip=request.headers.get("CF-Connecting-IP")||"unknown";
    const reserve=await budget(env,{action:"reserve",kind:"search",company:host+"-facilities-v1",ip});
    if(!reserve.allowed)return json({error:reserve.reason},429,cors);
-   const searches=[
+   const isRetail=host==="target.com";
+   const searches=isRetail?[
+    "Target regional distribution center locations city state list",
+    "Target distribution center warehouse facilities locations site:target.com",
+    "Target food distribution centers flow centers locations city state",
+    "Target import warehouse receive center sortation center locations city state"
+   ]:[
     "site:"+host+" manufacturing plants locations facilities cities",
     "site:"+host+" distribution centers warehouse locations",
     host+" factory plant facility manufacturing locations addresses",
@@ -208,14 +214,16 @@ export default {async fetch(request,env){
    const fetched=await Promise.allSettled(candidates.map((x,i)=>readPage(x.url,"facility-"+(i+1))));
    const evidence=candidates.map((x,i)=>{const page=fetched[i].status==="fulfilled"?fetched[i].value:null;return {id:"facility-"+(i+1),url:x.url,title:x.title,text:page?(page.text.slice(0,8000)):x.snippet,retrieval:page?"full_page":"search_snippet"}}).filter(x=>x.text.length>25);
    if(!evidence.length)throw Error("No facility evidence retrieved");
-   const instructions="You are an evidence extraction engine, not a supply chain storyteller. Extract ONLY explicitly named physical manufacturing plants or distribution/warehouse facilities in the provided evidence. Do not invent places, coordinates, routes, or operational relationships. A source saying 48 plants is not 48 named locations. Return JSON object with facilities array; each facility must have name, city, region, country, type (manufacturing or distribution_center or warehouse), status (inferred), evidence_ids array, evidence_quote (short verbatim phrase), coordinate_status (unresolved), lat null, lng null. Include unknowns array. If source is only a snippet, retain its citation but mark evidence_quality search_snippet. Do not claim currently operational solely from old documents. Max 24 facilities.";
+   const instructions="You are an evidence extraction engine, not a supply chain storyteller. Extract ONLY explicitly named physical manufacturing plants or distribution/warehouse facilities in the provided evidence. Do not invent places, coordinates, routes, or operational relationships. Reject generic regions (e.g. Middle Atlantic, Global), Unknown or empty cities, corporate offices and aggregate facility counts. Never invent a facility from an SEC geographic segment. Use real city and state names, not census region labels. A source saying 48 plants is not 48 named locations. Return JSON object with facilities array; each facility must have name, city, region, country, type (manufacturing or distribution_center or warehouse), status (inferred), evidence_ids array, evidence_quote (short verbatim phrase), coordinate_status (unresolved), lat null, lng null. Include unknowns array. If source is only a snippet, retain its citation but mark evidence_quality search_snippet. Do not claim currently operational solely from old documents. Max 24 facilities.";
    const messages=[{role:"system",content:instructions},{role:"user",content:JSON.stringify({company:host,evidence:evidence.map(x=>({...x,text:x.text.slice(0,5200)}))})}];
    const start=Date.now();
    const inference=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",signal:AbortSignal.timeout(75000),headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:2600})});
    if(!inference.ok)throw Error("Inference "+inference.status+": "+(await inference.text()).slice(0,180));
    const raw=await inference.json(),parsed=JSON.parse(raw.choices[0].message.content);
    const valid=new Set(evidence.map(x=>x.id));
-   const facilities=(Array.isArray(parsed.facilities)?parsed.facilities:[]).filter(x=>x&&x.city&&x.country&&Array.isArray(x.evidence_ids)&&x.evidence_ids.some(id=>valid.has(id))).map((x,i)=>({id:"facility-"+(i+1),label:x.name||x.city,type:["manufacturing","distribution_center","warehouse"].includes(x.type)?x.type:"unknown",city:x.city,region:x.region||"",country:x.country,status:"inferred",lat:null,lng:null,coordinate_status:"unresolved",evidence_ids:x.evidence_ids.filter(id=>valid.has(id)),notes:x.evidence_quote||"",evidence_quality:x.evidence_quality||"unreviewed"}));
+   const badPlace=/^(unknown|global|national|nationwide|multiple|various|not specified|n\/a|united states)$/i;
+   const badRegion=/\b(region|global|nationwide|unknown)\b/i;
+   const facilities=(Array.isArray(parsed.facilities)?parsed.facilities:[]).filter(x=>x&&typeof x.city==="string"&&x.city.trim()&&!badPlace.test(x.city.trim())&&!badRegion.test(x.city)&&x.country&&Array.isArray(x.evidence_ids)&&x.evidence_ids.some(id=>valid.has(id))).map((x,i)=>({id:"facility-"+(i+1),label:x.name||x.city,type:["manufacturing","distribution_center","warehouse"].includes(x.type)?x.type:"unknown",city:x.city,region:x.region||"",country:x.country,status:"inferred",lat:null,lng:null,coordinate_status:"unresolved",evidence_ids:x.evidence_ids.filter(id=>valid.has(id)),notes:x.evidence_quote||"",evidence_quality:x.evidence_quality||"unreviewed"}));
    // Independent geocoding: city centroid only, never presented as facility rooftop.
    await Promise.allSettled(facilities.map(async f=>{
     try{
@@ -227,7 +235,7 @@ export default {async fetch(request,env){
      const country=normalized(f.country);
      const cc=country==="unitedstates"?"US":country==="canada"?"CA":null;
      const region=normalized(f.region);
-     const matched=candidates.find(x=>(!cc||x.country_code===cc)&&(!region||normalized(x.admin1)===region||normalized(x.admin1).includes(region)||region.includes(normalized(x.admin1))))||candidates.find(x=>(!cc||x.country_code===cc)&&!region);
+     const matched=candidates.find(x=>(!cc||x.country_code===cc)&&(!region||normalized(x.admin1)===region||normalized(x.admin1).includes(region)||region.includes(normalized(x.admin1))))||candidates.find(x=>(!cc||x.country_code===cc)&&(!region||!badRegion.test(f.region)));
      if(!matched||!Number.isFinite(matched.latitude)||!Number.isFinite(matched.longitude))return;
      f.lat=matched.latitude;f.lng=matched.longitude;f.coordinate_status="city_centroid_approximate";f.geocoded_city=matched.name;f.geocoded_region=matched.admin1||"";f.geocoding_source="Open-Meteo Geocoding API (GeoNames)";
     }catch{}
