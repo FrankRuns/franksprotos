@@ -204,35 +204,48 @@ const benchmarkPlaces={
 const benchmarkDestinations={"direct-ship":[41.7658,-72.6734],"cold-chain":[42.3601,-71.0589],"carrier-contract":[41.8781,-87.6298],"capacity":[33.749,-84.388],"inventory-eligibility":[41.3083,-72.9279]};
 let benchmarkMap=null;
 function renderBenchmarkMap(result){
- const host=$("benchmark-map");
- if(!window.L){host.textContent="Interactive map library did not load. Check connection and reload the page.";return;}
- if(benchmarkMap){benchmarkMap.remove();benchmarkMap=null;}
- host.replaceChildren();
- benchmarkMap=L.map(host,{scrollWheelZoom:false});
- L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap contributors",maxZoom:18}).addTo(benchmarkMap);
- const bounds=[],scenario=result.scenario,location=benchmarkDestinations[scenario.id];
- if(!location){host.textContent="No geographic reference for this scenario.";return;}
- const customer=L.circleMarker(location,{radius:9,color:"#ffffff",fillColor:"#1e94c6",fillOpacity:1,weight:2}).addTo(benchmarkMap).bindPopup("Customer destination: "+scenario.demand.destination);
- bounds.push(location);
- const colors={baseline:"#fb8f88",context_graph:"#55d7b6"};
-
+ const host=$("benchmark-map");host.replaceChildren();
+ const scenario=result.scenario,destination=benchmarkDestinations[scenario.id];
+ if(!destination){host.textContent="No geographic reference available.";return;}
+ // Self-contained geographic plot: no map library, tile server or CDN required.
+ // Equirectangular projection over a padded lat/lon bounding box; city-center coordinates only.
+ const sites=[...scenario.options.map(o=>({id:o.from,point:benchmarkPlaces[o.from]})).filter(x=>x.point),{id:"Customer",point:destination}];
+ if(scenario.id==="direct-ship")sites.push({id:"CT store pickup",point:benchmarkPlaces["CT-STORE"]});
+ const lats=sites.map(s=>s.point[0]),lons=sites.map(s=>s.point[1]);
+ const latMin=Math.min(...lats)-0.55,latMax=Math.max(...lats)+0.55,lonMin=Math.min(...lons)-0.8,lonMax=Math.max(...lons)+0.8;
+ const width=640,height=390,pad=45;
+ const xy=p=>[pad+(p[1]-lonMin)/(lonMax-lonMin)*(width-2*pad),height-pad-(p[0]-latMin)/(latMax-latMin)*(height-2*pad)];
+ const ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg");
+ svg.setAttribute("viewBox","0 0 640 390");svg.setAttribute("role","img");svg.setAttribute("aria-label","Geographic positions and straight-line shipping alternatives");
+ svg.style.cssText="width:100%;height:100%;display:block;background:#132b3b;border-radius:12px";
+ const el=(tag,attrs,text)=>{const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs||{}))n.setAttribute(k,String(v));if(text!=null)n.textContent=text;svg.append(n);return n;};
+ for(let i=0;i<=5;i++){
+  const lat=latMin+(latMax-latMin)*i/5,y=xy([lat,lonMin])[1];
+  el("line",{x1:pad,y1:y,x2:width-pad,y2:y,stroke:"#38566b","stroke-width":1});
+  el("text",{x:5,y:y+4,fill:"#9db7c9","font-size":11},lat.toFixed(1)+"°N");
+  const lon=lonMin+(lonMax-lonMin)*i/5,x=xy([latMin,lon])[0];
+  el("line",{x1:x,y1:pad,x2:x,y2:height-pad,stroke:"#38566b","stroke-width":1});
+  el("text",{x:x-17,y:height-13,fill:"#9db7c9","font-size":11},Math.abs(lon).toFixed(1)+"°W");
+ }
+ const choices=result.runs;
  for(const option of scenario.options){
-  const from=benchmarkPlaces[option.from];if(!from)continue;
-  const run=result.runs.find(r=>r.condition==="context_graph"&&r.decision.option_id===option.id)||result.runs.find(r=>r.condition==="baseline"&&r.decision.option_id===option.id);
-  const color=run?colors[run.condition]:"#93a7b9";
-  const offset=option.to==="CT-STORE"?benchmarkPlaces["CT-STORE"]:location;
-  L.polyline([from,offset],{color,weight:run?5:2,opacity:run?0.95:0.45,dashArray:run&&!run.grade.feasible?"7 7":null}).addTo(benchmarkMap).bindPopup(option.from+" → "+option.to+" · $"+option.cost+" · "+option.days+" day(s)"+(run?" · "+run.condition:""));
-  L.circleMarker(from,{radius:7,color:"#fff",weight:1,fillColor:color,fillOpacity:0.95}).addTo(benchmarkMap).bindPopup(option.from+" (approximate city center)");
-  bounds.push(from);
+  const from=benchmarkPlaces[option.from],to=option.to==="customer"?destination:benchmarkPlaces[option.to];
+  if(!from||!to)continue;
+  const chosen=choices.find(r=>r.condition==="context_graph"&&r.decision.option_id===option.id)||choices.find(r=>r.condition==="baseline"&&r.decision.option_id===option.id);
+  const color=chosen?(chosen.condition==="context_graph"?"#55d7b6":"#fb8f88"):"#91a6b6";
+  const [x1,y1]=xy(from),[x2,y2]=xy(to);
+  const line=el("line",{x1,y1,x2,y2,stroke:color,"stroke-width":chosen?5:2,"stroke-dasharray":chosen&&!chosen.grade.feasible?"9 6":"none",opacity:chosen?1:0.55});
+  const title=document.createElementNS(ns,"title");title.textContent=option.from+" → "+option.to+" | $"+option.cost+" | "+option.days+" days";line.append(title);
  }
- if(scenario.id==="direct-ship"){
-  const store=benchmarkPlaces["CT-STORE"];
-  L.circleMarker([store[0]+0.055,store[1]+0.065],{radius:7,color:"#fff",fillColor:"#55d7b6",fillOpacity:1}).addTo(benchmarkMap).bindPopup("Illustrative CT store pickup location (offset for visibility)");
+ for(const site of sites){
+  const [x,y]=xy(site.point);
+  el("circle",{cx:x,cy:y,r:7,fill:site.id==="Customer"?"#fff":"#55d7b6",stroke:"#173448","stroke-width":2});
+  const label=site.id==="Customer"?"Customer · "+scenario.demand.destination:site.id;
+  el("text",{x:x+10,y:y-10,fill:"#f0f7fb","font-size":13,"font-weight":700,stroke:"#132b3b","stroke-width":3,"paint-order":"stroke"},label);
  }
- benchmarkMap.fitBounds(bounds,{padding:[35,35],maxZoom:8});
- setTimeout(()=>benchmarkMap?.invalidateSize(),150);
+ el("text",{x:width-14,y:20,"text-anchor":"end",fill:"#9db7c9","font-size":11},"Latitude / longitude · schematic geography");
+ host.append(svg);
 }
-
 function renderFulfillmentFlow(result){
  const scenario=result.scenario,base=result.runs.find(r=>r.condition==="baseline"),graph=result.runs.find(r=>r.condition==="context_graph");
  const selected=scenario.options.find(o=>o.id===graph.decision.option_id);
