@@ -234,6 +234,9 @@ export default {async fetch(request,env){
    const body=await request.json(),website=publicUrl(body.website||"https://www.3m.com").href;
    const host=new URL(website).hostname.replace(/^www\./,"");
    const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+   const cacheKey=host+"-facilities-v2";
+   const prior=await budget(env,{action:"cache",company:cacheKey,ip});
+   if(prior.hit)return json({...prior.data,cached:true},200,cors);
    const reserve=await budget(env,{action:"reserve",kind:"search",company:host+"-facilities-v1",ip});
    if(!reserve.allowed)return json({error:reserve.reason},429,cors);
    const isRetail=host==="target.com";
@@ -260,12 +263,15 @@ export default {async fetch(request,env){
    const fetched=await Promise.allSettled(candidates.map((x,i)=>readPageWithTimeout(x.url,"facility-"+(i+1),5500)));
    const evidence=candidates.map((x,i)=>{const page=fetched[i].status==="fulfilled"?fetched[i].value:null;return {id:"facility-"+(i+1),url:x.url,title:x.title,text:page?(page.text.slice(0,3000)):x.snippet,retrieval:page?"full_page":"search_snippet"}}).filter(x=>x.text.length>25);
    if(!evidence.length)throw Error("No facility evidence retrieved");
-   const instructions="You are an evidence extraction engine, not a supply chain storyteller. Extract ONLY explicitly named physical manufacturing plants or distribution/warehouse facilities in the provided evidence. Do not invent places, coordinates, routes, or operational relationships. Reject generic regions (e.g. Middle Atlantic, Global), Unknown or empty cities, corporate offices and aggregate facility counts. Never invent a facility from an SEC geographic segment. Use real city and state names, not census region labels. A source saying 48 plants is not 48 named locations. Return JSON object with facilities array; each facility must have name, city, region, country, type (manufacturing, regional_distribution_center, food_distribution_center, upstream_distribution_center, import_warehouse, fulfillment_center, flow_center, sortation_center, distribution_center, or warehouse), facility_code if explicitly documented (otherwise empty), street_address if explicitly documented (otherwise empty), status (inferred), evidence_ids array, evidence_quote (short verbatim phrase), coordinate_status (unresolved), lat null, lng null. Include unknowns array. If source is only a snippet, retain its citation but mark evidence_quality search_snippet. Do not claim currently operational solely from old documents. Distinct roles in the same city are separate entities: Rialto RDC, food DC, and upstream DC must not be merged. Same site may have multiple operational roles; avoid claiming separate buildings unless evidenced. Max 24 facilities.";
+   const instructions="You are an evidence extraction engine, not a supply chain storyteller. Extract ONLY explicitly named physical manufacturing plants or distribution/warehouse facilities in the provided evidence. Do not invent places, coordinates, routes, or operational relationships. Reject generic regions (e.g. Middle Atlantic, Global), Unknown or empty cities, corporate offices and aggregate facility counts. Never invent a facility from an SEC geographic segment. Use real city and state names, not census region labels. A source saying 48 plants is not 48 named locations. Return JSON object with facilities array; each facility must have name, city, region, country, type (manufacturing, regional_distribution_center, food_distribution_center, upstream_distribution_center, import_warehouse, fulfillment_center, flow_center, sortation_center, distribution_center, or warehouse), facility_code if explicitly documented (otherwise empty), street_address if explicitly documented (otherwise empty), status (inferred), evidence_ids array, evidence_quote (short verbatim phrase), coordinate_status (unresolved), lat null, lng null. Include unknowns array. If source is only a snippet, retain its citation but mark evidence_quality search_snippet. Do not claim currently operational solely from old documents. Distinct roles in the same city are separate entities: Rialto RDC, food DC, and upstream DC must not be merged. Same site may have multiple operational roles; avoid claiming separate buildings unless evidenced. Max 15 facilities. Keep response compact; no verbose prose.";
    const messages=[{role:"system",content:instructions},{role:"user",content:JSON.stringify({company:host,evidence:evidence.map(x=>({...x,text:x.text.slice(0,2200)}))})}];
    const start=Date.now();
-   const inference=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",signal:AbortSignal.timeout(45000),headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:1800})});
+   const inference=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",signal:AbortSignal.timeout(45000),headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({model:env.MODEL_ID,messages,temperature:0,response_format:{type:"json_object"},max_tokens:3000})});
    if(!inference.ok)throw Error("Inference "+inference.status+": "+(await inference.text()).slice(0,180));
-   const raw=await inference.json(),parsed=JSON.parse(raw.choices[0].message.content);
+   const raw=await inference.json();
+   let parsed;
+   try{parsed=JSON.parse(raw.choices?.[0]?.message?.content||"");}
+   catch{throw Error("Facility extraction returned incomplete JSON (finish_reason: "+String(raw.choices?.[0]?.finish_reason||"unknown")+"). No graph was replaced. Retry after deployment.");}
    const valid=new Set(evidence.map(x=>x.id));
    const badPlace=/^(unknown|global|national|nationwide|multiple|various|not specified|n\/a|united states)$/i;
    const badRegion=/\b(region|global|nationwide|unknown)\b/i;
@@ -310,7 +316,9 @@ export default {async fetch(request,env){
     scenario_edges.push({id:"candidate-"+(scenario_edges.length+1),source:plant.id,target:target.id,type:"potential_plant_to_distribution_flow",status:"hypothetical",evidence_ids:[],distance_km_approx:Math.round(km(plant,target)),notes:"SCENARIO ONLY: closest discovered distribution center by straight-line distance. Not evidence of a shipment lane, product compatibility, routing, or actual service territory."});
    }
    const research_policy={search_queries_attempted:searches.length,maximum_source_pages:10,additional_searches:0,stopping_reason:"Fixed discovery budget exhausted; unknowns and hypothetical links retained instead of researching indefinitely.",modeling_rule:"No hypothetical link may be represented as a verified or inferred physical flow without direct supporting evidence."};
-   return json({status:"ok",company:host,facilities,duplicates_collapsed,scenario_edges,research_policy,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"City centroids geocoded independently where possible; these are NOT exact facility addresses. No reference fixture supplied."},200,cors);
+   const result={status:"ok",company:host,facilities,duplicates_collapsed,scenario_edges,research_policy,sources:evidence.map(({id,url,title,retrieval})=>({id,url,title,retrieval})),search_log,unknowns:parsed.unknowns||[],usage:raw.usage||null,elapsed_ms:Date.now()-start,note:"City centroids geocoded independently where possible; these are NOT exact facility addresses. No reference fixture supplied."};
+   await budget(env,{action:"save",company:cacheKey,data:result,ip});
+   return json(result,200,cors);
   }catch(e){return json({error:String(e.message||e).slice(0,400)},400,cors)}
  }
  if(pathname==="/smoke-test"){
