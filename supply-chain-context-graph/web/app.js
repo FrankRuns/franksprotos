@@ -205,8 +205,9 @@ const benchmarkDestinations={"direct-ship":[41.7658,-72.6734],"cold-chain":[42.3
 let benchmarkMap=null;
 function renderBenchmarkMap(result){
  const host=$("benchmark-map");
- if(!window.L){host.textContent="Map tiles unavailable. Decision comparison remains below.";return;}
+ if(!window.L){host.textContent="Interactive map library did not load. Check connection and reload the page.";return;}
  if(benchmarkMap){benchmarkMap.remove();benchmarkMap=null;}
+ host.replaceChildren();
  benchmarkMap=L.map(host,{scrollWheelZoom:false});
  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap contributors",maxZoom:18}).addTo(benchmarkMap);
  const bounds=[],scenario=result.scenario,location=benchmarkDestinations[scenario.id];
@@ -290,7 +291,8 @@ $("run-benchmark").addEventListener("click",async()=>{
    const reason=document.createElement("p");reason.textContent=run.decision.reason||"";card.append(reason);cards.append(card);
   }
   $("benchmark-raw").textContent=JSON.stringify(result,null,2);output.hidden=false;
-  renderFulfillmentFlow(result);renderBenchmarkExplanation(result);renderBenchmarkMap(result);
+  renderFulfillmentFlow(result);renderBenchmarkExplanation(result);
+  requestAnimationFrame(()=>{try{renderBenchmarkMap(result);}catch(error){$("benchmark-map").textContent="Map failed to load: "+error.message;}});
   status.textContent="Paired experiment complete using "+result.model+". These results are one trial, not proof of a performance difference.";
  }catch(e){status.textContent="Benchmark failed: "+e.message;status.className="error";}
  finally{button.disabled=false;}
