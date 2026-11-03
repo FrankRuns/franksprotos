@@ -1,0 +1,1375 @@
+{
+  "1": {
+    "source": "https://www.newenglandskihistory.com/Connecticut/mohawk.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 29,
+        "reports": 4
+      },
+      "01": {
+        "percent": 88,
+        "reports": 3
+      },
+      "02": {
+        "percent": 72,
+        "reports": 3
+      },
+      "03": {
+        "percent": 99,
+        "reports": 1
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 6",
+        "closing": "March 22"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 6",
+        "closing": "March 23"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 2",
+        "closing": "March 10"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 26",
+        "closing": "April 2"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 3",
+        "closing": "March 27"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 12",
+        "closing": "March 27"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 23",
+        "closing": "March 12"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 23",
+        "closing": "March 31"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 9",
+        "closing": "April 1"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 17",
+        "closing": "April 2"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "2": {
+    "source": "https://www.newenglandskihistory.com/Massachusetts/berkshireeast.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 37,
+        "reports": 10
+      },
+      "01": {
+        "percent": 75,
+        "reports": 6
+      },
+      "02": {
+        "percent": 89,
+        "reports": 9
+      },
+      "03": {
+        "percent": 89,
+        "reports": 7
+      },
+      "04": {
+        "percent": 85,
+        "reports": 1
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 6",
+        "closing": "April 4"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 7",
+        "closing": "April 4"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 2",
+        "closing": "April 8"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 11",
+        "closing": "April 8"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 22",
+        "closing": "March 27"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 17",
+        "closing": "March 24"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 16",
+        "closing": "March 12"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 23",
+        "closing": "April 6"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 2",
+        "closing": "April 8"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 11",
+        "closing": "April 2"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "3": {
+    "source": "https://www.newenglandskihistory.com/Massachusetts/catamount.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 53,
+        "reports": 3
+      },
+      "01": {
+        "percent": 53,
+        "reports": 4
+      },
+      "02": {
+        "percent": 88,
+        "reports": 7
+      },
+      "03": {
+        "percent": 90,
+        "reports": 2
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 5",
+        "closing": "April 4"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 6",
+        "closing": "April 5"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 30",
+        "closing": "April 7"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 15",
+        "closing": "April 2"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 22",
+        "closing": "March 14"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 18",
+        "closing": "March 23"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 30",
+        "closing": "March 10"
+      },
+      {
+        "season": "2018-19",
+        "opening": "December 8",
+        "closing": "March 30"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 15",
+        "closing": "April 1"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 15",
+        "closing": "April 2"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "4": {
+    "source": "https://www.newenglandskihistory.com/Massachusetts/bousquet.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 60,
+        "reports": 1
+      },
+      "01": {
+        "percent": 48,
+        "reports": 2
+      },
+      "03": {
+        "percent": 57,
+        "reports": 3
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 12",
+        "closing": "March 29"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 13",
+        "closing": "March 23"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 9",
+        "closing": "March 17"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 25",
+        "closing": "April 2"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 10",
+        "closing": "March 20"
+      },
+      {
+        "season": "2020-21",
+        "opening": "January 9",
+        "closing": "March 21"
+      },
+      {
+        "season": "2019-20",
+        "opening": "December 19",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "January 8",
+        "closing": "March 17"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 20",
+        "closing": "March 31"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 15",
+        "closing": "March 26"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "5": {
+    "source": "https://www.newenglandskihistory.com/Vermont/magicmtn.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 52,
+        "reports": 6
+      },
+      "01": {
+        "percent": 70,
+        "reports": 9
+      },
+      "02": {
+        "percent": 91,
+        "reports": 15
+      },
+      "03": {
+        "percent": 62,
+        "reports": 10
+      },
+      "04": {
+        "percent": 84,
+        "reports": 4
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 5",
+        "closing": "April 4"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 7",
+        "closing": "April 4"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 26",
+        "closing": "April 7"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 18",
+        "closing": "April 9"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 18",
+        "closing": "March 27"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 17",
+        "closing": "March 27"
+      },
+      {
+        "season": "2019-20",
+        "opening": "December 7",
+        "closing": "March 15"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 24",
+        "closing": "April 7"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 16",
+        "closing": "April 8"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 27",
+        "closing": "April 9"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "6": {
+    "source": "https://www.newenglandskihistory.com/Vermont/boltonvalley.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 64,
+        "reports": 4
+      },
+      "01": {
+        "percent": 54,
+        "reports": 7
+      },
+      "02": {
+        "percent": 90,
+        "reports": 7
+      },
+      "03": {
+        "percent": 85,
+        "reports": 7
+      },
+      "04": {
+        "percent": 86,
+        "reports": 3
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "November 22",
+        "closing": "April 12"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 6",
+        "closing": "April 13"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 24",
+        "closing": "April 14"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 25",
+        "closing": "April 9"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 4",
+        "closing": "April 3"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 11",
+        "closing": "April 4"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 29",
+        "closing": "March 15"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 24",
+        "closing": "April 7"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 8",
+        "closing": "April 14"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 9",
+        "closing": "April 9"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "7": {
+    "source": "https://www.newenglandskihistory.com/Vermont/jaypeak.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 67,
+        "reports": 5
+      },
+      "01": {
+        "percent": 97,
+        "reports": 7
+      },
+      "02": {
+        "percent": 83,
+        "reports": 8
+      },
+      "03": {
+        "percent": 99,
+        "reports": 8
+      },
+      "04": {
+        "percent": 76,
+        "reports": 19
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "November 22",
+        "closing": null
+      },
+      {
+        "season": "2024-25",
+        "opening": "November 23",
+        "closing": "June 21"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 24",
+        "closing": "June 22"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 25",
+        "closing": "May 7"
+      },
+      {
+        "season": "2021-22",
+        "opening": "November 26",
+        "closing": "May 14"
+      },
+      {
+        "season": "2020-21",
+        "opening": "November 27",
+        "closing": "May 1"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 22",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 23",
+        "closing": "May 5"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 17",
+        "closing": "May 6"
+      },
+      {
+        "season": "2016-17",
+        "opening": "November 25",
+        "closing": "May 1"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "9": {
+    "source": "https://www.newenglandskihistory.com/Vermont/burkemtn.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 5,
+        "reports": 1
+      },
+      "01": {
+        "percent": 69,
+        "reports": 3
+      },
+      "02": {
+        "percent": 96,
+        "reports": 4
+      },
+      "03": {
+        "percent": 81,
+        "reports": 5
+      },
+      "04": {
+        "percent": 100,
+        "reports": 1
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 6",
+        "closing": "April 12"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 7",
+        "closing": "April 6"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 2",
+        "closing": "April 8"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 26",
+        "closing": "April 9"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 10",
+        "closing": "April 10"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 19",
+        "closing": "April 4"
+      },
+      {
+        "season": "2019-20",
+        "opening": "December 7",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 23",
+        "closing": "April 14"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 1",
+        "closing": "April 15"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 2",
+        "closing": "April 16"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "10": {
+    "source": "https://www.newenglandskihistory.com/NewHampshire/watervillevalley.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 31,
+        "reports": 11
+      },
+      "01": {
+        "percent": 83,
+        "reports": 10
+      },
+      "02": {
+        "percent": 91,
+        "reports": 9
+      },
+      "03": {
+        "percent": 93,
+        "reports": 33
+      },
+      "04": {
+        "percent": 78,
+        "reports": 20
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "November 29",
+        "closing": "April 11"
+      },
+      {
+        "season": "2024-25",
+        "opening": "November 30",
+        "closing": "April 12"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 25",
+        "closing": "April 13"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 10",
+        "closing": "April 15"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 4",
+        "closing": "April 10"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 4",
+        "closing": "April 11"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 23",
+        "closing": "March 18"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 23",
+        "closing": "April 14"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 24",
+        "closing": "April 15"
+      },
+      {
+        "season": "2016-17",
+        "opening": "November 25",
+        "closing": "April 16"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "11": {
+    "source": "https://www.newenglandskihistory.com/NewHampshire/patspeak.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 53,
+        "reports": 84
+      },
+      "01": {
+        "percent": 95,
+        "reports": 98
+      },
+      "02": {
+        "percent": 100,
+        "reports": 71
+      },
+      "03": {
+        "percent": 94,
+        "reports": 62
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 5",
+        "closing": "March 29"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 6",
+        "closing": "March 28"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 1",
+        "closing": "March 23"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 2",
+        "closing": "March 26"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 3",
+        "closing": "March 27"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 11",
+        "closing": "March 27"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 29",
+        "closing": "March 15"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 23",
+        "closing": "March 31"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 2",
+        "closing": "April 1"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 10",
+        "closing": "March 26"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "13": {
+    "source": "https://www.newenglandskihistory.com/Vermont/okemo.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 33,
+        "reports": 16
+      },
+      "01": {
+        "percent": 73,
+        "reports": 10
+      },
+      "02": {
+        "percent": 93,
+        "reports": 5
+      },
+      "03": {
+        "percent": 92,
+        "reports": 6
+      },
+      "04": {
+        "percent": 35,
+        "reports": 1
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "November 22",
+        "closing": "April 16"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 1",
+        "closing": "April 13"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 17",
+        "closing": "April 14"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 19",
+        "closing": "April 16"
+      },
+      {
+        "season": "2021-22",
+        "opening": "November 26",
+        "closing": "April 17"
+      },
+      {
+        "season": "2020-21",
+        "opening": "November 25",
+        "closing": "April 4"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 22",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 16",
+        "closing": "April 14"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 11",
+        "closing": "April 22"
+      },
+      {
+        "season": "2016-17",
+        "opening": "November 23",
+        "closing": "April 16"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "14": {
+    "source": "https://www.newenglandskihistory.com/Vermont/stowe.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 60,
+        "reports": 5
+      },
+      "01": {
+        "percent": 95,
+        "reports": 1
+      },
+      "02": {
+        "percent": 99,
+        "reports": 2
+      },
+      "03": {
+        "percent": 97,
+        "reports": 2
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "November 21",
+        "closing": "April 25"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 3",
+        "closing": "April 27"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 17",
+        "closing": "April 21"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 19",
+        "closing": "April 16"
+      },
+      {
+        "season": "2021-22",
+        "opening": "November 26",
+        "closing": "April 17"
+      },
+      {
+        "season": "2020-21",
+        "opening": "November 25",
+        "closing": "April 18"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 22",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 16",
+        "closing": "April 21"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 17",
+        "closing": "April 15"
+      },
+      {
+        "season": "2016-17",
+        "opening": "November 23",
+        "closing": "April 23"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "15": {
+    "source": "https://www.newenglandskihistory.com/NewHampshire/sunapee.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 28,
+        "reports": 13
+      },
+      "01": {
+        "percent": 76,
+        "reports": 8
+      },
+      "02": {
+        "percent": 88,
+        "reports": 5
+      },
+      "03": {
+        "percent": 84,
+        "reports": 10
+      },
+      "04": {
+        "percent": 61,
+        "reports": 9
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 5",
+        "closing": "April 5"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 4",
+        "closing": "April 6"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 30",
+        "closing": "April 7"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 23",
+        "closing": "April 9"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 3",
+        "closing": "April 3"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 12",
+        "closing": "April 11"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 27",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 29",
+        "closing": "April 7"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 22",
+        "closing": "April 13"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 6",
+        "closing": "April 9"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "16": {
+    "source": "https://www.newenglandskihistory.com/NewHampshire/crotchedmtn.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 55,
+        "reports": 21
+      },
+      "01": {
+        "percent": 85,
+        "reports": 30
+      },
+      "02": {
+        "percent": 97,
+        "reports": 17
+      },
+      "03": {
+        "percent": 93,
+        "reports": 22
+      },
+      "04": {
+        "percent": 90,
+        "reports": 1
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 12",
+        "closing": "March 29"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 6",
+        "closing": "March 23"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 1",
+        "closing": "March 24"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 10",
+        "closing": "March 26"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 26",
+        "closing": "March 27"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 12",
+        "closing": "March 28"
+      },
+      {
+        "season": "2019-20",
+        "opening": "December 6",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "December 8",
+        "closing": "March 30"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 15",
+        "closing": "April 1"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 10",
+        "closing": "April 9"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "17": {
+    "source": "https://www.newenglandskihistory.com/NewHampshire/attitash.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 22,
+        "reports": 5
+      },
+      "02": {
+        "percent": 70,
+        "reports": 3
+      },
+      "03": {
+        "percent": 86,
+        "reports": 7
+      },
+      "04": {
+        "percent": 78,
+        "reports": 2
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 6",
+        "closing": "April 5"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 6",
+        "closing": "April 13"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 1",
+        "closing": "April 7"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 2",
+        "closing": "April 9"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 10",
+        "closing": "April 3"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 12",
+        "closing": "April 4"
+      },
+      {
+        "season": "2019-20",
+        "opening": "December 6",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "December 8",
+        "closing": "April 7"
+      },
+      {
+        "season": "2017-18",
+        "opening": "December 15",
+        "closing": "April 8"
+      },
+      {
+        "season": "2016-17",
+        "opening": "December 16",
+        "closing": "April 9"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "12": {
+    "source": "https://www.newenglandskihistory.com/Vermont/mtsnow.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 56,
+        "reports": 22
+      },
+      "01": {
+        "percent": 64,
+        "reports": 18
+      },
+      "02": {
+        "percent": 84,
+        "reports": 13
+      },
+      "03": {
+        "percent": 77,
+        "reports": 20
+      },
+      "04": {
+        "percent": 68,
+        "reports": 6
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "November 22",
+        "closing": "April 18"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 3",
+        "closing": "April 20"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 23",
+        "closing": "April 21"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 20",
+        "closing": "April 23"
+      },
+      {
+        "season": "2021-22",
+        "opening": "November 26",
+        "closing": "April 24"
+      },
+      {
+        "season": "2020-21",
+        "opening": "November 25",
+        "closing": "April 18"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 13",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "October 27",
+        "closing": "April 14"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 11",
+        "closing": "April 22"
+      },
+      {
+        "season": "2016-17",
+        "opening": "November 23",
+        "closing": "April 16"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "18": {
+    "source": "https://www.newenglandskihistory.com/NewHampshire/wildcatmtn.php",
+    "retrieved": "2026-10-03",
+    "terrain": {
+      "12": {
+        "percent": 66,
+        "reports": 3
+      },
+      "01": {
+        "percent": 75,
+        "reports": 2
+      },
+      "02": {
+        "percent": 69,
+        "reports": 3
+      },
+      "03": {
+        "percent": 85,
+        "reports": 6
+      },
+      "04": {
+        "percent": 65,
+        "reports": 21
+      }
+    },
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "December 3",
+        "closing": "April 12"
+      },
+      {
+        "season": "2024-25",
+        "opening": "December 4",
+        "closing": "April 6"
+      },
+      {
+        "season": "2023-24",
+        "opening": "November 22",
+        "closing": "April 21"
+      },
+      {
+        "season": "2022-23",
+        "opening": "November 24",
+        "closing": "April 16"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 4",
+        "closing": "April 10"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 11",
+        "closing": "April 11"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 15",
+        "closing": "March 14"
+      },
+      {
+        "season": "2018-19",
+        "opening": "October 27",
+        "closing": "April 28"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 11",
+        "closing": "April 29"
+      },
+      {
+        "season": "2016-17",
+        "opening": "November 24",
+        "closing": "April 29"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  },
+  "8": {
+    "source": "https://www.newenglandskihistory.com/NewHampshire/cannonmtn.php",
+    "retrieved": "2026-10-03",
+    "terrain": {},
+    "seasons": [
+      {
+        "season": "2025-26",
+        "opening": "November 22",
+        "closing": "April 12"
+      },
+      {
+        "season": "2024-25",
+        "opening": "November 29",
+        "closing": "April 13"
+      },
+      {
+        "season": "2023-24",
+        "opening": "December 2",
+        "closing": "April 8"
+      },
+      {
+        "season": "2022-23",
+        "opening": "December 3",
+        "closing": "April 16"
+      },
+      {
+        "season": "2021-22",
+        "opening": "December 3",
+        "closing": "April 10"
+      },
+      {
+        "season": "2020-21",
+        "opening": "December 12",
+        "closing": "April 11"
+      },
+      {
+        "season": "2019-20",
+        "opening": "November 23",
+        "closing": "March 18"
+      },
+      {
+        "season": "2018-19",
+        "opening": "November 23",
+        "closing": "April 15"
+      },
+      {
+        "season": "2017-18",
+        "opening": "November 24",
+        "closing": "April 15"
+      },
+      {
+        "season": "2016-17",
+        "opening": "November 25",
+        "closing": "April 16"
+      }
+    ],
+    "period": "Volunteer observations across unspecified years; report counts shown. Not a random or daily sample."
+  }
+}

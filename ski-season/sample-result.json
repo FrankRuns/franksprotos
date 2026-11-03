@@ -1,0 +1,837 @@
+{
+  "selected": [
+    {
+      "name": "x0",
+      "w": "2026-12-05",
+      "sat": null,
+      "sun": null,
+      "hotel": null,
+      "mode": "Stay home",
+      "satHours": 0,
+      "sunHours": 0,
+      "drive": 0,
+      "distance": 0,
+      "lodging": 0,
+      "fuel": 0,
+      "parking": 0,
+      "food": 0,
+      "other": 0,
+      "cost": 0,
+      "q": 0,
+      "days": 0
+    },
+    {
+      "name": "x1",
+      "w": "2026-12-12",
+      "sat": null,
+      "sun": null,
+      "hotel": null,
+      "mode": "Stay home",
+      "satHours": 0,
+      "sunHours": 0,
+      "drive": 0,
+      "distance": 0,
+      "lodging": 0,
+      "fuel": 0,
+      "parking": 0,
+      "food": 0,
+      "other": 0,
+      "cost": 0,
+      "q": 0,
+      "days": 0
+    },
+    {
+      "name": "x2",
+      "w": "2026-12-19",
+      "sat": null,
+      "sun": null,
+      "hotel": null,
+      "mode": "Stay home",
+      "satHours": 0,
+      "sunHours": 0,
+      "drive": 0,
+      "distance": 0,
+      "lodging": 0,
+      "fuel": 0,
+      "parking": 0,
+      "food": 0,
+      "other": 0,
+      "cost": 0,
+      "q": 0,
+      "days": 0
+    },
+    {
+      "name": "x3",
+      "w": "2026-12-26",
+      "sat": null,
+      "sun": null,
+      "hotel": null,
+      "mode": "Stay home",
+      "satHours": 0,
+      "sunHours": 0,
+      "drive": 0,
+      "distance": 0,
+      "lodging": 0,
+      "fuel": 0,
+      "parking": 0,
+      "food": 0,
+      "other": 0,
+      "cost": 0,
+      "q": 0,
+      "days": 0
+    },
+    {
+      "name": "x28",
+      "w": "2027-01-02",
+      "sat": null,
+      "sun": null,
+      "hotel": null,
+      "mode": "Stay home",
+      "satHours": 0,
+      "sunHours": 0,
+      "drive": 0,
+      "distance": 0,
+      "lodging": 0,
+      "fuel": 0,
+      "parking": 0,
+      "food": 0,
+      "other": 0,
+      "cost": 0,
+      "q": 0,
+      "days": 0
+    },
+    {
+      "name": "x40",
+      "w": "2027-01-09",
+      "sat": 11,
+      "sun": 11,
+      "hotel": 32,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 6.795000000000002,
+      "drive": 9.389666666666667,
+      "distance": 316.35672671597865,
+      "legs": [
+        [
+          0,
+          32
+        ],
+        [
+          32,
+          11
+        ],
+        [
+          11,
+          32
+        ],
+        [
+          32,
+          11
+        ],
+        [
+          11,
+          0
+        ]
+      ],
+      "lodging": 414.40000000000003,
+      "fuel": 44.28994174023701,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 608.689941740237,
+      "q": 9674,
+      "components": {
+        "weather": 5.749030580071429,
+        "preference": 2.8969500000000004,
+        "crowds": 1.8623250000000002,
+        "risk": 0.08277000000000001,
+        "fatigue": 0.7511733333333334
+      },
+      "days": 2,
+      "sundayLeave": 15.795000000000002,
+      "fridayArrival": 20.705866666666665
+    },
+    {
+      "name": "x71",
+      "w": "2027-01-16",
+      "sat": 14,
+      "sun": 14,
+      "hotel": 24,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 4.927566666666667,
+      "drive": 11.902099999999999,
+      "distance": 451.1599136045494,
+      "legs": [
+        [
+          0,
+          24
+        ],
+        [
+          24,
+          14
+        ],
+        [
+          14,
+          24
+        ],
+        [
+          24,
+          14
+        ],
+        [
+          14,
+          0
+        ]
+      ],
+      "lodging": 829.9200000000002,
+      "fuel": 63.16238790463691,
+      "parking": 50,
+      "food": 150,
+      "other": 0,
+      "cost": 1093.082387904637,
+      "q": 9078,
+      "components": {
+        "weather": 5.282247380477514,
+        "preference": 3.5782700000000003,
+        "crowds": 1.186196505,
+        "risk": 0.017039380952380948,
+        "fatigue": 0.9521679999999999
+      },
+      "days": 2,
+      "sundayLeave": 13.927566666666667,
+      "fridayArrival": 22.282466666666664
+    },
+    {
+      "name": "x82",
+      "w": "2027-01-23",
+      "sat": 7,
+      "sun": 7,
+      "hotel": 25,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 4.119266666666666,
+      "drive": 14.254399999999999,
+      "distance": 553.1878827646543,
+      "legs": [
+        [
+          0,
+          25
+        ],
+        [
+          25,
+          7
+        ],
+        [
+          7,
+          25
+        ],
+        [
+          25,
+          7
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "lodging": 369.6,
+      "fuel": 77.4463035870516,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 597.0463035870516,
+      "q": 9030,
+      "components": {
+        "weather": 5.362205829420001,
+        "preference": 3.3357799999999997,
+        "crowds": 1.501101,
+        "risk": 0.02859239999999999,
+        "fatigue": 1.1403519999999998
+      },
+      "days": 2,
+      "sundayLeave": 13.119266666666666,
+      "fridayArrival": 22.8737
+    },
+    {
+      "name": "x127",
+      "w": "2027-01-30",
+      "sat": 19,
+      "sun": 19,
+      "hotel": 34,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 6.7773,
+      "drive": 8.249799999999999,
+      "distance": 210.75525182931676,
+      "legs": [
+        [
+          0,
+          34
+        ],
+        [
+          34,
+          19
+        ],
+        [
+          19,
+          34
+        ],
+        [
+          34,
+          19
+        ],
+        [
+          19,
+          0
+        ]
+      ],
+      "lodging": 470.40000000000003,
+      "fuel": 29.505735256104344,
+      "parking": 20,
+      "food": 150,
+      "other": 0,
+      "cost": 669.9057352561044,
+      "q": 10754,
+      "components": {
+        "weather": 6.458518101566668,
+        "preference": 3.3892157999999997,
+        "crowds": 1.6119441,
+        "risk": 0.04592433333333332,
+        "fatigue": 0.6599839999999999
+      },
+      "days": 2,
+      "sundayLeave": 15.7773,
+      "fridayArrival": 20.366266666666668
+    },
+    {
+      "name": "x149",
+      "w": "2027-02-06",
+      "sat": 8,
+      "sun": 9,
+      "hotel": 26,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 5.183866666666667,
+      "drive": 12.264266666666664,
+      "distance": 478.9380020679233,
+      "legs": [
+        [
+          0,
+          26
+        ],
+        [
+          26,
+          8
+        ],
+        [
+          8,
+          26
+        ],
+        [
+          26,
+          9
+        ],
+        [
+          9,
+          0
+        ]
+      ],
+      "lodging": 369.6,
+      "fuel": 67.05132028950926,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 586.6513202895093,
+      "q": 9729,
+      "components": {
+        "weather": 5.670446422736509,
+        "preference": 3.394644,
+        "crowds": 1.644822,
+        "risk": 0,
+        "fatigue": 0.9811413333333332
+      },
+      "days": 2,
+      "sundayLeave": 14.183866666666667,
+      "fridayArrival": 22.206766666666667
+    },
+    {
+      "name": "x192",
+      "w": "2027-02-13",
+      "sat": 8,
+      "sun": 9,
+      "hotel": 26,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 5.183866666666667,
+      "drive": 12.264266666666664,
+      "distance": 478.9380020679233,
+      "legs": [
+        [
+          0,
+          26
+        ],
+        [
+          26,
+          8
+        ],
+        [
+          8,
+          26
+        ],
+        [
+          26,
+          9
+        ],
+        [
+          9,
+          0
+        ]
+      ],
+      "lodging": 480.48,
+      "fuel": 67.05132028950926,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 697.5313202895093,
+      "q": 9489,
+      "components": {
+        "weather": 5.677220778309842,
+        "preference": 3.394644,
+        "crowds": 1.3980987,
+        "risk": 0,
+        "fatigue": 0.9811413333333332
+      },
+      "days": 2,
+      "sundayLeave": 14.183866666666667,
+      "fridayArrival": 22.206766666666667
+    },
+    {
+      "name": "x224",
+      "w": "2027-02-20",
+      "sat": 3,
+      "sun": 3,
+      "hotel": 29,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 7,
+      "drive": 7.117033333333333,
+      "distance": 215.27647289827408,
+      "legs": [
+        [
+          0,
+          29
+        ],
+        [
+          29,
+          3
+        ],
+        [
+          3,
+          29
+        ],
+        [
+          29,
+          3
+        ],
+        [
+          3,
+          0
+        ]
+      ],
+      "lodging": 480.48,
+      "fuel": 30.13870620575837,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 660.6187062057584,
+      "q": 9639,
+      "components": {
+        "weather": 5.734302933333334,
+        "preference": 2.94,
+        "crowds": 1.6065,
+        "risk": 0.07199999999999998,
+        "fatigue": 0.5693626666666666
+      },
+      "days": 2,
+      "sundayLeave": 17.617666666666665,
+      "fridayArrival": 19.673566666666666
+    },
+    {
+      "name": "x297",
+      "w": "2027-02-27",
+      "sat": 15,
+      "sun": 15,
+      "hotel": 32,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 6.8612,
+      "drive": 7.8015,
+      "distance": 282.2348112025769,
+      "legs": [
+        [
+          0,
+          32
+        ],
+        [
+          32,
+          15
+        ],
+        [
+          15,
+          32
+        ],
+        [
+          32,
+          15
+        ],
+        [
+          15,
+          0
+        ]
+      ],
+      "lodging": 414.40000000000003,
+      "fuel": 39.51287356836077,
+      "parking": 20,
+      "food": 150,
+      "other": 0,
+      "cost": 623.9128735683607,
+      "q": 11117,
+      "components": {
+        "weather": 6.768960586457143,
+        "preference": 3.4098552,
+        "crowds": 1.6217604,
+        "risk": 0.05940514285714284,
+        "fatigue": 0.62412
+      },
+      "days": 2,
+      "sundayLeave": 15.8612,
+      "fridayArrival": 20.705866666666665
+    },
+    {
+      "name": "x322",
+      "w": "2027-03-06",
+      "sat": 12,
+      "sun": 12,
+      "hotel": 31,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 7,
+      "drive": 6.373266666666667,
+      "distance": 195.82966724329913,
+      "legs": [
+        [
+          0,
+          31
+        ],
+        [
+          31,
+          12
+        ],
+        [
+          12,
+          31
+        ],
+        [
+          31,
+          12
+        ],
+        [
+          12,
+          0
+        ]
+      ],
+      "lodging": 448.00000000000006,
+      "fuel": 27.416153414061878,
+      "parking": 20,
+      "food": 150,
+      "other": 0,
+      "cost": 645.4161534140619,
+      "q": 11155,
+      "components": {
+        "weather": 6.4631578,
+        "preference": 3.696,
+        "crowds": 1.6380000000000001,
+        "risk": 0.13199999999999998,
+        "fatigue": 0.5098613333333334
+      },
+      "days": 2,
+      "sundayLeave": 16.723766666666666,
+      "fridayArrival": 19.8019
+    },
+    {
+      "name": "x337",
+      "w": "2027-03-13",
+      "sat": 1,
+      "sun": 1,
+      "hotel": null,
+      "mode": "Day trips",
+      "satHours": 7,
+      "sunHours": 7,
+      "drive": 4.970666666666666,
+      "distance": 145.34829098067286,
+      "legs": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "lodging": 0,
+      "fuel": 20.3487607372942,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 170.34876073729419,
+      "q": 10903,
+      "components": {
+        "weather": 6.780759333333335,
+        "preference": 2.7300000000000004,
+        "crowds": 1.8900000000000001,
+        "risk": 0.09999999999999996,
+        "fatigue": 0.3976533333333333
+      },
+      "days": 2,
+      "sundayLeave": 18.2577,
+      "fridayArrival": null
+    },
+    {
+      "name": "x389",
+      "w": "2027-03-20",
+      "sat": 13,
+      "sun": 13,
+      "hotel": 22,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 7,
+      "drive": 7.111000000000001,
+      "distance": 253.89599737532808,
+      "legs": [
+        [
+          0,
+          22
+        ],
+        [
+          22,
+          13
+        ],
+        [
+          13,
+          22
+        ],
+        [
+          22,
+          13
+        ],
+        [
+          13,
+          0
+        ]
+      ],
+      "lodging": 515.2,
+      "fuel": 35.545439632545936,
+      "parking": 20,
+      "food": 150,
+      "other": 0,
+      "cost": 720.745439632546,
+      "q": 11800,
+      "components": {
+        "weather": 6.939070600000001,
+        "preference": 3.8640000000000003,
+        "crowds": 1.6380000000000001,
+        "risk": 0.07199999999999998,
+        "fatigue": 0.56888
+      },
+      "days": 2,
+      "sundayLeave": 16.0489,
+      "fridayArrival": 20.399533333333334
+    },
+    {
+      "name": "x414",
+      "w": "2027-03-27",
+      "sat": 10,
+      "sun": 10,
+      "hotel": 36,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 5.003033333333333,
+      "drive": 11.403366666666667,
+      "distance": 439.4484336474986,
+      "legs": [
+        [
+          0,
+          36
+        ],
+        [
+          36,
+          10
+        ],
+        [
+          10,
+          36
+        ],
+        [
+          36,
+          10
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "lodging": 459.20000000000005,
+      "fuel": 61.522780710649805,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 670.7227807106499,
+      "q": 9476,
+      "components": {
+        "weather": 5.660811765803334,
+        "preference": 3.1688007999999996,
+        "crowds": 1.6204095,
+        "risk": 0.0617298857142857,
+        "fatigue": 0.9122693333333334
+      },
+      "days": 2,
+      "sundayLeave": 14.003033333333333,
+      "fridayArrival": 22.444633333333332
+    },
+    {
+      "name": "x435",
+      "w": "2027-04-03",
+      "sat": 5,
+      "sun": 5,
+      "hotel": 22,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 7,
+      "drive": 8.718166666666667,
+      "distance": 290.18805177761874,
+      "legs": [
+        [
+          0,
+          22
+        ],
+        [
+          22,
+          5
+        ],
+        [
+          5,
+          22
+        ],
+        [
+          22,
+          5
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "lodging": 515.2,
+      "fuel": 40.62632724886662,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 705.8263272488666,
+      "q": 10538,
+      "components": {
+        "weather": 5.6737794666666685,
+        "preference": 3.7800000000000002,
+        "crowds": 1.8900000000000001,
+        "risk": 0.10799999999999996,
+        "fatigue": 0.6974533333333334
+      },
+      "days": 2,
+      "sundayLeave": 16.130233333333333,
+      "fridayArrival": 20.399533333333334
+    },
+    {
+      "name": "x460",
+      "w": "2027-04-10",
+      "sat": 6,
+      "sun": 6,
+      "hotel": 23,
+      "mode": "Two-night trip",
+      "satHours": 7,
+      "sunHours": 5.160733333333333,
+      "drive": 11.646366666666665,
+      "distance": 446.52653503539324,
+      "legs": [
+        [
+          0,
+          23
+        ],
+        [
+          23,
+          6
+        ],
+        [
+          6,
+          23
+        ],
+        [
+          23,
+          6
+        ],
+        [
+          6,
+          0
+        ]
+      ],
+      "lodging": 425.6,
+      "fuel": 62.51371490495505,
+      "parking": 0,
+      "food": 150,
+      "other": 0,
+      "cost": 638.113714904955,
+      "q": 9436,
+      "components": {
+        "weather": 5.61991115411873,
+        "preference": 3.3563624,
+        "crowds": 1.641699,
+        "risk": 0.25016365714285704,
+        "fatigue": 0.9317093333333333
+      },
+      "days": 2,
+      "sundayLeave": 14.160733333333333,
+      "fridayArrival": 21.976266666666668
+    },
+    {
+      "name": "x479",
+      "w": "2027-04-17",
+      "sat": null,
+      "sun": null,
+      "hotel": null,
+      "mode": "Stay home",
+      "satHours": 0,
+      "sunHours": 0,
+      "drive": 0,
+      "distance": 0,
+      "lodging": 0,
+      "fuel": 0,
+      "parking": 0,
+      "food": 0,
+      "other": 0,
+      "cost": 0,
+      "q": 0,
+      "days": 0
+    }
+  ],
+  "quality": 141.818,
+  "status": "Optimal",
+  "variables": 480
+}

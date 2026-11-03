@@ -1,0 +1,17 @@
+{
+  "name": "ski-season",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node verify.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0",
+  "type": "module",
+  "dependencies": {
+    "glpk.js": "^5.0.0",
+    "leaflet": "^1.9.4"
+  }
+}

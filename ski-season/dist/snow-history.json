@@ -1,0 +1,246 @@
+{
+  "1": {
+    "name": "Mohawk",
+    "source": "https://www.onthesnow.com/connecticut/mohawk-mountain/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 14.0,
+      "01": 18.0,
+      "02": 23.0,
+      "03": 25.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "2": {
+    "name": "Berkshire East",
+    "source": "https://www.onthesnow.com/massachusetts/berkshire-east/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 8.0,
+      "01": 10.0,
+      "02": 14.0,
+      "03": 14.0,
+      "04": 11.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "4": {
+    "name": "Bousquet",
+    "source": "https://www.onthesnow.com/massachusetts/bousquet-ski-area/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 11.0,
+      "01": 11.0,
+      "02": 12.0,
+      "03": 13.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "5": {
+    "name": "Magic",
+    "source": "https://www.onthesnow.com/vermont/magic-mountain/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 9.0,
+      "01": 11.0,
+      "02": 15.0,
+      "03": 17.0,
+      "04": 17.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "6": {
+    "name": "Bolton Valley",
+    "source": "https://www.onthesnow.com/vermont/bolton-valley/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 14.0,
+      "01": 15.0,
+      "02": 19.0,
+      "03": 23.0,
+      "04": 23.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "7": {
+    "name": "Jay Peak",
+    "source": "https://www.onthesnow.com/vermont/jay-peak/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 17.0,
+      "01": 21.0,
+      "02": 28.0,
+      "03": 29.0,
+      "04": 22.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "8": {
+    "name": "Cannon",
+    "source": "https://www.onthesnow.com/new-hampshire/cannon-mountain/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 15.0,
+      "01": 19.0,
+      "02": 25.0,
+      "03": 27.0,
+      "04": 24.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "9": {
+    "name": "Burke",
+    "source": "https://www.onthesnow.com/vermont/burke-mountain/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 9.0,
+      "01": 11.0,
+      "02": 14.0,
+      "03": 16.0,
+      "04": 16.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "10": {
+    "name": "Waterville Valley",
+    "source": "https://www.onthesnow.com/new-hampshire/waterville-valley/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 12.0,
+      "01": 17.0,
+      "02": 20.0,
+      "03": 21.0,
+      "04": 34.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "11": {
+    "name": "Pats Peak",
+    "source": "https://www.onthesnow.com/new-hampshire/pats-peak/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 11.0,
+      "01": 15.0,
+      "02": 17.0,
+      "03": 18.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "12": {
+    "name": "Mount Snow",
+    "source": "https://www.onthesnow.com/vermont/mount-snow/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 15.0,
+      "01": 18.0,
+      "02": 23.0,
+      "03": 27.0,
+      "04": 24.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "13": {
+    "name": "Okemo",
+    "source": "https://www.onthesnow.com/vermont/okemo-mountain-resort/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 16.0,
+      "01": 19.0,
+      "02": 24.0,
+      "03": 27.0,
+      "04": 24.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "14": {
+    "name": "Stowe",
+    "source": "https://www.onthesnow.com/vermont/stowe-mountain-resort/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 17.0,
+      "01": 20.0,
+      "02": 26.0,
+      "03": 29.0,
+      "04": 22.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "15": {
+    "name": "Mount Sunapee",
+    "source": "https://www.onthesnow.com/new-hampshire/mount-sunapee/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 13.0,
+      "01": 19.0,
+      "02": 24.0,
+      "03": 25.0,
+      "04": 21.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "16": {
+    "name": "Crotched",
+    "source": "https://www.onthesnow.com/new-hampshire/crotched-mountain/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 21.0,
+      "01": 23.0,
+      "02": 28.0,
+      "03": 27.0,
+      "04": 27.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "17": {
+    "name": "Attitash",
+    "source": "https://www.onthesnow.com/new-hampshire/attitash/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 13.0,
+      "01": 17.0,
+      "02": 19.0,
+      "03": 19.0,
+      "04": 19.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "18": {
+    "name": "Wildcat",
+    "source": "https://www.onthesnow.com/new-hampshire/wildcat-mountain/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 15.0,
+      "01": 16.0,
+      "02": 20.0,
+      "03": 21.0,
+      "04": 18.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "19": {
+    "name": "Hunter",
+    "source": "https://www.onthesnow.com/new-york/hunter-mountain/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 16.0,
+      "01": 22.0,
+      "02": 30.0,
+      "03": 29.0,
+      "04": 24.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  },
+  "3": {
+    "name": "Catamount",
+    "source": "https://www.onthesnow.com/new-york/catamount-ski-ride-area/historical-snowfall",
+    "retrieved": "2026-10-03",
+    "baseDepthIn": {
+      "12": 11.0,
+      "01": 12.0,
+      "02": 16.0,
+      "03": 16.0,
+      "04": 12.0
+    },
+    "period": "Publisher historical monthly aggregate; period and sample sizes not disclosed"
+  }
+}
