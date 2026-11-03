@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ski Season Optimizer</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#142536;background:#f5f8fb}*{box-sizing:border-box}body{margin:0}main{max-width:1100px;margin:auto;padding:18px}header{display:flex;justify-content:space-between;align-items:center;gap:10px}h1{font-size:clamp(23px,4vw,36px);margin:8px 0}p{color:#607387;margin:5px 0 15px}.panel{background:white;border:1px solid #dce6ee;border-radius:16px;padding:16px;margin:12px 0}.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}label{font-size:12px;font-weight:700;color:#456}input,select,button{font:inherit;width:100%;padding:10px;border-radius:9px;border:1px solid #cad7e2;background:white;margin-top:5px}button{background:#126c9c;color:white;border:0;font-weight:700;cursor:pointer}button.secondary{background:#e9f3f9;color:#145a80}#map{height:350px;border-radius:12px;z-index:0}.results{display:grid;grid-template-columns:1fr 1fr;gap:12px}.weeks{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.week{border:1px solid #dce6ee;border-radius:9px;padding:8px;min-height:70px;font-size:11px;background:#f8fafc}.week strong{display:block;font-size:12px}.week.ski{background:#e0f3fc;border-color:#91cce7}.stat{font-size:23px;font-weight:800;color:#145a80}.small{font-size:12px;color:#6a7a8b}#summary{display:flex;gap:28px;flex-wrap:wrap}.leaflet-container{font:inherit}@media(max-width:700px){.results{grid-template-columns:1fr}.weeks{grid-template-columns:repeat(3,1fr)}#map{height:290px}} </style></head>
+<body><main><header><div><div class="small">NORTHEAST • 2026–27</div><h1>⛷️ Plan your ski season</h1><p>More great days. Less driving.</p></div></header>
+<section class="panel"><div class="controls">
+<label>Home base<input id="home" placeholder="Town or ZIP" value="Simsbury, CT" autocomplete="address-level2"></label>
+<label>Ski pass<select id="pass"><option value="all">All resorts</option><option value="epic">Epic</option><option value="ikon">Ikon</option></select></label>
+<label>Ski days wanted<input id="days" type="number" min="1" max="22" value="10"></label>
+<label>Maximum drive (hours)<input id="drive" type="number" min="1" max="10" step=".5" value="4"></label>
+<label>Travel preference<select id="pref"><option value="balanced">Balanced</option><option value="snow">Best expected snow</option><option value="close">Least driving</option></select></label>
+<label>Available weekends<select id="weekends"><option value="all">Every weekend</option><option value="alternate">Every other weekend</option></select></label>
+</div><div class="controls" style="margin-top:12px"><button id="run">Optimize my season</button><button id="locate" class="secondary">Use my location</button></div><p id="status" class="small" role="status">Home base is editable. Location access is optional.</p></section>
+<div id="summary" class="panel" aria-live="polite"></div>
+<div class="results"><section class="panel"><h3>Resort map</h3><div id="map"></div></section><section class="panel"><h3>Your ski calendar</h3><div id="calendar" class="weeks"></div></section></div>
+<p class="small">Prototype: heuristic schedule with illustrative historical-season snow scores, approximate straight-line-adjusted driving times, and simplified pass eligibility. Not live weather, road routing, blackout-date verification, or a mathematical optimum. Confirm pass access and travel times before booking.</p>
+</main><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
+const resorts=[
+{name:"Mount Snow",lat:42.96,lon:-72.92,pass:"epic",snow:62},
+{name:"Okemo",lat:43.40,lon:-72.72,pass:"epic",snow:66},
+{name:"Stowe",lat:44.53,lon:-72.78,pass:"epic",snow:84},
+{name:"Mount Sunapee",lat:43.33,lon:-72.08,pass:"epic",snow:61},
+{name:"Attitash",lat:44.08,lon:-71.23,pass:"epic",snow:73},
+{name:"Wildcat",lat:44.26,lon:-71.20,pass:"epic",snow:87},
+{name:"Stratton",lat:43.11,lon:-72.91,pass:"ikon",snow:67},
+{name:"Sugarbush",lat:44.14,lon:-72.89,pass:"ikon",snow:83},
+{name:"Killington",lat:43.63,lon:-72.80,pass:"ikon",snow:78},
+{name:"Sunday River",lat:44.47,lon:-70.86,pass:"ikon",snow:82},
+{name:"Sugarloaf",lat:45.03,lon:-70.31,pass:"ikon",snow:94},
+{name:"Loon",lat:44.04,lon:-71.62,pass:"ikon",snow:70}];
+const homes={"simsbury, ct":[41.876,-72.801],"hartford, ct":[41.765,-72.673],"boston, ma":[42.36,-71.06],"new york, ny":[40.713,-74.006],"albany, ny":[42.652,-73.756],"danbury, ct":[41.394,-73.454],"springfield, ma":[42.101,-72.59],"providence, ri":[41.824,-71.413],"new haven, ct":[41.308,-72.928],"burlington, vt":[44.476,-73.212]};
+let origin=[41.876,-72.801],markers=[],homeMarker=null;
+const map=L.map("map").setView([43.2,-72.4],7);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors"}).addTo(map);
+function distance(a,b){const rad=Math.PI/180,dl=(b[1]-a[1])*rad,dp=(b[0]-a[0])*rad,h=Math.sin(dp/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(dl/2)**2;return 3959*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))}
+function hours(r){return distance(origin,[r.lat,r.lon])*1.27/52}
+function seasonBoost(i){return i<4?-25+i*4:i<9?i*2-4:i<15?15:i<19?8-(i-15)*3:-12}
+function score(r,i,pref){const snow=r.snow+seasonBoost(i),travel=hours(r);return pref==="snow"?snow-travel*3:pref==="close"?snow*.35-travel*16:snow*.75-travel*9}
+function dateWeeks(){let d=new Date(2026,11,5),a=[];for(let i=0;i<22;i++){a.push(new Date(d));d.setDate(d.getDate()+7)}return a}
+function render(){const pass=document.getElementById("pass").value,days=Math.max(1,Math.min(22,+document.getElementById("days").value||10)),max=+document.getElementById("drive").value||4,pref=document.getElementById("pref").value,alt=document.getElementById("weekends").value==="alternate";
+const eligible=resorts.filter(r=>(pass==="all"||r.pass===pass)&&hours(r)<=max);
+const weeks=dateWeeks(),choices=weeks.map((d,i)=>({i,d,options:eligible.map(r=>({r,score:score(r,i,pref)})).sort((a,b)=>b.score-a.score)})).filter(w=>(!alt||w.i%2===0)&&w.options.length);
+const selected=choices.map(w=>({...w,best:w.options[0]})).sort((a,b)=>b.best.score-a.best.score).slice(0,days).sort((a,b)=>a.i-b.i),byWeek=new Map(selected.map(s=>[s.i,s]));
+document.getElementById("calendar").innerHTML=weeks.map((d,i)=>{const s=byWeek.get(i);return '<div class="week '+(s?'ski':'')+'"><strong>'+d.toLocaleDateString("en-US",{month:"short",day:"numeric"})+'</strong>'+(s?s.best.r.name+'<div class="small">'+hours(s.best.r).toFixed(1)+'h drive</div>':'—')+'</div>'}).join("");
+document.getElementById("summary").innerHTML='<div><div class="stat">'+selected.length+'</div><div class="small">planned ski days</div></div><div><div class="stat">'+new Set(selected.map(s=>s.best.r.name)).size+'</div><div class="small">resorts</div></div><div><div class="stat">'+Math.round(selected.reduce((a,s)=>a+hours(s.best.r)*2,0))+'h</div><div class="small">estimated round-trip driving</div></div>';
+markers.forEach(m=>map.removeLayer(m));markers=[];eligible.forEach(r=>{const count=selected.filter(s=>s.best.r===r).length;const m=L.circleMarker([r.lat,r.lon],{radius:count?9:5,color:count?"#126c9c":"#8ca1b2",fillOpacity:count?.85:.4}).addTo(map).bindPopup('<b>'+r.name+'</b><br>'+count+' planned day(s)<br>~'+hours(r).toFixed(1)+'h one way');markers.push(m)});
+if(homeMarker)map.removeLayer(homeMarker);homeMarker=L.marker(origin).addTo(map).bindPopup('Home base');const coords=[origin,...eligible.map(r=>[r.lat,r.lon])];if(coords.length>1)map.fitBounds(coords,{padding:[25,25]});document.getElementById("status").textContent=eligible.length?eligible.length+' resorts within approximate drive limit.':'No resorts match. Increase maximum drive or change pass.';
+}
+async function setHome(){const val=document.getElementById("home").value.trim().toLowerCase();if(homes[val]){origin=homes[val];render();return}if(!val){render();return}document.getElementById("status").textContent="Looking up home base…";try{const u="https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(val);const r=await fetch(u);const a=await r.json();if(!a.length)throw Error("Location not found");origin=[+a[0].lat,+a[0].lon];render()}catch(e){document.getElementById("status").textContent="Could not locate home base. Try a city and state."}}
+document.getElementById("run").addEventListener("click",setHome);document.getElementById("locate").addEventListener("click",()=>{if(!navigator.geolocation){document.getElementById("status").textContent="Location unavailable. Enter your home base.";return}navigator.geolocation.getCurrentPosition(p=>{origin=[p.coords.latitude,p.coords.longitude];document.getElementById("home").value="Current location";render()},()=>document.getElementById("status").textContent="Location not shared. Enter your home base instead.",{timeout:10000})});render();
+</script></body></html>
