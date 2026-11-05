@@ -212,14 +212,35 @@ function validateGraph(g,evidence){
  g.operating_context=g.operating_context.filter(item=>ids.has(item.subject_id));
  g.validation={dropped_edges_missing_endpoints:originalCount-g.edges.length,dropped_context_missing_subjects:originalContext-g.operating_context.length};
 }
+async function interpretSkiFeedback(request,env,cors){
+ if(!env.HF_TOKEN)return json({error:"HF_TOKEN is not configured"},503,cors);
+ let body;try{body=await request.json()}catch{return json({error:"Invalid JSON"},400,cors)}
+ const feedback=String(body.feedback||"").trim().slice(0,700);
+ const resorts=Array.isArray(body.resorts)?body.resorts.filter(x=>typeof x==="string").slice(0,100):[];
+ if(!feedback||!resorts.length)return json({error:"Feedback and resort names are required"},400,cors);
+ const system='You interpret ski-season planning requests into a constrained JSON action. Never invent a resort. Return ONLY a JSON object with keys action, resort, month, weekend_ordinal, days, explanation. action must be lock_weekend or unsupported. resort must exactly match one of the provided resort names. month is an integer 1-12, weekend_ordinal is an integer 1-5 meaning nth Saturday in the month, days must be 2 for both Saturday and Sunday. If the request is ambiguous or cannot be expressed as a two-day resort lock, return action unsupported and explain. Never create arbitrary optimization code.';
+ try{
+  const response=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+env.HF_TOKEN,"Content-Type":"application/json"},signal:AbortSignal.timeout(25000),body:JSON.stringify({model:env.MODEL_ID||"Qwen/Qwen3-4B-Instruct-2507",messages:[{role:"system",content:system},{role:"user",content:JSON.stringify({feedback,resorts,season:"December 2026 through April 2027"})}],temperature:0,max_tokens:300,response_format:{type:"json_object"}})});
+  if(!response.ok)throw Error("Hugging Face HTTP "+response.status+": "+(await response.text()).slice(0,160));
+  const data=await response.json();const raw=data.choices?.[0]?.message?.content;if(!raw)throw Error("Empty model response");
+  const parsed=JSON.parse(raw);
+  if(parsed.action!=="lock_weekend")return json({action:"unsupported",explanation:String(parsed.explanation||"Request not supported yet").slice(0,240)},200,cors);
+  const resort=resorts.find(x=>x.toLowerCase()===String(parsed.resort||"").toLowerCase());
+  const month=Number(parsed.month),ordinal=Number(parsed.weekend_ordinal);
+  if(!resort||![12,1,2,3,4].includes(month)||!Number.isInteger(ordinal)||ordinal<1||ordinal>5||Number(parsed.days)!==2)return json({error:"Model returned an invalid or unsupported constraint"},422,cors);
+  return json({action:"lock_weekend",resort,month,weekend_ordinal:ordinal,days:2,explanation:String(parsed.explanation||"Lock the requested resort weekend").slice(0,240)},200,cors);
+ }catch(e){return json({error:"Inference failed: "+e.message},502,cors)}
+}
+
 export default {async fetch(request,env){
  const origin=request.headers.get("Origin"),allowed=env.ALLOWED_ORIGIN||"https://franksprotos.com";
  const cors=origin===allowed?{"Access-Control-Allow-Origin":allowed,"Vary":"Origin"}:{};
  if(request.method==="OPTIONS")return origin===allowed?new Response(null,{status:204,headers:{...cors,"Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Max-Age":"600"}}):json({error:"Origin not allowed"},403);
  const pathname=new URL(request.url).pathname;
  if(pathname==="/health")return json({status:"ok",model:env.MODEL_ID,research:"budgeted-public-search-v8",web_search_configured:!!env.BRAVE_API_KEY});
- if(!["/generate","/research","/plan","/benchmark","/smoke-test","/facility-research","/network-research","/target-decision-test"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
+ if(!["/generate","/research","/plan","/benchmark","/smoke-test","/facility-research","/network-research","/target-decision-test","/ski-feedback"].includes(pathname)||request.method!=="POST")return json({error:"Not found"},404,cors);
  if(origin!==allowed)return json({error:"Origin not allowed"},403,cors);
+ if(pathname==="/ski-feedback")return interpretSkiFeedback(request,env,cors);
  if(pathname==="/network-research"){
   if(!env.HF_TOKEN||!env.BRAVE_API_KEY)return json({error:"HF_TOKEN or BRAVE_API_KEY missing"},503,cors);
   try{
